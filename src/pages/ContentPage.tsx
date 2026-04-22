@@ -240,14 +240,15 @@ function ContentPage() {
 
     if (data.type === 'personnel' || data.type === 'personnel-groups') {
       const displayPersonnel = firePersonnel.length > 0 ? firePersonnel : (data.personnelData || []);
-      const head = displayPersonnel.find(p => p.isHead);
+      const heads = displayPersonnel.filter(p => p.isHead);
       const others = displayPersonnel.filter(p => !p.isHead);
 
       const renderPersonCard = (person: any, isBig = false) => (
         <div key={person.id || person.name} style={{ 
           background: 'white', borderRadius: '24px', overflow: 'hidden', 
           boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-          textAlign: 'center', transition: 'all 0.3s ease'
+          textAlign: 'center', transition: 'all 0.3s ease',
+          height: '100%'
         }}>
           <div style={{ height: isBig ? '450px' : '320px', background: '#f8fafc', overflow: 'hidden' }}>
             <img src={getDirectImageUrl(person.image || person.imageUrl)} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => e.currentTarget.src = DEFAULT_PLACEHOLDER} />
@@ -271,10 +272,23 @@ function ContentPage() {
 
       return (
         <div className="animate-fade-in">
-          {head && (
+          {heads.length > 0 && (
             <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-               <div style={{ display: 'inline-block', padding: '0.5rem 2rem', background: '#FFF7ED', color: '#C2410C', borderRadius: '50px', fontSize: '0.85rem', fontWeight: 800, marginBottom: '2rem', border: '1px solid #FFEDD5' }}>หัวหน้าส่วนงาน</div>
-               <div style={{ maxWidth: '400px', margin: '0 auto' }}>{renderPersonCard(head, true)}</div>
+               <div style={{ display: 'inline-block', padding: '0.5rem 2rem', background: '#FFF7ED', color: '#C2410C', borderRadius: '50px', fontSize: '0.85rem', fontWeight: 800, marginBottom: '2rem', border: '1px solid #FFEDD5' }}>ฝ่ายบริหาร</div>
+               <div style={{ 
+                 display: 'flex', 
+                 flexWrap: 'wrap',
+                 justifyContent: 'center', 
+                 gap: '3rem',
+                 maxWidth: '1000px',
+                 margin: '0 auto' 
+               }}>
+                 {heads.map(h => (
+                   <div key={h.id} style={{ width: heads.length === 1 ? '400px' : '350px' }}>
+                     {renderPersonCard(h, heads.length === 1)}
+                   </div>
+                 ))}
+               </div>
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
