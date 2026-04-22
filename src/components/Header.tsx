@@ -70,7 +70,7 @@ export default function Header() {
 
             <div className="dropdown">
               <span className="nav-item flex items-center gap-1 cursor-pointer">
-                ฝ่ายบริหาร <ChevronDown size={14} />
+                บุคลากร <ChevronDown size={14} />
               </span>
               <div className="dropdown-content">
                 <Link to="/page/director" className="dropdown-item">ผู้อำนวยการสถานศึกษา</Link>
@@ -86,7 +86,6 @@ export default function Header() {
                 การบริหารงาน <ChevronDown size={14} />
               </span>
               <div className="dropdown-content">
-                <Link to="/page/org-chart" className="dropdown-item">โครงสร้างการบริหาร</Link>
                 <Link to="/page/academic-affairs" className="dropdown-item">กลุ่มงานวิชาการ</Link>
                 <Link to="/page/budget" className="dropdown-item">กลุ่มงานงบประมาณ</Link>
                 <Link to="/page/personnel" className="dropdown-item">กลุ่มงานบุคคล</Link>

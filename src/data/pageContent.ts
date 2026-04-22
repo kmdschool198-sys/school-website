@@ -13,7 +13,7 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
       { path: 'contact', label: 'แผนที่และติดต่อ' },
     ]
   },
-  'ฝ่ายบริหาร': {
+  'บุคลากร': {
     icon: '👥',
     links: [
       { path: 'director', label: 'ผู้อำนวยการสถานศึกษา' },
@@ -26,7 +26,6 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
   'การบริหารงาน': {
     icon: '🏢',
     links: [
-      { path: 'org-chart', label: 'โครงสร้างการบริหาร' },
       { path: 'academic-affairs', label: 'กลุ่มงานวิชาการ' },
       { path: 'budget', label: 'กลุ่มงานงบประมาณ' },
       { path: 'personnel', label: 'กลุ่มงานบุคคล' },
@@ -74,13 +73,13 @@ export interface PageContent {
 export const pageContent: Record<string, PageContent> = {
   'director': {
     title: 'ผู้อำนวยการสถานศึกษา',
-    subtitle: 'ฝ่ายบริหาร',
+    subtitle: 'บุคลากร',
     type: 'personnel',
     content: ''
   },
   'vice-director': {
     title: 'รองผู้อำนวยการสถานศึกษา',
-    subtitle: 'ฝ่ายบริหาร',
+    subtitle: 'บุคลากร',
     type: 'personnel',
     content: ''
   },
