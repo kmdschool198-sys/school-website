@@ -1,6 +1,6 @@
 
 import { db } from './firebase';
-import { collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 
 const personnelData = [
   { name: 'นาย ปรัชญา ปรางค์ชัยภูมิ', pos: 'ผู้อำนวยการสถานศึกษา', major: 'ดนตรีศึกษา/การบริหารการศึกษา', posNum: '610', phone: '0880998990', cat: 'director', wg: 'management' },
