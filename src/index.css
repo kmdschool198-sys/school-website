@@ -1,0 +1,190 @@
+:root {
+  --primary-orange: #FF6A01;
+  --primary-orange-hover: #E55B00;
+  --secondary-orange: #FB923C;
+  --light-orange: #FFF7ED;
+  --deep-orange: #431407; /* Replaces deep blue for a very dark warm tone */
+  --white: #FFFFFF;
+  --off-white: #FAFAFA;
+  --dark-text: #0F172A;
+  --gray-text: #64748B;
+  --light-gray: #F1F5F9;
+  --border-color: #E2E8F0;
+  
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Inter', sans-serif;
+  
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 32px;
+  --radius-xl: 50px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--off-white);
+  color: var(--dark-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Global Premium Orange Vignette - Replaces rogue blue glows */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(255, 106, 1, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 100% 0%, rgba(255, 106, 1, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(255, 106, 1, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(255, 106, 1, 0.05) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Kill Lilac/Blue Rogue Styles */
+[style*="rgba(79"], [style*="rgba(139"], [style*="rgba(10,20,50"], .vignette, .glow-overlay {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Premium Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(255, 106, 1, 0.4); transform: scale(1); }
+  50% { box-shadow: 0 0 0 15px rgba(255, 106, 1, 0); transform: scale(1.02); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 106, 1, 0); transform: scale(1); }
+}
+
+@keyframes smooth-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 3s infinite;
+}
+
+.smooth-bounce {
+  animation: smooth-bounce 4s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Typography Overrides */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Glassmorphism */
+.glass-box {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Buttons */
+.btn-premium {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  background: var(--primary-orange);
+  color: white;
+  box-shadow: 0 10px 20px rgba(255, 106, 1, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.btn-premium:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(255, 106, 1, 0.4);
+  background: var(--primary-orange-hover);
+}
+
+.btn-outline-white {
+  padding: 1rem 2.5rem;
+  border-radius: var(--radius-md);
+  border: 2px solid white;
+  background: transparent;
+  color: white;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-white:hover {
+  background: white;
+  color: var(--primary-orange);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--off-white);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-orange);
+}
+
+/* Sidebar Specific */
+.sidebar-icon-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  color: var(--gray-text);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.sidebar-icon-item:hover, .sidebar-icon-item.active {
+  background: var(--light-orange);
+  color: var(--primary-orange);
+}
+
+/* Input Fields */
+input[type="text"], input[type="password"], textarea {
+  width: 100%;
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: white;
+  transition: all 0.3s ease;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary-orange);
+  box-shadow: 0 0 0 4px rgba(255, 106, 1, 0.1);
+}
+
+
+
