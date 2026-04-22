@@ -33,6 +33,7 @@ import { getDirectImageUrl, DEFAULT_PLACEHOLDER } from '../utils/imageUtils';
 import DriveImageInput from '../components/DriveImageInput';
 import GooglePhotosInput from '../components/GooglePhotosInput';
 import Toast from '../components/Toast';
+import { seedPersonnel } from '../seed_personnel_data';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../App.css';
 
@@ -721,6 +722,34 @@ function Admin() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-4 p-4 rounded-4 shadow-sm" style={{ background: '#FFF7ED', border: '1px solid #FFEDD5' }}>
+              <div className="d-flex align-items-center gap-3 mb-3">
+                <div style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', padding: '12px', borderRadius: '12px' }}>
+                  <Database size={24} color="white" />
+                </div>
+                <div>
+                  <h5 className="fw-bold mb-1" style={{ color: '#C2410C' }}>เครื่องมือกรอกข้อมูลอัตโนมัติ</h5>
+                  <p className="small text-muted mb-0">ระบบจะช่วยกรอกข้อมูลรายชื่อครูทั้ง 20 ท่านตามไฟล์ Excel ให้คุณทันที</p>
+                </div>
+              </div>
+              <button className="btn btn-warning fw-bold px-4 py-2 rounded-3 shadow-sm d-flex align-items-center gap-2" 
+                onClick={async () => {
+                  if(window.confirm('ยืนยันการกรอกข้อมูล 20 รายชื่อลงฐานข้อมูล? (รูปภาพต้องมาใส่เองภายหลัง)')) {
+                    setLoading(true);
+                    try {
+                      await seedPersonnel();
+                      showToast('กรอกข้อมูล 20 ท่านสำเร็จแล้วครับ!', 'success');
+                      loadPersonnel(); // Refresh the personnel list count
+                    } catch (e) {
+                      showToast('เกิดข้อผิดพลาดในการกรอกข้อมูล', 'error');
+                    }
+                    setLoading(false);
+                  }
+                }} disabled={loading}>
+                {loading ? 'กำลังกรอกข้อมูล...' : '🚀 เริ่มกรอกข้อมูลครู 20 ท่าน (Auto-Seed)'}
+              </button>
             </div>
           </div>
         )}
