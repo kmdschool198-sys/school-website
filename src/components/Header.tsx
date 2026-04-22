@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GraduationCap, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';

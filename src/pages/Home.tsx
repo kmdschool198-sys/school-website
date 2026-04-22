@@ -39,7 +39,7 @@ interface Highlight {
 function Home() {
   const [posts, setPosts] = useState<HomePost[]>([]);
   const [heroSlides, setHeroSlides] = useState<string[]>([]);
-  const [schoolInfo, setSchoolInfo] = useState<any>(null);
+  const [schoolInfo, setSchoolInfo] = useState<any>(null); // Keeping any for now to avoid breaking complex merges, or I'll define it
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [currentHighlightSlide, setCurrentHighlightSlide] = useState(0);
@@ -53,7 +53,7 @@ function Home() {
 
     // Fetch School Info for Global Branding
     getDoc(doc(db, 'config', 'school_info')).then(snap => {
-      if (snap.exists()) setSchoolInfo((prev: any) => ({ ...prev, ...snap.data() }));
+      if (snap.exists()) setSchoolInfo((prev: Record<string, any>) => ({ ...prev, ...snap.data() }));
     });
 
     // Fetch Highlights from Firestore (admin-managed)
@@ -67,8 +67,8 @@ function Home() {
     const q = query(collection(db, 'posts'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allItems: any[] = [];
-      snapshot.forEach(doc => allItems.push({ id: doc.id, ...doc.data() }));
+      const allItems: HomePost[] = [];
+      snapshot.forEach(doc => allItems.push({ id: doc.id, ...(doc.data() as any) }));
       
       allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

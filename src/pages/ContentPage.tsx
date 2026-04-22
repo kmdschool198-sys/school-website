@@ -119,6 +119,7 @@ function ContentPage() {
   };
 
   const renderFormattedText = (text: string) => {
+    if (!text || typeof text !== 'string') return null;
     const lines = text.split('\n');
     const elements: any[] = [];
     let listBuffer: string[] = [];

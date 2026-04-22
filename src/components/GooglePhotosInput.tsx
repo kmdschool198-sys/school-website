@@ -1,4 +1,4 @@
-import { useState } from 'react';
+
 import { Image as ImageIcon, Link as LinkIcon, CheckCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import { isGooglePhotosUrl } from '../utils/imageUtils';
 
@@ -15,7 +15,6 @@ export default function GooglePhotosInput({
   label,
   placeholder
 }: GooglePhotosInputProps) {
-  const [showPreview, setShowPreview] = useState(false);
   const isValid = isGooglePhotosUrl(value);
 
   return (
