@@ -278,7 +278,7 @@ function ContentPage() {
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
-            {(others.length > 0 ? others : displayPersonnel).map(person => renderPersonCard(person))}
+            {others.map(person => renderPersonCard(person))}
           </div>
         </div>
       );
