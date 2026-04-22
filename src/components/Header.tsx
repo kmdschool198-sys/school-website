@@ -70,10 +70,11 @@ export default function Header() {
 
             <div className="dropdown">
               <span className="nav-item flex items-center gap-1 cursor-pointer">
-                บุคลากร <ChevronDown size={14} />
+                ฝ่ายบริหาร <ChevronDown size={14} />
               </span>
               <div className="dropdown-content">
-                <Link to="/page/directors" className="dropdown-item">ทำเนียบผู้บริหาร</Link>
+                <Link to="/page/director" className="dropdown-item">ผู้อำนวยการสถานศึกษา</Link>
+                <Link to="/page/vice-director" className="dropdown-item">รองผู้อำนวยการสถานศึกษา</Link>
                 <Link to="/personnel/teacher" className="dropdown-item">คณะครู</Link>
                 <Link to="/personnel/support" className="dropdown-item">บุคลากรสายสนับสนุน</Link>
                 <Link to="/page/board" className="dropdown-item">คณะกรรมการสถานศึกษา</Link>

@@ -13,7 +13,7 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
       { path: 'contact', label: 'แผนที่และติดต่อ' },
     ]
   },
-  'บุคลากร': {
+  'ฝ่ายบริหาร': {
     icon: '👥',
     links: [
       { path: 'director', label: 'ผู้อำนวยการสถานศึกษา' },
@@ -72,6 +72,18 @@ export interface PageContent {
 }
 
 export const pageContent: Record<string, PageContent> = {
+  'director': {
+    title: 'ผู้อำนวยการสถานศึกษา',
+    subtitle: 'ฝ่ายบริหาร',
+    type: 'personnel',
+    content: ''
+  },
+  'vice-director': {
+    title: 'รองผู้อำนวยการสถานศึกษา',
+    subtitle: 'ฝ่ายบริหาร',
+    type: 'personnel',
+    content: ''
+  },
   'history': {
     title: 'ประวัติโรงเรียนบ้านคลองมดแดง',
     subtitle: 'เกี่ยวกับโรงเรียน',
