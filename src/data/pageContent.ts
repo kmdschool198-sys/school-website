@@ -16,8 +16,7 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
   'บุคลากร': {
     icon: '👥',
     links: [
-      { path: 'director', label: 'ผู้อำนวยการสถานศึกษา' },
-      { path: 'vice-director', label: 'รองผู้อำนวยการสถานศึกษา' },
+      { path: 'directors', label: 'ทำเนียบผู้บริหาร' },
       { path: '/personnel/teacher', label: 'คณะครู' },
       { path: '/personnel/support', label: 'บุคลากรสายสนับสนุน' },
       { path: 'board', label: 'คณะกรรมการสถานศึกษา' },
@@ -71,14 +70,8 @@ export interface PageContent {
 }
 
 export const pageContent: Record<string, PageContent> = {
-  'director': {
-    title: 'ผู้อำนวยการสถานศึกษา',
-    subtitle: 'บุคลากร',
-    type: 'personnel',
-    content: ''
-  },
-  'vice-director': {
-    title: 'รองผู้อำนวยการสถานศึกษา',
+  'directors': {
+    title: 'ทำเนียบผู้บริหาร',
     subtitle: 'บุคลากร',
     type: 'personnel',
     content: ''
