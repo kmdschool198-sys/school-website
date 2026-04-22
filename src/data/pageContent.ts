@@ -16,7 +16,8 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
   'บุคลากร': {
     icon: '👥',
     links: [
-      { path: 'directors', label: 'ทำเนียบผู้บริหาร' },
+      { path: 'director', label: 'ผู้อำนวยการสถานศึกษา' },
+      { path: 'vice-director', label: 'รองผู้อำนวยการสถานศึกษา' },
       { path: '/personnel/teacher', label: 'คณะครู' },
       { path: '/personnel/support', label: 'บุคลากรสายสนับสนุน' },
       { path: 'board', label: 'คณะกรรมการสถานศึกษา' },

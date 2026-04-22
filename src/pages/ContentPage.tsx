@@ -63,6 +63,8 @@ function ContentPage() {
     const slugToFilter: Record<string, { field: string, value: string }> = {
       'directors': { field: 'category', value: 'director' },
       'board': { field: 'category', value: 'board' },
+      'director': { field: 'category', value: 'director' },
+      'vice-director': { field: 'category', value: 'director' },
       'teacher': { field: 'category', value: 'teacher' }, // from /personnel/teacher
       'support': { field: 'category', value: 'support' }, // from /personnel/support
       'academic-affairs': { field: 'workGroup', value: 'academic' },
@@ -76,8 +78,16 @@ function ContentPage() {
     if (filter) {
       const q = query(collection(db, 'personnel'), where(filter.field, '==', filter.value));
       unsubPers = onSnapshot(q, (snapshot) => {
-        const results: any[] = [];
+        let results: any[] = [];
         snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
+        
+        // Specific filtering for director sub-pages
+        if (activeSlug === 'director') {
+          results = results.filter(p => p.position?.includes('ผู้อำนวยการสถานศึกษา') && !p.position?.includes('รอง'));
+        } else if (activeSlug === 'vice-director') {
+          results = results.filter(p => p.position?.includes('รอง'));
+        }
+
         results.sort((a, b) => (a.order || 0) - (b.order || 0));
         setFirePersonnel(results);
       });
