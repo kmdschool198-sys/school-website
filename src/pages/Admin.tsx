@@ -54,7 +54,11 @@ interface Personnel {
   id: string;
   name: string;
   position: string;
+  major?: string;
+  positionNumber?: string;
+  phone?: string;
   category: string;
+  workGroup?: string;
   image: string;
   order: number;
   isHead?: boolean;
@@ -152,9 +156,13 @@ function Admin() {
   const [personnelList, setPersonnelList] = useState<Personnel[]>([]);
   const [pName, setPName] = useState('');
   const [pPos, setPPos] = useState('');
-  const [pCat, setPCat] = useState('academic');
+  const [pCat, setPCat] = useState('teacher');
+  const [pWorkGroup, setPWorkGroup] = useState('none');
   const [pImage, setPImage] = useState('');
   const [pIsHead, setPIsHead] = useState(false);
+  const [pMajor, setPMajor] = useState('');
+  const [pPosNum, setPPosNum] = useState('');
+  const [pPhone, setPPhone] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Highlights
@@ -383,13 +391,26 @@ function Admin() {
   // ---------- Personnel ----------
   const resetPersonnelForm = () => {
     setEditingId(null); setPName(''); setPPos(''); setPImage(''); setPIsHead(false);
+    setPCat('teacher'); setPWorkGroup('none');
+    setPMajor(''); setPPosNum(''); setPPhone('');
   };
 
   const handleSubmitPersonnel = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = { name: pName, position: pPos, category: pCat, image: pImage, isHead: pIsHead, order: editingId ? personnelList.find(x => x.id === editingId)?.order ?? personnelList.length + 1 : personnelList.length + 1 };
+      const data = { 
+        name: pName, 
+        position: pPos, 
+        major: pMajor,
+        positionNumber: pPosNum,
+        phone: pPhone,
+        category: pCat, 
+        workGroup: pWorkGroup,
+        image: pImage, 
+        isHead: pIsHead, 
+        order: editingId ? personnelList.find(x => x.id === editingId)?.order ?? personnelList.length + 1 : personnelList.length + 1 
+      };
       if (editingId) {
         await updateDoc(doc(db, 'personnel', editingId), data);
         showToast('อัปเดตบุคลากรแล้ว', 'success');
@@ -859,18 +880,34 @@ function Admin() {
               <div style={{ ...GLASS_CARD, padding: '1.75rem' }}>
                 <h5 className="fw-bold mb-4">{editingId ? 'แก้ไขข้อมูล' : 'เพิ่มบุคลากร'}</h5>
                 <form onSubmit={handleSubmitPersonnel}>
+                  <div className="mb-2 small fw-bold">ประเภทบุคลากร</div>
                   <select className="form-select mb-3" value={pCat} onChange={e => setPCat(e.target.value)}>
                     <option value="director">ผู้บริหาร</option>
                     <option value="board">คณะกรรมการสถานศึกษา</option>
+                    <option value="teacher">คณะครูประจำการ</option>
+                    <option value="support">สายสนับสนุน/ลูกจ้าง</option>
+                  </select>
+                  <div className="mb-2 small fw-bold">กลุ่มงาน (ถ้ามี)</div>
+                  <select className="form-select mb-3" value={pWorkGroup} onChange={e => setPWorkGroup(e.target.value)}>
+                    <option value="none">-- ไม่ระบุกลุ่มงาน --</option>
+                    <option value="management">ฝ่ายบริหาร</option>
                     <option value="academic">งานวิชาการ</option>
                     <option value="budget">งานงบประมาณ</option>
                     <option value="personnel">งานบุคคล</option>
                     <option value="general">งานทั่วไป</option>
-                    <option value="teacher">คณะครูประจำการ</option>
-                    <option value="support">สายสนับสนุน/ลูกจ้าง</option>
+                    <option value="student">กิจการนักเรียน</option>
                   </select>
                   <input type="text" className="form-control mb-3" placeholder="ชื่อ-นามสกุล" value={pName} onChange={e => setPName(e.target.value)} required />
-                  <input type="text" className="form-control mb-3" placeholder="ตำแหน่ง" value={pPos} onChange={e => setPPos(e.target.value)} />
+                  <input type="text" className="form-control mb-3" placeholder="ชื่อตำแหน่ง (เช่น ครู, ครูผู้ช่วย)" value={pPos} onChange={e => setPPos(e.target.value)} />
+                  <input type="text" className="form-control mb-3" placeholder="กลุ่มวิชาเอก" value={pMajor} onChange={e => setPMajor(e.target.value)} />
+                  <div className="row g-2 mb-3">
+                    <div className="col-6">
+                      <input type="text" className="form-control" placeholder="เลขที่ตำแหน่ง" value={pPosNum} onChange={e => setPPosNum(e.target.value)} />
+                    </div>
+                    <div className="col-6">
+                      <input type="text" className="form-control" placeholder="เบอร์โทรศัพท์" value={pPhone} onChange={e => setPPhone(e.target.value)} />
+                    </div>
+                  </div>
                   <DriveImageInput label="รูปบุคลากร (Google Drive)" value={pImage} onChange={setPImage} />
                   <div className="mb-4 form-check"><input type="checkbox" className="form-check-input" id="isHead" checked={pIsHead} onChange={e => setPIsHead(e.target.checked)} /><label className="form-check-label small fw-bold" htmlFor="isHead">เป็นหัวหน้ากลุ่มงาน</label></div>
                   <div className="d-flex gap-2">
@@ -894,10 +931,27 @@ function Admin() {
                         <div className="flex-grow-1 overflow-hidden">
                           <div className="fw-bold small text-truncate">{p.name}</div>
                           <div className="text-muted small text-truncate">{p.position}</div>
-                          <div className="badge bg-light text-dark border" style={{ fontSize: '9px' }}>{p.category}</div>
+                          <div className="d-flex gap-1 mt-1">
+                            <div className="badge bg-light text-dark border" style={{ fontSize: '9px' }}>{p.category}</div>
+                            {p.workGroup && p.workGroup !== 'none' && (
+                              <div className="badge border" style={{ fontSize: '9px', background: '#FFF7ED', color: '#FF6A01' }}>{p.workGroup}</div>
+                            )}
+                          </div>
                         </div>
                         <div className="d-flex flex-column gap-1">
-                          <button className="btn btn-sm btn-light border" onClick={() => { setEditingId(p.id); setPName(p.name); setPPos(p.position); setPCat(p.category); setPImage(p.image); setPIsHead(!!p.isHead); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><Edit2 size={12} /></button>
+                          <button className="btn btn-sm btn-light border" onClick={() => { 
+                            setEditingId(p.id); 
+                            setPName(p.name); 
+                            setPPos(p.position); 
+                            setPMajor(p.major || '');
+                            setPPosNum(p.positionNumber || '');
+                            setPPhone(p.phone || '');
+                            setPCat(p.category); 
+                            setPWorkGroup(p.workGroup || 'none');
+                            setPImage(p.image); 
+                            setPIsHead(!!p.isHead); 
+                            window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                          }}><Edit2 size={12} /></button>
                           <button className="btn btn-sm btn-light border text-danger" onClick={() => handleDeletePersonnel(p.id)}><Trash2 size={12} /></button>
                         </div>
                       </div>

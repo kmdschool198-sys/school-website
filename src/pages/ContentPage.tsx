@@ -59,21 +59,22 @@ function ContentPage() {
       });
     }
 
-    // Personnel snapshot logic (Category mapping)
-    const slugToCat: Record<string, string> = {
-      'directors': 'director',
-      'board': 'board',
-      'teachers': 'teacher',
-      'academic-affairs': 'academic',
-      'budget': 'budget',
-      'personnel': 'personnel',
-      'general-affairs': 'general',
-      'support': 'support'
+    // Personnel snapshot logic (Category and WorkGroup mapping)
+    const slugToFilter: Record<string, { field: string, value: string }> = {
+      'directors': { field: 'category', value: 'director' },
+      'board': { field: 'category', value: 'board' },
+      'teacher': { field: 'category', value: 'teacher' }, // from /personnel/teacher
+      'support': { field: 'category', value: 'support' }, // from /personnel/support
+      'academic-affairs': { field: 'workGroup', value: 'academic' },
+      'budget': { field: 'workGroup', value: 'budget' },
+      'personnel': { field: 'workGroup', value: 'personnel' },
+      'general-affairs': { field: 'workGroup', value: 'general' },
+      'student-affairs': { field: 'workGroup', value: 'student' }
     };
 
-    const targetCat = slugToCat[activeSlug];
-    if (targetCat) {
-      const q = query(collection(db, 'personnel'), where('category', '==', targetCat));
+    const filter = slugToFilter[activeSlug];
+    if (filter) {
+      const q = query(collection(db, 'personnel'), where(filter.field, '==', filter.value));
       unsubPers = onSnapshot(q, (snapshot) => {
         const results: any[] = [];
         snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
@@ -252,7 +253,17 @@ function ContentPage() {
           </div>
           <div style={{ padding: '1.5rem' }}>
             <h4 style={{ fontSize: isBig ? '1.4rem' : '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.4rem' }}>{person.name}</h4>
-            <p style={{ fontSize: '0.9rem', color: '#FF6A01', fontWeight: 700, margin: 0 }}>{person.position}</p>
+            <p style={{ fontSize: '0.9rem', color: '#FF6A01', fontWeight: 700, margin: '0 0 0.5rem 0' }}>{person.position}</p>
+            {person.major && (
+              <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                วิชาเอก: <span style={{ fontWeight: 600 }}>{person.major}</span>
+              </div>
+            )}
+            {person.phone && (
+              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                โทร: <span style={{ fontWeight: 600 }}>{person.phone}</span>
+              </div>
+            )}
           </div>
         </div>
       );
