@@ -16,7 +16,7 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
   'บุคลากร': {
     icon: '👥',
     links: [
-      { path: 'directors', label: 'ทำเนียบผู้บริหาร' },
+      { path: 'directors', label: 'ฝ่ายบริหาร' },
       { path: '/personnel/teacher', label: 'คณะครู' },
       { path: '/personnel/support', label: 'บุคลากรสายสนับสนุน' },
       { path: 'board', label: 'คณะกรรมการสถานศึกษา' },
@@ -198,22 +198,7 @@ export const pageContent: Record<string, PageContent> = {
 
 รับฟังเพลงได้ที่: https://www.youtube.com/watch?v=desbO2EDzSI`
   },
-  'directors': {
-    title: 'ทำเนียบผู้บริหาร',
-    subtitle: 'บุคลากร',
-    type: 'personnel',
-    content: 'ทำเนียบผู้บริหารโรงเรียนบ้านคลองมดแดงตั้งแต่อดีตจนถึงปัจจุบัน',
-    personnelData: [
-      { name: 'นายปรัชญา ปรางค์ชัยภูมิ', position: 'ผู้อำนวยการโรงเรียน (พ.ศ. ๒๕๖๘ - ปัจจุบัน)', image: 'https://picsum.photos/seed/director/400/500', bio: 'วุฒิปริญญาโท ศึกษาศาสตรมหาบัณฑิต สาขาวิชาการบริหารการศึกษา' },
-      { name: 'นางสาววัชรินทร์ ขันทับทิม', position: 'ผู้อำนวยการโรงเรียน (พ.ศ. ๒๕๕๕)', image: 'https://picsum.photos/seed/d_vacharin/400/500' },
-      { name: 'นางสาวสาวิตรี คล้ายจันทร์', position: 'รองผู้อำนวยการโรงเรียน (พ.ศ. ๒๕๕๓)', image: 'https://picsum.photos/seed/d_savitree/400/500' },
-      { name: 'นายเมธี นาคบัณฑิตย์', position: 'ผู้อำนวยการโรงเรียน (พ.ศ. ๒๕๕๑)', image: 'https://picsum.photos/seed/d_methee/400/500' },
-      { name: 'นางสาวสุรีรัตน์ ฆ้องชัย', position: 'รองผู้อำนวยการโรงเรียน (พ.ศ. ๒๕๕๐)', image: 'https://picsum.photos/seed/d_sureerat/400/500' },
-      { name: 'นายศิวโรจน์ เลิศไกรชัยพร', position: 'ผู้อำนวยการโรงเรียน (พ.ศ. ๒๕๔๙)', image: 'https://picsum.photos/seed/d_sivaro/400/500' },
-      { name: 'นายวิทย์ สุวรรณภูมิ', position: 'ผู้อำนวยการโรงเรียน (พ.ศ. ๒๕๔๗-๒๕๔๘)', image: 'https://picsum.photos/seed/d_wit/400/500' },
-      { name: 'นายเกียรติศักดิ์ ทันจันทร์', position: 'ผู้อำนวยการโรงเรียน (พ.ศ. ๒๕๓๖-๒๕๔๗)', image: 'https://picsum.photos/seed/d_kiat/400/500' },
-    ]
-  },
+
   'academic-affairs': {
     title: 'กลุ่มบริหารงานวิชาการ',
     subtitle: 'การบริหารงาน',
@@ -385,12 +370,6 @@ Facebook: โรงเรียนบ้านคลองมดแดง`
 
 รายละเอียดผลการประเมินรายปี สามารถดูได้จากรายงานการประเมินตนเอง (SAR) ของโรงเรียนในแต่ละปีการศึกษา`
   },
-  'board': {
-    title: 'คณะกรรมการสถานศึกษาขั้นพื้นฐาน',
-    subtitle: 'บุคลากร',
-    type: 'personnel',
-    content: 'รายชื่อคณะกรรมการสถานศึกษาขั้นพื้นฐาน โรงเรียนบ้านคลองมดแดง'
-  },
   'budget': {
     title: 'กลุ่มบริหารงานงบประมาณ',
     subtitle: 'การบริหารงาน',
@@ -414,12 +393,6 @@ Facebook: โรงเรียนบ้านคลองมดแดง`
     subtitle: 'การบริหารงาน',
     type: 'personnel',
     content: 'คณะกรรมการและบุคลากรผู้รับผิดชอบงานกิจการนักเรียน ดูแลงานปกครอง ระบบดูแลช่วยเหลือนักเรียน กิจกรรมพัฒนาผู้เรียน และคุณธรรมจริยธรรม'
-  },
-  'support': {
-    title: 'บุคลากรทางการศึกษา/ลูกจ้าง',
-    subtitle: 'บุคลากร',
-    type: 'personnel',
-    content: 'รายชื่อบุคลากรสายสนับสนุน และพนักงานจ้าง โรงเรียนบ้านคลองมดแดง'
   },
   'sar': { title: 'รายงานการประเมินตนเอง (SAR)', subtitle: 'สารสนเทศ', type: 'download', content: 'รายงานการประเมินตนเองประจำปีการศึกษาล่าสุด' },
   'gallery': { title: 'ภาพกิจกรรมโรงเรียน (Gallery)', subtitle: 'ข่าวสาร', type: 'gallery', content: 'รวมภาพกิจกรรมโรงเรียน' },
