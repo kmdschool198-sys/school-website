@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
-import { getDirectImageUrl } from '../utils/imageUtils';
+import DriveImage from './DriveImage';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -38,15 +38,29 @@ export default function Header() {
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container nav-container">
-        <Link to="/" className="logo-link">
-          {schoolInfo.logoUrl ? (
-            <img src={getDirectImageUrl(schoolInfo.logoUrl)} alt="logo" style={{ height: '50px', width: 'auto', objectFit: 'contain' }} />
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <img src="/school_logo_kmd.png" alt="logo" style={{ height: '55px', filter: 'drop-shadow(0 0 5px rgba(255,106,0,0.2))' }} />
-            </div>
-          )}
-          <span style={{ fontSize: '1.2rem', fontWeight: 850 }}>{schoolInfo.name}</span>
+        <Link to="/" className="logo-link" style={{ display: 'flex', alignItems: 'center', gap: '14px', textDecoration: 'none' }}>
+          <div style={{
+            width: '58px', height: '58px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #FFF7ED, #FFEDD5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '4px',
+            boxShadow: '0 4px 14px rgba(255,106,1,0.25), inset 0 0 0 2px rgba(255,255,255,0.8)',
+            flexShrink: 0,
+          }}>
+            <DriveImage
+              src={schoolInfo.logoUrl || '/school_logo_kmd.png'}
+              alt="logo"
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '50%' }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.3px' }}>
+              {schoolInfo.name}
+            </span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#FF6A01', letterSpacing: '1.5px', textTransform: 'uppercase', marginTop: '2px' }}>
+              Ban Klong Mod Daeng School
+            </span>
+          </div>
         </Link>
 
         <nav className="nav-links">

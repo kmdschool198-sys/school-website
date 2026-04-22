@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { GraduationCap } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getDirectImageUrl } from '../utils/imageUtils';
+import DriveImage from './DriveImage';
 
 export default function Footer() {
   const [info, setInfo] = useState({
@@ -27,7 +27,7 @@ export default function Footer() {
           <div className="footer-brand">
             <a href="/" className="logo-link" style={{ marginBottom: '1.5rem', display: 'inline-flex' }}>
               {info.logoUrl ? (
-                <img src={getDirectImageUrl(info.logoUrl)} alt="logo" style={{ height: '40px', marginRight: '10px' }} />
+                <DriveImage src={info.logoUrl} alt="logo" style={{ height: '40px', marginRight: '10px' }} />
               ) : (
                 <GraduationCap size={32} />
               )}

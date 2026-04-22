@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { getDirectImageUrl, DEFAULT_PLACEHOLDER, getDrivePreviewUrl } from '../utils/imageUtils';
+import { getDrivePreviewUrl } from '../utils/imageUtils';
+import DriveImage from './DriveImage';
 import { X, Calendar, Tag, Image as ImageIcon, ExternalLink, FileText, Globe, Video } from 'lucide-react';
 
 export interface NewsItem {
@@ -81,11 +82,10 @@ export default function NewsModal({ post, onClose }: Props) {
                 title="PDF Content"
               />
             ) : (
-              <img
-                src={getDirectImageUrl(post.imageUrl)}
+              <DriveImage
+                src={post.imageUrl}
                 alt={post.title}
                 style={{ width: '100%', height: 'auto', objectFit: 'contain', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', display: 'block' }}
-                onError={e => (e.currentTarget.src = DEFAULT_PLACEHOLDER)}
               />
             )}
           </div>

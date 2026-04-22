@@ -29,7 +29,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { pageContent as staticPageContent } from '../data/pageContent';
-import { getDirectImageUrl, DEFAULT_PLACEHOLDER } from '../utils/imageUtils';
+import DriveImage from '../components/DriveImage';
 import DriveImageInput from '../components/DriveImageInput';
 import GooglePhotosInput from '../components/GooglePhotosInput';
 import Toast from '../components/Toast';
@@ -146,6 +146,7 @@ function Admin() {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [newCategory, setNewCategory] = useState('ข่าวประชาสัมพันธ์');
+  const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newImageType, setNewImageType] = useState<'image' | 'pdf'>('image');
   const [newAlbumUrl, setNewAlbumUrl] = useState('');
@@ -329,6 +330,7 @@ function Admin() {
     setPostId(null); setNewTitle(''); setNewContent(''); setNewImageUrl(''); setNewImageType('image'); 
     setNewAlbumUrl(''); setNewTiktokUrl(''); setNewWebsiteUrl(''); setNewDocumentUrl('');
     setNewCategory('ข่าวประชาสัมพันธ์');
+    setNewDate(new Date().toISOString().split('T')[0]);
   };
 
   const handleSubmitPost = async (e: FormEvent) => {
@@ -345,12 +347,12 @@ function Admin() {
         tiktokUrl: newTiktokUrl,
         websiteUrl: newWebsiteUrl,
         documentUrl: newDocumentUrl,
+        date: newDate || new Date().toISOString().split('T')[0],
       };
       if (postId) {
         await updateDoc(doc(db, 'posts', postId), data);
         showToast('อัปเดตโพสต์เรียบร้อย', 'success');
       } else {
-        data.date = new Date().toISOString().split('T')[0];
         await addDoc(collection(db, 'posts'), data);
         showToast('เพิ่มโพสต์ใหม่สำเร็จ', 'success');
       }
@@ -368,6 +370,7 @@ function Admin() {
     setNewTitle(p.title);
     setNewContent(p.content || '');
     setNewCategory(p.category || 'ข่าวประชาสัมพันธ์');
+    setNewDate(p.date || new Date().toISOString().split('T')[0]);
     setNewImageUrl(p.imageUrl || '');
     setNewImageType(p.imageType || 'image');
     setNewAlbumUrl(p.albumUrl || '');
@@ -771,6 +774,10 @@ function Admin() {
                     </select>
                   </div>
                   <div className="mb-3">
+                    <label className="form-label small fw-bold">วันที่</label>
+                    <input type="date" className="form-control" value={newDate} onChange={e => setNewDate(e.target.value)} required />
+                  </div>
+                  <div className="mb-3">
                     <label className="form-label small fw-bold">หัวข้อ</label>
                     <input type="text" className="form-control" value={newTitle} onChange={e => setNewTitle(e.target.value)} required />
                   </div>
@@ -815,7 +822,7 @@ function Admin() {
                           <td><span className="badge" style={{ background: '#FFF7ED', color: '#FF6A01' }}>{p.category}</span></td>
                           <td>
                             <div className="d-flex align-items-center gap-2">
-                              {p.imageUrl && <img src={getDirectImageUrl(p.imageUrl)} style={{ width: '40px', height: '30px', objectFit: 'cover', borderRadius: '6px' }} />}
+                              {p.imageUrl && <DriveImage src={p.imageUrl} style={{ width: '40px', height: '30px', objectFit: 'cover', borderRadius: '6px' }} />}
                               <span className="fw-bold small text-truncate" style={{ maxWidth: '220px' }}>{p.title}</span>
                             </div>
                           </td>
@@ -880,7 +887,7 @@ function Admin() {
                 <div className="d-flex flex-column gap-3">
                   {highlights.map(h => (
                     <div key={h.id} style={{ display: 'flex', gap: '14px', padding: '12px', borderRadius: '16px', border: '1px solid #FFEDD5', background: 'white' }}>
-                      <img src={getDirectImageUrl(h.imageUrl) || DEFAULT_PLACEHOLDER} style={{ width: '110px', height: '80px', objectFit: 'cover', borderRadius: '12px' }} />
+                      <DriveImage src={h.imageUrl} style={{ width: '110px', height: '80px', objectFit: 'cover', borderRadius: '12px' }} />
                       <div className="flex-grow-1 overflow-hidden">
                         <div className="d-flex align-items-center gap-2 mb-1">
                           <span className="badge" style={{ background: '#FFF7ED', color: '#FF6A01', fontSize: '0.7rem' }}>{h.badge}</span>
@@ -956,7 +963,7 @@ function Admin() {
                   {personnelList.map(p => (
                     <div key={p.id} className="col-md-6">
                       <div className={`p-3 rounded-4 d-flex gap-3 align-items-center ${p.isHead ? 'border border-warning bg-light' : 'bg-white border'}`}>
-                        <img src={getDirectImageUrl(p.image) || DEFAULT_PLACEHOLDER} style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover' }} />
+                        <DriveImage src={p.image} style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover' }} />
                         <div className="flex-grow-1 overflow-hidden">
                           <div className="fw-bold small text-truncate">{p.name}</div>
                           <div className="text-muted small text-truncate">{p.position}</div>

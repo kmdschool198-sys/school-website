@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Link as LinkIcon, CheckCircle, AlertTriangle, FileText, Image as ImageIcon } from 'lucide-react';
-import { getPreviewThumbnail, isValidDriveUrl, extractDriveId, getDrivePreviewUrl } from '../utils/imageUtils';
+import { isValidDriveUrl, extractDriveId, getDrivePreviewUrl } from '../utils/imageUtils';
+import DriveImage from './DriveImage';
 
 interface DriveImageInputProps {
   value: string;
@@ -20,11 +21,9 @@ export default function DriveImageInput({
   onFileTypeChange
 }: DriveImageInputProps) {
   const [showPreview, setShowPreview] = useState(false);
-  const [imgError, setImgError] = useState(false);
 
   const driveId = extractDriveId(value);
   const isValid = isValidDriveUrl(value);
-  const previewUrl = getPreviewThumbnail(value);
   const pdfPreviewUrl = getDrivePreviewUrl(value);
 
   return (
@@ -95,7 +94,7 @@ export default function DriveImageInput({
           <input
             type="text"
             value={value}
-            onChange={e => { onChange(e.target.value); setImgError(false); }}
+            onChange={e => onChange(e.target.value)}
             placeholder={placeholder || (fileType === 'pdf' ? 'วางลิงก์ PDF จาก Google Drive...' : 'วางลิงก์รูปภาพจาก Google Drive...')}
             style={{
               width: '100%', padding: '12px 14px 12px 38px',
@@ -148,19 +147,11 @@ export default function DriveImageInput({
           position: 'relative', 
         }}>
           {fileType === 'image' ? (
-            !imgError ? (
-              <img
-                src={previewUrl}
-                alt="preview"
-                onError={() => setImgError(true)}
-                style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block' }}
-              />
-            ) : (
-              <div style={{ padding: '2rem', textAlign: 'center', color: '#EF4444', fontWeight: 600, fontSize: '0.85rem' }}>
-                <AlertTriangle size={24} style={{ marginBottom: '8px' }} />
-                <p>ไม่สามารถโหลดรูปภาพได้ ตรวจสอบว่าไฟล์เปิดสาธารณะ</p>
-              </div>
-            )
+            <DriveImage
+              src={value}
+              alt="preview"
+              style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block' }}
+            />
           ) : (
             <div style={{ height: '400px', width: '100%' }}>
               <iframe

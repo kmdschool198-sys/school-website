@@ -12,7 +12,9 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import '../App.css';
 import { sidebarMenus, pageContent } from '../data/pageContent';
-import { getDirectImageUrl, DEFAULT_PLACEHOLDER, getDrivePreviewUrl } from '../utils/imageUtils';
+import { getDirectImageUrl, getDrivePreviewUrl } from '../utils/imageUtils';
+import DriveImage from '../components/DriveImage';
+import NewsModal, { type NewsItem } from '../components/NewsModal';
 import { FileText, ExternalLink, Video, Globe } from 'lucide-react';
 
 function ContentPage() {
@@ -21,6 +23,7 @@ function ContentPage() {
   const [firePersonnel, setFirePersonnel] = useState<any[]>([]);
   const [firebasePosts, setFirebasePosts] = useState<any[]>([]);
   const [dynamicPage, setDynamicPage] = useState<{title?: string, content?: string, bannerUrl?: string, blocks?: any[]} | null>(null);
+  const [activePost, setActivePost] = useState<NewsItem | null>(null);
 
   useEffect(() => {
     let unsubPosts: any = null;
@@ -43,9 +46,9 @@ function ContentPage() {
         'e-newsletter': 'จดหมายข่าว',
         'school-awards': 'ผลงานรางวัล'
       };
-      
+
       const q = query(
-        collection(db, 'posts'), 
+        collection(db, 'posts'),
         where('category', '==', catMap[activeSlug]),
         orderBy('date', 'desc')
       );
@@ -56,6 +59,19 @@ function ContentPage() {
         setFirebasePosts(results);
       }, (err) => {
         console.error("Posts snapshot error:", err);
+      });
+    }
+
+    // Gallery: pull all posts that have an albumUrl
+    if (activeSlug === 'gallery') {
+      const q = query(collection(db, 'posts'), orderBy('date', 'desc'));
+      unsubPosts = onSnapshot(q, (snapshot) => {
+        const results: any[] = [];
+        snapshot.forEach(doc => {
+          const d: any = { id: doc.id, ...doc.data() };
+          if (d.albumUrl && d.albumUrl.trim() !== '') results.push(d);
+        });
+        setFirebasePosts(results);
       });
     }
 
@@ -216,7 +232,7 @@ function ContentPage() {
                   <iframe src={getDrivePreviewUrl(b.url)} width="100%" height="100%" style={{ border: 'none' }} title="PDF Content" />
                 </div>
               ) : (
-                <img src={getDirectImageUrl(b.url)} alt={b.caption || ''} style={{ maxWidth: '100%', borderRadius: '20px', boxShadow: '0 15px 40px rgba(255,106,1,0.12)' }} onError={e => (e.currentTarget.src = DEFAULT_PLACEHOLDER)} />
+                <DriveImage src={b.url} alt={b.caption || ''} style={{ maxWidth: '100%', borderRadius: '20px', boxShadow: '0 15px 40px rgba(255,106,1,0.12)' }} />
               )}
               {b.caption && <figcaption style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: '#64748b', fontStyle: 'italic' }}>{b.caption}</figcaption>}
             </figure>
@@ -251,7 +267,7 @@ function ContentPage() {
           height: '100%'
         }}>
           <div style={{ height: isBig ? '450px' : '320px', background: '#f8fafc', overflow: 'hidden' }}>
-            <img src={getDirectImageUrl(person.image || person.imageUrl)} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => e.currentTarget.src = DEFAULT_PLACEHOLDER} />
+            <DriveImage src={person.image || person.imageUrl} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div style={{ padding: '1.5rem' }}>
             <h4 style={{ fontSize: isBig ? '1.4rem' : '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.4rem' }}>{person.name}</h4>
@@ -298,13 +314,75 @@ function ContentPage() {
       );
     }
 
+    if (data.type === 'gallery') {
+      return (
+        <div className="animate-fade-in">
+          {firebasePosts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem 2rem', background: '#f8fafc', borderRadius: '24px' }}>
+              <ImageIcon size={48} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
+              <p style={{ color: '#94a3b8', fontSize: '1.05rem', fontWeight: 600 }}>ยังไม่มีอัลบั้มภาพ</p>
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>เพิ่มอัลบั้มได้จากหน้า Admin โดยใส่ลิงก์ Google Photos ในข่าว</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+              {firebasePosts.map((post) => (
+                <a
+                  key={post.id}
+                  href={post.albumUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    background: 'white', borderRadius: '20px', overflow: 'hidden',
+                    border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.04)',
+                    textDecoration: 'none', color: 'inherit',
+                    display: 'flex', flexDirection: 'column',
+                    transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 16px 36px rgba(255,106,1,0.18)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.04)'; }}
+                >
+                  <div style={{ position: 'relative', height: '200px', background: '#f8fafc', overflow: 'hidden' }}>
+                    <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{
+                      position: 'absolute', top: '12px', right: '12px',
+                      background: 'rgba(255,106,1,0.95)', color: 'white',
+                      padding: '5px 10px', borderRadius: '20px',
+                      fontSize: '0.7rem', fontWeight: 800,
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                    }}>
+                      <ImageIcon size={12} /> ALBUM
+                    </div>
+                  </div>
+                  <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '0.75rem' }}>
+                      <Calendar size={12} /> {post.date}
+                    </div>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.4, margin: 0 }}>
+                      {post.title}
+                    </h4>
+                    <div style={{ marginTop: 'auto', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#FF6A01', fontSize: '0.85rem', fontWeight: 700 }}>
+                      เปิดอัลบั้ม <ExternalLink size={14} />
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (data.type === 'news') {
       return (
         <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
           {firebasePosts.map((post) => (
-            <div key={post.id} style={{ background: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+            <div key={post.id} onClick={() => setActivePost(post as NewsItem)} style={{ background: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', cursor: 'pointer', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(255,106,1,0.15)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)'; }}
+            >
                <div style={{ height: '200px', background: '#f8fafc' }}>
-                  <img src={getDirectImageUrl(post.imageUrl)} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => e.currentTarget.src = DEFAULT_PLACEHOLDER} />
+                  <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                </div>
                <div style={{ padding: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.8rem', marginBottom: '0.8rem' }}>
@@ -313,11 +391,11 @@ function ContentPage() {
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: '#1e293b', lineHeight: 1.4 }}>{post.title}</h4>
                   <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, marginBottom: '1.5rem' }}>{post.content.substring(0, 90)}...</p>
                   <div style={{ display: 'flex', gap: '12px' }}>
-                    <Link to="#" style={{ color: '#FF6A01', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
+                    <span style={{ color: '#FF6A01', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       อ่านรายละเอียด <ChevronRight size={16} />
-                    </Link>
+                    </span>
                     {post.imageType === 'pdf' && (
-                      <a href={post.imageUrl} target="_blank" rel="noreferrer" style={{ color: '#64748b', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
+                      <a href={post.imageUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#64748b', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
                         <FileText size={16} /> ดู PDF <ExternalLink size={14} />
                       </a>
                     )}
@@ -330,17 +408,17 @@ function ContentPage() {
                       </div>
                     )}
                     {post.tiktokUrl && post.tiktokUrl.trim() !== '' && (
-                      <a href={post.tiktokUrl} target="_blank" rel="noreferrer" style={{ color: '#000', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <a href={post.tiktokUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#000', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Video size={14} /> TikTok
                       </a>
                     )}
                     {post.websiteUrl && post.websiteUrl.trim() !== '' && (
-                      <a href={post.websiteUrl} target="_blank" rel="noreferrer" style={{ color: '#3B82F6', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <a href={post.websiteUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#3B82F6', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <Globe size={14} /> เว็บไซต์
                       </a>
                     )}
                     {post.documentUrl && post.documentUrl.trim() !== '' && (
-                      <a href={post.documentUrl} target="_blank" rel="noreferrer" style={{ color: '#10B981', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <a href={post.documentUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#10B981', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <FileText size={14} /> เอกสาร
                       </a>
                     )}
@@ -431,7 +509,9 @@ function ContentPage() {
       </main>
 
       <Footer />
-      
+
+      <NewsModal post={activePost} onClose={() => setActivePost(null)} />
+
       {/* Premium Specific CSS Effects */}
       <style>{`
         .animate-fade-in {

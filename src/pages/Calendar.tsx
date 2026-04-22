@@ -1,10 +1,26 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, MapPin, Clock, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, MapPin, Clock, AlertCircle, Image as ImageIcon, FileText, Link as LinkIcon, Newspaper, Images } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import DriveImage from '../components/DriveImage';
 import '../App.css';
+import { DEFAULT_ACTIVITIES, COLOR_ACTIVITY } from '../data/defaultActivities';
+
+interface Post {
+  id: string;
+  title: string;
+  date?: string;
+  category?: string;
+  imageUrl?: string;
+  imageType?: string;
+  albumUrl?: string;
+  tiktokUrl?: string;
+  websiteUrl?: string;
+  documentUrl?: string;
+  content?: string;
+}
 
 export interface Activity {
   id: string;
@@ -33,6 +49,7 @@ export default function CalendarPage() {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth()); // 0-11
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,10 +57,27 @@ export default function CalendarPage() {
     const unsub = onSnapshot(q, snap => {
       const arr: Activity[] = [];
       snap.forEach(d => arr.push({ id: d.id, ...(d.data() as any) }));
-      setActivities(arr);
+      // Merge with defaults: Firestore data overrides defaults with same id
+      const fireIds = new Set(arr.map(a => a.id));
+      const merged = [...DEFAULT_ACTIVITIES.filter(a => !fireIds.has(a.id)), ...arr];
+      // Apply default activity color (blue) if user didn't pick one
+      merged.forEach(a => { if (!a.color && !a.isHoliday) a.color = COLOR_ACTIVITY; });
+      merged.sort((a, b) => a.date.localeCompare(b.date));
+      setActivities(merged);
     });
-    return () => unsub();
+    const unsubPosts = onSnapshot(collection(db, 'posts'), snap => {
+      const arr: Post[] = [];
+      snap.forEach(d => arr.push({ id: d.id, ...(d.data() as any) }));
+      setPosts(arr);
+    });
+    return () => { unsub(); unsubPosts(); };
   }, []);
+
+  const postsByDate = useMemo(() => {
+    const map: Record<string, Post[]> = {};
+    posts.forEach(p => { if (p.date) (map[p.date] = map[p.date] || []).push(p); });
+    return map;
+  }, [posts]);
 
   // Group by date
   const byDate = useMemo(() => {
@@ -79,6 +113,7 @@ export default function CalendarPage() {
 
   const todayStr = fmt(today);
   const selectedActs = selectedDate ? (byDate[selectedDate] || []) : [];
+  const selectedPosts = selectedDate ? (postsByDate[selectedDate] || []) : [];
   const upcoming = activities
     .filter(a => a.date >= todayStr)
     .slice(0, 6);
@@ -118,6 +153,7 @@ export default function CalendarPage() {
                 if (d === null) return <div key={i} />;
                 const dateStr = fmt(new Date(year, month, d));
                 const acts = byDate[dateStr] || [];
+                const dayPosts = postsByDate[dateStr] || [];
                 const hasHoliday = acts.some(a => a.isHoliday);
                 const isToday = dateStr === todayStr;
                 const isSelected = dateStr === selectedDate;
@@ -137,11 +173,14 @@ export default function CalendarPage() {
                     onMouseOut={e => (e.currentTarget.style.transform = 'scale(1)')}
                   >
                     <span style={{ fontSize: '0.95rem' }}>{d}</span>
-                    {acts.length > 0 && (
+                    {(acts.length > 0 || dayPosts.length > 0) && (
                       <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center' }}>
                         {acts.slice(0, 3).map((a, j) => (
                           <span key={j} style={{ width: '6px', height: '6px', borderRadius: '50%', background: a.isHoliday ? '#EF4444' : (a.color || (isSelected ? 'white' : '#FF6A01')) }} />
                         ))}
+                        {dayPosts.length > 0 && (
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isSelected ? 'white' : '#10B981' }} />
+                        )}
                       </div>
                     )}
                   </button>
@@ -150,8 +189,11 @@ export default function CalendarPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '14px', marginTop: '1.5rem', flexWrap: 'wrap', fontSize: '0.8rem', color: '#64748B' }}>
-              <Legend color="#FF6A01" label="กิจกรรม" />
-              <Legend color="#EF4444" label="วันหยุด" />
+              <Legend color="#3B82F6" label="กิจกรรม" />
+              <Legend color="#EF4444" label="วันหยุดราชการ" />
+              <Legend color="#F59E0B" label="วันพระ / วันสำคัญทางศาสนา" />
+              <Legend color="#A855F7" label="เปิด-ปิดภาคเรียน" />
+              <Legend color="#10B981" label="มีข่าว/สื่อ" />
               <Legend color="#FFFFFF" border="#FF6A01" label="วันนี้" />
             </div>
           </div>
@@ -184,7 +226,7 @@ export default function CalendarPage() {
             <div style={{ color: '#FF6A01', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' }}>วันที่</div>
             <h3 style={{ fontWeight: 900, color: '#0F172A', marginBottom: '1.5rem' }}>{selectedDate}</h3>
 
-            {selectedActs.length === 0 ? (
+            {selectedActs.length === 0 && selectedPosts.length === 0 ? (
               <div style={{ padding: '2rem', background: '#FAFAFA', borderRadius: '16px', textAlign: 'center', color: '#94A3B8' }}>
                 <CalendarIcon size={32} style={{ opacity: 0.4, marginBottom: '8px' }} />
                 <p style={{ margin: 0 }}>ไม่มีกิจกรรมในวันนี้</p>
@@ -205,6 +247,49 @@ export default function CalendarPage() {
                     </div>
                   </div>
                 ))}
+
+                {selectedPosts.length > 0 && (
+                  <div style={{ marginTop: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0 10px', color: '#0F172A', fontWeight: 800, fontSize: '0.95rem' }}>
+                      <Newspaper size={16} color="#FF6A01" /> ข่าว / สื่อในวันนี้
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {selectedPosts.map(p => (
+                        <div key={p.id} style={{ display: 'flex', gap: '12px', padding: '10px', borderRadius: '14px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                          {p.imageUrl && p.imageType !== 'pdf' && (
+                            <div style={{ width: 72, height: 72, borderRadius: '10px', overflow: 'hidden', flexShrink: 0, background: '#FFEDD5' }}>
+                              <DriveImage src={p.imageUrl} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {p.category && <div style={{ fontSize: '0.7rem', color: '#FF6A01', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>{p.category}</div>}
+                            <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.92rem', marginBottom: '4px' }}>{p.title}</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                              {p.albumUrl && (
+                                <a href={p.albumUrl} target="_blank" rel="noreferrer" style={chipLink}><Images size={12} /> อัลบั้ม</a>
+                              )}
+                              {p.imageUrl && p.imageType === 'pdf' && (
+                                <a href={p.imageUrl} target="_blank" rel="noreferrer" style={chipLink}><FileText size={12} /> PDF</a>
+                              )}
+                              {p.imageUrl && p.imageType !== 'pdf' && (
+                                <a href={p.imageUrl} target="_blank" rel="noreferrer" style={chipLink}><ImageIcon size={12} /> รูปภาพ</a>
+                              )}
+                              {p.websiteUrl && (
+                                <a href={p.websiteUrl} target="_blank" rel="noreferrer" style={chipLink}><LinkIcon size={12} /> เว็บไซต์</a>
+                              )}
+                              {p.documentUrl && (
+                                <a href={p.documentUrl} target="_blank" rel="noreferrer" style={chipLink}><FileText size={12} /> เอกสาร</a>
+                              )}
+                              {p.tiktokUrl && (
+                                <a href={p.tiktokUrl} target="_blank" rel="noreferrer" style={chipLink}><LinkIcon size={12} /> TikTok</a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -215,6 +300,13 @@ export default function CalendarPage() {
     </div>
   );
 }
+
+const chipLink: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: '4px',
+  padding: '4px 10px', borderRadius: '50px', background: 'white',
+  border: '1px solid #FFEDD5', color: '#FF6A01', fontSize: '0.72rem',
+  fontWeight: 700, textDecoration: 'none',
+};
 
 const navBtn: React.CSSProperties = {
   width: 38, height: 38, borderRadius: '12px', border: '1px solid #FFEDD5',

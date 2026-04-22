@@ -18,18 +18,19 @@ export const extractDriveId = (url: string): string | null => {
 };
 
 /**
- * Converts any Google Drive link to a direct-viewable thumbnail URL.
+ * Converts any Google Drive link to a direct-viewable URL.
+ * Uses lh3.googleusercontent.com which works for publicly shared Drive files.
  */
 export const getDirectImageUrl = (url: string | undefined): string => {
   if (!url) return DEFAULT_PLACEHOLDER;
 
   const driveId = extractDriveId(url);
   if (driveId) {
-    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`;
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w2000`;
   }
 
-  // Handle Google Photos direct links (if provided by user from specific tools)
-  if (url.includes('googleusercontent.com') && !url.includes('drive.google.com')) {
+  // Handle Google Photos / googleusercontent direct links
+  if (url.includes('googleusercontent.com')) {
     return url;
   }
 
@@ -40,13 +41,25 @@ export const getDirectImageUrl = (url: string | undefined): string => {
 };
 
 /**
+ * Returns thumbnail URL (smaller size for previews/cards)
+ */
+export const getThumbnailUrl = (url: string | undefined): string => {
+  if (!url) return DEFAULT_PLACEHOLDER;
+  const driveId = extractDriveId(url);
+  if (driveId) {
+    return `https://lh3.googleusercontent.com/d/${driveId}=w800`;
+  }
+  return getDirectImageUrl(url);
+};
+
+/**
  * Get a small thumbnail for preview purposes
  */
 export const getPreviewThumbnail = (url: string): string => {
   if (!url) return '';
   const driveId = extractDriveId(url);
   if (driveId) {
-    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
+    return `https://lh3.googleusercontent.com/d/${driveId}=w800`;
   }
   return url;
 };
