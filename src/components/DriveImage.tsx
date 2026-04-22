@@ -1,4 +1,4 @@
-import { useState, useEffect, ImgHTMLAttributes } from 'react';
+import { useState, useEffect, type ImgHTMLAttributes } from 'react';
 import { extractDriveId, DEFAULT_PLACEHOLDER } from '../utils/imageUtils';
 
 interface DriveImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> {

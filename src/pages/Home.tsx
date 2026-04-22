@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   ArrowRight, Video, Globe, FileText, Image as ImageIcon,
-  GraduationCap, ClipboardList, CalendarDays, FolderOpen,
+  ClipboardList, CalendarDays, FolderOpen,
   Award, Target, BookOpen, Users, Sparkles, Heart, ShieldCheck,
   ChevronRight, Phone, Mail, MapPin, Quote, Images
 } from 'lucide-react';
