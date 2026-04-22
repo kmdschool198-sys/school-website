@@ -76,6 +76,24 @@ export const pageContent: Record<string, PageContent> = {
     type: 'personnel',
     content: ''
   },
+  'teacher': {
+    title: 'คณะครูประจำการ',
+    subtitle: 'บุคลากร',
+    type: 'personnel',
+    content: ''
+  },
+  'support': {
+    title: 'บุคลากรสายสนับสนุน / ลูกจ้าง',
+    subtitle: 'บุคลากร',
+    type: 'personnel',
+    content: ''
+  },
+  'board': {
+    title: 'คณะกรรมการสถานศึกษา',
+    subtitle: 'บุคลากร',
+    type: 'personnel',
+    content: ''
+  },
   'history': {
     title: 'ประวัติโรงเรียนบ้านคลองมดแดง',
     subtitle: 'เกี่ยวกับโรงเรียน',
