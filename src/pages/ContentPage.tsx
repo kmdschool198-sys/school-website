@@ -15,20 +15,54 @@ import { sidebarMenus, pageContent } from '../data/pageContent';
 import { getDirectImageUrl, getDrivePreviewUrl } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
+import { DEFAULT_STUDENTS } from '../data/defaultStudents';
+import { BUILDINGS, STATUS_COLOR, CATEGORY_ICON } from '../data/buildings';
+import Building3D from '../components/Building3D';
+import CampusMap from '../components/CampusMap';
 import { FileText, ExternalLink, Video, Globe } from 'lucide-react';
+
+const thStyle: React.CSSProperties = { padding: '12px 14px', textAlign: 'left', fontWeight: 800, fontSize: '0.85rem', borderBottom: '2px solid #FFEDD5' };
+const tdStyle: React.CSSProperties = { padding: '12px 14px', color: '#334155' };
+
+const actionBtn = (color: string): React.CSSProperties => ({
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+  padding: '14px 18px', borderRadius: 14, background: color, color: 'white',
+  fontWeight: 800, textDecoration: 'none', fontSize: '0.92rem',
+  boxShadow: `0 8px 20px ${color}40`, transition: 'transform .2s'
+});
+
+function InfoCard({ color, icon, title, children }: { color: string; icon: string; title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: 'white', borderRadius: 20, padding: '1.5rem', borderLeft: `5px solid ${color}`, boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+      <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{icon}</div>
+      <h5 style={{ fontWeight: 900, color: '#0F172A', marginBottom: 8, fontSize: '1rem' }}>{title}</h5>
+      <div style={{ color: '#334155', fontSize: '0.92rem', lineHeight: 1.7 }}>{children}</div>
+    </div>
+  );
+}
 
 function ContentPage() {
   const { slug } = useParams<{ slug: string }>();
   const activeSlug = slug || '';
   const [firePersonnel, setFirePersonnel] = useState<any[]>([]);
   const [firebasePosts, setFirebasePosts] = useState<any[]>([]);
+  const [studentsData, setStudentsData] = useState<{ title?: string; subtitle?: string; rows: any[] } | null>(null);
   const [dynamicPage, setDynamicPage] = useState<{title?: string, content?: string, bannerUrl?: string, blocks?: any[]} | null>(null);
   const [activePost, setActivePost] = useState<NewsItem | null>(null);
+  const [mapMode, setMapMode] = useState<string>('hybrid');
 
   useEffect(() => {
     let unsubPosts: any = null;
     let unsubPers: any = null;
     let unsubPage: any = null;
+    let unsubStu: any = null;
+
+    if (activeSlug === 'students') {
+      unsubStu = onSnapshot(doc(db, 'config', 'students_count'), snap => {
+        if (snap.exists()) setStudentsData(snap.data() as any);
+        else setStudentsData(null);
+      });
+    }
 
     // Dynamic Page Content snapshot
     unsubPage = onSnapshot(doc(db, 'pages', activeSlug), (snapshot) => {
@@ -107,6 +141,7 @@ function ContentPage() {
       if (unsubPosts) unsubPosts();
       if (unsubPers) unsubPers();
       if (unsubPage) unsubPage();
+      if (unsubStu) unsubStu();
     };
   }, [activeSlug]);
   
@@ -172,13 +207,41 @@ function ContentPage() {
       }
       flushList(`fl-${i}`);
 
-      // Section header: "X)" or "X." alone (no colon → pure section title)
-      const isPureNumberedHeader = /^[๐-๙๑๒๓๔๕๖๗๘๙0-9]+[\.\)]\s*[^\:]*$/.test(trimmed) && !trimmed.includes(':') && trimmed.length < 80;
-      if (isPureNumberedHeader && /^[๐-๙๑๒๓๔๕๖๗๘๙0-9]+[\.\)]/.test(trimmed)) {
+      // Major section header: "X. Title"  (top-level — strip the number, render as chapter)
+      const majorMatch = /^([0-9]+)\.\s+(.+)$/.exec(trimmed);
+      if (majorMatch && !trimmed.includes(':') && trimmed.length < 90) {
+        const title = majorMatch[2].trim();
         elements.push(
-          <h3 key={i} style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', marginTop: '2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ width: '8px', height: '28px', background: 'linear-gradient(180deg,#FF6A01,#FB923C)', borderRadius: '4px' }} />
-            {trimmed}
+          <div key={i} style={{
+            marginTop: '2.5rem', marginBottom: '1.25rem',
+            padding: '1.1rem 1.4rem',
+            background: 'linear-gradient(135deg, #FF6A01 0%, #FB923C 100%)',
+            color: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 10px 28px rgba(255,106,1,0.25)',
+            display: 'flex', alignItems: 'center', gap: '14px',
+          }}>
+            <span style={{
+              width: 42, height: 42, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.22)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+              fontWeight: 900, fontSize: '1.1rem',
+            }}>◆</span>
+            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, letterSpacing: '0.3px' }}>{title}</h2>
+          </div>
+        );
+        return;
+      }
+
+      // Sub-section header: "X) Title" (no colon)
+      const subMatch = /^([0-9]+)\)\s+(.+)$/.exec(trimmed);
+      if (subMatch && !trimmed.includes(':') && trimmed.length < 90) {
+        const title = subMatch[2].trim();
+        elements.push(
+          <h3 key={i} style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', marginTop: '1.6rem', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+            <span style={{ width: '6px', height: '22px', background: 'linear-gradient(180deg,#FF6A01,#FB923C)', borderRadius: '4px' }} />
+            {title}
           </h3>
         );
         return;
@@ -187,8 +250,9 @@ function ContentPage() {
       // "X) Label: value"  OR  "Label: value"  → info card
       if (trimmed.includes(':')) {
         const idx = trimmed.indexOf(':');
-        const key = trimmed.slice(0, idx).trim();
+        let key = trimmed.slice(0, idx).trim();
         const val = trimmed.slice(idx + 1).trim();
+        key = key.replace(/^[0-9]+[\.\)]\s*/, '');
         elements.push(
           <div key={i} style={{
             display: 'grid', gridTemplateColumns: 'minmax(160px, 220px) 1fr', gap: '1rem',
@@ -246,7 +310,357 @@ function ContentPage() {
     </div>
   );
 
+  const renderContactPage = () => {
+    const SHORT = 'https://maps.app.goo.gl/GVXx3ctAPKZbzZmPA';
+    const LAT = 16.4046183;
+    const LNG = 99.237658;
+    const LABEL = encodeURIComponent('โรงเรียนบ้านคลองมดแดง');
+    const QUERY = `${LAT},${LNG}`;
+    const mapModes: Record<string, { label: string; t: string; z: number }> = {
+      hybrid: { label: 'ดาวเทียม + ป้ายชื่อ', t: 'h', z: 18 },
+      satellite: { label: 'ดาวเทียม', t: 'k', z: 18 },
+      map: { label: 'แผนที่ปกติ', t: 'm', z: 17 },
+    };
+    const buildSrc = (mode: string) => {
+      const m = mapModes[mode];
+      return `https://maps.google.com/maps?q=loc:${LAT},${LNG}(${LABEL})&t=${m.t}&z=${m.z}&hl=th&output=embed`;
+    };
+    return (
+      <div className="animate-fade-in">
+        {/* 3D-style map hero */}
+        <div style={{ position: 'relative', borderRadius: 28, overflow: 'hidden', boxShadow: '0 30px 60px rgba(255,106,1,0.15)', border: '1px solid #FFEDD5', marginBottom: '2rem', background: '#0F172A' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', background: 'linear-gradient(90deg, rgba(255,106,1,0.95), rgba(251,146,60,0.95))', color: 'white' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFD400', boxShadow: '0 0 0 4px rgba(255,212,0,0.3)' }} />
+              สถานที่ตั้งโรงเรียน · LIVE MAP
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {Object.entries(mapModes).map(([k, v]) => (
+                <button key={k} onClick={() => setMapMode(k)} style={{
+                  padding: '6px 14px', borderRadius: 50, border: 'none', cursor: 'pointer',
+                  background: mapMode === k ? 'white' : 'rgba(255,255,255,0.18)',
+                  color: mapMode === k ? '#FF6A01' : 'white',
+                  fontWeight: 700, fontSize: '0.78rem', transition: 'all .25s'
+                }}>{v.label}</button>
+              ))}
+            </div>
+          </div>
+          <iframe key={mapMode} src={buildSrc(mapMode)} width="100%" height="500" style={{ border: 0, display: 'block' }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="School Map"></iframe>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: '2rem' }}>
+          <a href={SHORT} target="_blank" rel="noreferrer" style={actionBtn('#FF6A01')}>
+            <ExternalLink size={18} /> เปิดใน Google Maps
+          </a>
+          <a href={`https://www.google.com/maps/dir/?api=1&destination=${QUERY}`} target="_blank" rel="noreferrer" style={actionBtn('#3B82F6')}>
+            🚗 ขอเส้นทาง (นำทาง)
+          </a>
+          <a href={`https://earth.google.com/web/search/${QUERY}`} target="_blank" rel="noreferrer" style={actionBtn('#10B981')}>
+            🌍 ดูใน Google Earth (3D)
+          </a>
+          <a href={`https://www.google.com/maps/@?api=1&map_action=pano&query=${QUERY}`} target="_blank" rel="noreferrer" style={actionBtn('#A855F7')}>
+            👁️ Street View
+          </a>
+        </div>
+
+        {/* Info grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+          <InfoCard color="#FF6A01" icon="📍" title="ที่ตั้ง">
+            เลขที่ 198 หมู่ 3<br />
+            ตำบลโป่งน้ำร้อน อำเภอคลองลาน<br />
+            จังหวัดกำแพงเพชร 62180
+          </InfoCard>
+          <InfoCard color="#3B82F6" icon="🏫" title="สังกัด">
+            สำนักงานเขตพื้นที่การศึกษา<br />
+            ประถมศึกษากำแพงเพชร เขต 2<br />
+            (สพป.กำแพงเพชร 2)
+          </InfoCard>
+          <InfoCard color="#10B981" icon="📚" title="ระดับชั้นที่เปิดสอน">
+            อนุบาล 2 - มัธยมศึกษาปีที่ 3<br />
+            <span style={{ fontSize: '0.85rem', color: '#64748B' }}>(โรงเรียนขยายโอกาสทางการศึกษา)</span>
+          </InfoCard>
+          <InfoCard color="#A855F7" icon="🏘️" title="เขตพื้นที่บริการ">
+            6 หมู่บ้าน · หมู่ 3, 5, 7, 9, 10<br />
+            ตำบลโป่งน้ำร้อน
+          </InfoCard>
+          <InfoCard color="#1877F2" icon="📘" title="Facebook">
+            <a href="https://web.facebook.com/BnKhlngMddang" target="_blank" rel="noreferrer" style={{ color: '#1877F2', fontWeight: 700, textDecoration: 'none' }}>
+              โรงเรียนบ้านคลองมดแดง →
+            </a>
+          </InfoCard>
+          <InfoCard color="#000000" icon="🎵" title="TikTok">
+            <a href="https://www.tiktok.com/@kmdschool198" target="_blank" rel="noreferrer" style={{ color: '#000000', fontWeight: 700, textDecoration: 'none' }}>
+              @kmdschool198 →
+            </a>
+          </InfoCard>
+          <InfoCard color="#FF0000" icon="▶️" title="YouTube">
+            <a href="https://www.youtube.com/@KMDSchool" target="_blank" rel="noreferrer" style={{ color: '#FF0000', fontWeight: 700, textDecoration: 'none' }}>
+              @KMDSchool →
+            </a>
+          </InfoCard>
+          <InfoCard color="#F59E0B" icon="🕐" title="เวลาทำการ">
+            จันทร์ - ศุกร์<br />
+            08:00 - 16:30 น.<br />
+            <span style={{ fontSize: '0.85rem', color: '#64748B' }}>(ปิดวันเสาร์-อาทิตย์ และวันหยุดราชการ)</span>
+          </InfoCard>
+        </div>
+      </div>
+    );
+  };
+
+  const renderStudentsPage = () => {
+    const sd = (studentsData && studentsData.rows && studentsData.rows.length > 0) ? studentsData : DEFAULT_STUDENTS;
+    const rows = sd.rows.map((r: any) => ({
+      ...r,
+      male: Number(r.male) || 0,
+      female: Number(r.female) || 0,
+      total: (Number(r.male) || 0) + (Number(r.female) || 0),
+    }));
+    const totalMale = rows.reduce((s, r) => s + r.male, 0);
+    const totalFemale = rows.reduce((s, r) => s + r.female, 0);
+    const grandTotal = totalMale + totalFemale;
+    const maxTotal = Math.max(...rows.map(r => r.total), 1);
+
+    // Group totals
+    const sumGroup = (prefix: string) => rows
+      .filter(r => r.class.startsWith(prefix))
+      .reduce((s, r) => ({ male: s.male + r.male, female: s.female + r.female }), { male: 0, female: 0 });
+    const anubaan = sumGroup('อนุบาล');
+    const prathom = sumGroup('ประถม');
+    const matthayom = sumGroup('มัธยม');
+
+    return (
+      <div className="animate-fade-in">
+        {/* Header */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontWeight: 900, color: '#0F172A', marginBottom: 8 }}>{sd.title || 'จำนวนนักเรียน'}</h2>
+          <p style={{ color: '#64748B', margin: 0 }}>{sd.subtitle}</p>
+        </div>
+
+        {/* Summary Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+          {[
+            { label: 'นักเรียนชาย', val: totalMale, color: '#3B82F6', bg: '#EFF6FF' },
+            { label: 'นักเรียนหญิง', val: totalFemale, color: '#EC4899', bg: '#FDF2F8' },
+            { label: 'รวมทั้งสิ้น', val: grandTotal, color: '#FF6A01', bg: '#FFF7ED' },
+            { label: 'จำนวนชั้นเรียน', val: rows.length, color: '#10B981', bg: '#ECFDF5' },
+          ].map((s, i) => (
+            <div key={i} style={{ background: s.bg, borderRadius: 20, padding: '1.5rem', border: `1px solid ${s.color}22` }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: s.color, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{s.label}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.val.toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bar Chart */}
+        <div style={{ background: 'white', borderRadius: 24, padding: '2rem', border: '1px solid #FFEDD5', marginBottom: '2rem' }}>
+          <h4 style={{ fontWeight: 900, color: '#0F172A', marginBottom: '1.5rem' }}>กราฟจำนวนนักเรียนแยกชั้น</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {rows.map((r, i) => {
+              const malePct = (r.male / maxTotal) * 100;
+              const femalePct = (r.female / maxTotal) * 100;
+              return (
+                <div key={i}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: '0.85rem' }}>
+                    <span style={{ fontWeight: 700, color: '#0F172A' }}>{r.class}</span>
+                    <span style={{ color: '#64748B' }}>
+                      <span style={{ color: '#3B82F6', fontWeight: 700 }}>ช {r.male}</span> · <span style={{ color: '#EC4899', fontWeight: 700 }}>ญ {r.female}</span> · <span style={{ color: '#FF6A01', fontWeight: 800 }}>รวม {r.total}</span>
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', height: 22, borderRadius: 8, overflow: 'hidden', background: '#F1F5F9' }}>
+                    <div style={{ width: `${malePct}%`, background: 'linear-gradient(90deg,#60A5FA,#3B82F6)', transition: 'width .6s ease' }} />
+                    <div style={{ width: `${femalePct}%`, background: 'linear-gradient(90deg,#F472B6,#EC4899)', transition: 'width .6s ease' }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 16, marginTop: '1.5rem', justifyContent: 'center', fontSize: '0.85rem', color: '#64748B' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: '#3B82F6' }} /> ชาย
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: '#EC4899' }} /> หญิง
+            </span>
+          </div>
+        </div>
+
+        {/* Group Summary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+          {[
+            { label: 'อนุบาล', g: anubaan, color: '#EC4899' },
+            { label: 'ประถมศึกษา', g: prathom, color: '#3B82F6' },
+            { label: 'มัธยมศึกษา', g: matthayom, color: '#F59E0B' },
+          ].map((g, i) => {
+            const total = g.g.male + g.g.female;
+            const pct = grandTotal > 0 ? Math.round((total / grandTotal) * 100) : 0;
+            return (
+              <div key={i} style={{ background: 'white', borderRadius: 20, padding: '1.25rem', borderLeft: `5px solid ${g.color}`, boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>ระดับ{g.label}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: '2rem', fontWeight: 900, color: g.color }}>{total}</span>
+                  <span style={{ color: '#64748B', fontSize: '0.85rem' }}>คน · {pct}%</span>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 4 }}>ช {g.g.male} · ญ {g.g.female}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Detail Table */}
+        <div style={{ background: 'white', borderRadius: 24, padding: '1.5rem', border: '1px solid #FFEDD5', overflow: 'auto' }}>
+          <h4 style={{ fontWeight: 900, color: '#0F172A', marginBottom: '1rem' }}>ตารางรายละเอียด</h4>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.92rem' }}>
+            <thead>
+              <tr style={{ background: '#FFF7ED', color: '#0F172A' }}>
+                <th style={thStyle}>ชั้น</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>ชาย</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>หญิง</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>รวม</th>
+                <th style={thStyle}>ครูประจำชั้น</th>
+                <th style={thStyle}>หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <td style={tdStyle}>{r.class}</td>
+                  <td style={{ ...tdStyle, textAlign: 'center', color: '#3B82F6', fontWeight: 700 }}>{r.male}</td>
+                  <td style={{ ...tdStyle, textAlign: 'center', color: '#EC4899', fontWeight: 700 }}>{r.female}</td>
+                  <td style={{ ...tdStyle, textAlign: 'center', color: '#FF6A01', fontWeight: 800 }}>{r.total}</td>
+                  <td style={tdStyle}>{r.teacher}</td>
+                  <td style={tdStyle}>{r.note}</td>
+                </tr>
+              ))}
+              <tr style={{ background: '#FFF7ED', fontWeight: 800 }}>
+                <td style={tdStyle}>รวมทั้งสิ้น</td>
+                <td style={{ ...tdStyle, textAlign: 'center', color: '#3B82F6' }}>{totalMale}</td>
+                <td style={{ ...tdStyle, textAlign: 'center', color: '#EC4899' }}>{totalFemale}</td>
+                <td style={{ ...tdStyle, textAlign: 'center', color: '#FF6A01' }}>{grandTotal}</td>
+                <td colSpan={2} style={tdStyle}></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderBuildingsPage = () => {
+    const grouped = BUILDINGS.reduce((acc, b) => {
+      (acc[b.category] = acc[b.category] || []).push(b);
+      return acc;
+    }, {} as Record<string, typeof BUILDINGS>);
+
+    const total = BUILDINGS.length;
+    const good = BUILDINGS.filter(b => b.status === 'ดี').length;
+    const ok = BUILDINGS.filter(b => b.status === 'พอใช้').length;
+    const bad = BUILDINGS.filter(b => b.status === 'ทรุดโทรม').length;
+
+    return (
+      <div className="animate-fade-in">
+        {/* Hero */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #FF6A01 130%)',
+          color: 'white', borderRadius: 28, padding: '2.2rem 2rem', marginBottom: '2rem',
+          boxShadow: '0 30px 60px rgba(15,23,42,0.25)',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 80% 20%, rgba(255,212,0,0.18), transparent 50%)' }} />
+          <div style={{ position: 'relative' }}>
+            <div style={{ fontSize: '0.85rem', letterSpacing: 2, opacity: 0.85, fontWeight: 700 }}>3D MODEL · CAMPUS</div>
+            <h2 style={{ margin: '6px 0 4px', fontSize: '2rem', fontWeight: 900 }}>แบบจำลองอาคารทั้งหมด</h2>
+            <p style={{ opacity: 0.9, margin: 0 }}>โรงเรียนบ้านคลองมดแดง · รวม {total} อาคาร</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 12, marginTop: '1.5rem' }}>
+              {[
+                { label: 'ทั้งหมด', val: total, color: '#FFD400' },
+                { label: 'สภาพดี', val: good, color: STATUS_COLOR['ดี'] },
+                { label: 'พอใช้', val: ok, color: STATUS_COLOR['พอใช้'] },
+                { label: 'ทรุดโทรม', val: bad, color: STATUS_COLOR['ทรุดโทรม'] },
+              ].map(s => (
+                <div key={s.label} style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(6px)', borderRadius: 16, padding: '12px 16px', borderLeft: `4px solid ${s.color}` }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: s.color }}>{s.val}</div>
+                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Campus Map — full isometric overview */}
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
+            <span style={{ fontSize: '1.6rem' }}>🗺️</span>
+            <h3 style={{ margin: 0, fontWeight: 900, color: '#0F172A', fontSize: '1.3rem' }}>แผนผังโรงเรียน · 3D Campus Map</h3>
+            <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#FFEDD5,transparent)' }} />
+          </div>
+          <CampusMap />
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: '1.5rem', padding: '12px 16px', background: '#FFF7ED', borderRadius: 14, border: '1px solid #FFEDD5' }}>
+          <span style={{ fontWeight: 800, color: '#7C2D12' }}>สถานะ:</span>
+          {(['ดี', 'พอใช้', 'ทรุดโทรม'] as const).map(s => (
+            <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#0F172A' }}>
+              <span style={{ width: 12, height: 12, borderRadius: '50%', background: STATUS_COLOR[s] }} />
+              {s}
+            </span>
+          ))}
+        </div>
+
+        {Object.entries(grouped).map(([cat, items]) => (
+          <div key={cat} style={{ marginBottom: '2.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
+              <span style={{ fontSize: '1.6rem' }}>{CATEGORY_ICON[cat] || '🏗️'}</span>
+              <h3 style={{ margin: 0, fontWeight: 900, color: '#0F172A', fontSize: '1.3rem' }}>{cat}</h3>
+              <span style={{ background: '#FFEDD5', color: '#7C2D12', padding: '2px 12px', borderRadius: 50, fontSize: '0.78rem', fontWeight: 800 }}>{items.length} หลัง</span>
+              <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#FFEDD5,transparent)' }} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
+              {items.map(b => (
+                <div key={b.id} style={{
+                  position: 'relative',
+                  background: 'linear-gradient(180deg, #F0F9FF 0%, #FFF 60%, #FFFBEB 100%)',
+                  borderRadius: 20,
+                  padding: '0.5rem 1rem 1.1rem',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
+                  transition: 'transform .25s, box-shadow .25s',
+                }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 14px 30px rgba(255,106,1,0.15)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(0,0,0,0.05)'; }}
+                >
+                  <Building3D b={b} />
+                  <div style={{
+                    borderTop: '1px dashed #E2E8F0',
+                    paddingTop: 10, marginTop: 4,
+                  }}>
+                    <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.98rem' }}>{b.name}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: 2 }}>
+                      {b.floors} ชั้น · {b.shape === 'house' ? 'หลังคาจั่ว' : 'หลังคาเรียบ'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderContent = () => {
+    if (activeSlug === 'students') {
+      return renderStudentsPage();
+    }
+    if (activeSlug === 'contact') {
+      return renderContactPage();
+    }
+    if (activeSlug === 'campus' || activeSlug === 'buildings' || activeSlug === 'school-buildings') {
+      return renderBuildingsPage();
+    }
     if (dynamicPage?.blocks && dynamicPage.blocks.length > 0) {
       return renderBlocks(dynamicPage.blocks);
     }
@@ -286,18 +700,26 @@ function ContentPage() {
         </div>
       );
 
+      const SectionHeading = ({ text }: { text: string }) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', margin: '0 0 2rem' }}>
+          <span style={{ width: 6, height: 28, borderRadius: 4, background: 'linear-gradient(180deg,#FF6A01,#FB923C)' }} />
+          <h3 style={{ margin: 0, fontWeight: 900, color: '#0F172A', fontSize: '1.4rem' }}>{text}</h3>
+          <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#FFEDD5,transparent)' }} />
+        </div>
+      );
+
       return (
         <div className="animate-fade-in">
           {heads.length > 0 && (
-            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-               <div style={{ display: 'inline-block', padding: '0.5rem 2rem', background: '#FFF7ED', color: '#C2410C', borderRadius: '50px', fontSize: '0.85rem', fontWeight: 800, marginBottom: '2rem', border: '1px solid #FFEDD5' }}>ฝ่ายบริหาร</div>
-               <div style={{ 
-                 display: 'flex', 
+            <div style={{ marginBottom: '4rem' }}>
+               <SectionHeading text="หัวหน้างาน" />
+               <div style={{
+                 display: 'flex',
                  flexWrap: 'wrap',
-                 justifyContent: 'center', 
+                 justifyContent: 'center',
                  gap: '3rem',
                  maxWidth: '1000px',
-                 margin: '0 auto' 
+                 margin: '0 auto'
                }}>
                  {heads.map(h => (
                    <div key={h.id} style={{ width: heads.length === 1 ? '400px' : '350px' }}>
@@ -307,9 +729,14 @@ function ContentPage() {
                </div>
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
-            {others.map(person => renderPersonCard(person))}
-          </div>
+          {others.length > 0 && (
+            <>
+              <SectionHeading text="สมาชิกกลุ่มงาน" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
+                {others.map(person => renderPersonCard(person))}
+              </div>
+            </>
+          )}
         </div>
       );
     }

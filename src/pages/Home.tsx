@@ -427,6 +427,35 @@ function Home() {
               <Link to="/calendar" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: '1.5rem', color: '#FF6A01', fontWeight: 800, textDecoration: 'none' }}>
                 ดูปฏิทินเต็ม <ArrowRight size={18} />
               </Link>
+
+              {/* Director Quote Card */}
+              <div style={{ marginTop: '2.5rem', background: 'linear-gradient(135deg, #0F172A, #1E293B)', borderRadius: '24px', padding: '2rem', color: 'white', position: 'relative', overflow: 'hidden' }}>
+                <Quote size={80} style={{ position: 'absolute', top: -10, right: -10, opacity: 0.08 }} />
+                <div style={{ display: 'inline-block', padding: '4px 12px', background: 'rgba(255,212,0,0.15)', color: '#FFD400', borderRadius: 50, fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2, marginBottom: '1rem' }}>
+                  สารจากผู้บริหาร
+                </div>
+                <p style={{ fontSize: '1rem', lineHeight: 1.7, fontStyle: 'italic', margin: '0 0 1.25rem', opacity: 0.95 }}>
+                  "เราเชื่อว่าเด็กทุกคนมีศักยภาพ — โรงเรียนจะเป็นพื้นที่ปลอดภัยที่ให้พวกเขาได้เรียนรู้ เติบโต และค้นพบตัวเอง"
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #FF6A01, #FB923C)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>ผ</div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem' }}>ผู้อำนวยการโรงเรียน</div>
+                    <div style={{ fontSize: '0.78rem', opacity: 0.7 }}>โรงเรียนบ้านคลองมดแดง</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Info Card */}
+              <div style={{ marginTop: '1.25rem', background: '#FFF7ED', borderRadius: '24px', padding: '1.5rem', border: '1px solid #FFEDD5' }}>
+                <h6 style={{ fontWeight: 900, color: '#0F172A', marginBottom: '1rem', fontSize: '1rem' }}>ข้อมูลโรงเรียน</h6>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <InfoRow icon={<MapPin size={16} />} label="ตำบลโป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร" />
+                  <InfoRow icon={<Users size={16} />} label="เปิดสอนระดับอนุบาล - มัธยมศึกษาปีที่ 3" />
+                  <InfoRow icon={<ShieldCheck size={16} />} label="สังกัด สพป.กำแพงเพชร เขต 2" />
+                  <InfoRow icon={<Award size={16} />} label="ก่อตั้ง พ.ศ. 2525 (44+ ปี)" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -569,6 +598,15 @@ function Tag({ color, icon, label }: { color: string; icon: any; label: string }
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: `${color}15`, color, borderRadius: 50, fontSize: '0.7rem', fontWeight: 800 }}>
       {icon}{label}
     </span>
+  );
+}
+
+function InfoRow({ icon, label }: { icon: any; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', color: '#0F172A' }}>
+      <div style={{ width: 28, height: 28, borderRadius: 8, background: 'white', color: '#FF6A01', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
+      <span style={{ fontWeight: 600 }}>{label}</span>
+    </div>
   );
 }
 

@@ -33,7 +33,7 @@ import DriveImage from '../components/DriveImage';
 import DriveImageInput from '../components/DriveImageInput';
 import GooglePhotosInput from '../components/GooglePhotosInput';
 import Toast from '../components/Toast';
-import { seedPersonnel } from '../seed_personnel_data';
+import { DEFAULT_STUDENTS } from '../data/defaultStudents';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../App.css';
 
@@ -83,7 +83,9 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'settings';
+
+interface StudentRow { class: string; male: number; female: number; teacher: string; note: string; }
 
 interface Activity {
   id: string;
@@ -153,6 +155,11 @@ function Admin() {
   const [newTiktokUrl, setNewTiktokUrl] = useState('');
   const [newWebsiteUrl, setNewWebsiteUrl] = useState('');
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
+
+  // Students count — seed from DEFAULT_STUDENTS so admin form has same data as public page
+  const [studentsTitle, setStudentsTitle] = useState(DEFAULT_STUDENTS.title);
+  const [studentsSubtitle, setStudentsSubtitle] = useState(DEFAULT_STUDENTS.subtitle);
+  const [studentRows, setStudentRows] = useState<StudentRow[]>(DEFAULT_STUDENTS.rows);
 
   // Personnel
   const [personnelList, setPersonnelList] = useState<Personnel[]>([]);
@@ -234,7 +241,31 @@ function Admin() {
     if (snap.exists()) setSchoolSettings(snap.data() as any);
     const snapHome = await getDoc(doc(db, 'config', 'home_assets'));
     if (snapHome.exists()) setHomeAssets(snapHome.data() as any);
+    const snapStu = await getDoc(doc(db, 'config', 'students_count'));
+    if (snapStu.exists()) {
+      const d = snapStu.data() as any;
+      if (d.title) setStudentsTitle(d.title);
+      if (d.subtitle) setStudentsSubtitle(d.subtitle);
+      if (Array.isArray(d.rows)) setStudentRows(d.rows);
+    }
   };
+
+  const saveStudents = async () => {
+    setLoading(true);
+    try {
+      await setDoc(doc(db, 'config', 'students_count'), {
+        title: studentsTitle, subtitle: studentsSubtitle, rows: studentRows
+      });
+      showToast('บันทึกข้อมูลนักเรียนเรียบร้อย', 'success');
+    } catch (e) { console.error(e); showToast('บันทึกไม่สำเร็จ', 'error'); }
+    setLoading(false);
+  };
+
+  const updateStudentRow = (i: number, field: keyof StudentRow, value: any) => {
+    setStudentRows(rows => rows.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
+  };
+  const addStudentRow = () => setStudentRows(rows => [...rows, { class: '', male: 0, female: 0, teacher: '', note: '' }]);
+  const removeStudentRow = (i: number) => setStudentRows(rows => rows.filter((_, idx) => idx !== i));
 
   const loadNews = async () => {
     const q = query(collection(db, 'posts'), orderBy('date', 'desc'));
@@ -602,6 +633,7 @@ function Admin() {
     personnel: 'จัดการข้อมูลบุคลากร',
     contents: 'จัดการเนื้อหาหน้าเว็บ',
     activities: 'ปฏิทินกิจกรรม / วันหยุด',
+    students: 'จำนวนนักเรียน',
     settings: 'ตั้งค่าระบบ'
   };
 
@@ -626,6 +658,7 @@ function Admin() {
             ['personnel', <Users size={18} key="p" />, 'บุคลากร'],
             ['contents', <Globe size={18} key="c" />, 'เนื้อหาหน้าเว็บ'],
             ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม'],
+            ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
             ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
           ] as [AdminTab, ReactNode, string][]).map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
@@ -727,33 +760,6 @@ function Admin() {
               </div>
             </div>
 
-            <div className="mt-4 p-4 rounded-4 shadow-sm" style={{ background: '#FFF7ED', border: '1px solid #FFEDD5' }}>
-              <div className="d-flex align-items-center gap-3 mb-3">
-                <div style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', padding: '12px', borderRadius: '12px' }}>
-                  <Database size={24} color="white" />
-                </div>
-                <div>
-                  <h5 className="fw-bold mb-1" style={{ color: '#C2410C' }}>เครื่องมือกรอกข้อมูลอัตโนมัติ</h5>
-                  <p className="small text-muted mb-0">ระบบจะช่วยกรอกข้อมูลรายชื่อครูทั้ง 20 ท่านตามไฟล์ Excel ให้คุณทันที</p>
-                </div>
-              </div>
-              <button className="btn btn-warning fw-bold px-4 py-2 rounded-3 shadow-sm d-flex align-items-center gap-2" 
-                onClick={async () => {
-                  if(window.confirm('ยืนยันการกรอกข้อมูล 20 รายชื่อลงฐานข้อมูล? (รูปภาพต้องมาใส่เองภายหลัง)')) {
-                    setLoading(true);
-                    try {
-                      await seedPersonnel();
-                      showToast('กรอกข้อมูล 20 ท่านสำเร็จแล้วครับ!', 'success');
-                      loadPersonnel(); // Refresh the personnel list count
-                    } catch (e) {
-                      showToast('เกิดข้อผิดพลาดในการกรอกข้อมูล', 'error');
-                    }
-                    setLoading(false);
-                  }
-                }} disabled={loading}>
-                {loading ? 'กำลังกรอกข้อมูล...' : '🚀 เริ่มกรอกข้อมูลครู 20 ท่าน (Auto-Seed)'}
-              </button>
-            </div>
           </div>
         )}
 
@@ -1172,6 +1178,67 @@ function Admin() {
                   {activities.length === 0 && <div className="text-center text-muted py-4">ยังไม่มีกิจกรรม</div>}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Students Count */}
+        {activeTab === 'students' && (
+          <div style={{ ...GLASS_CARD, padding: '1.75rem' }}>
+            <div className="row g-3 mb-3">
+              <div className="col-md-7">
+                <label className="small fw-bold mb-1">หัวข้อ</label>
+                <input type="text" className="form-control" value={studentsTitle} onChange={e => setStudentsTitle(e.target.value)} />
+              </div>
+              <div className="col-md-5">
+                <label className="small fw-bold mb-1">คำอธิบายย่อย (ปีการศึกษา/รอบ)</label>
+                <input type="text" className="form-control" value={studentsSubtitle} onChange={e => setStudentsSubtitle(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="table-responsive" style={{ borderRadius: 12, border: '1px solid #FFEDD5' }}>
+              <table className="table table-sm align-middle mb-0" style={{ background: 'white' }}>
+                <thead style={{ background: '#FFF7ED' }}>
+                  <tr>
+                    <th style={{ width: '20%' }}>ชั้น</th>
+                    <th style={{ width: '8%' }}>ชาย</th>
+                    <th style={{ width: '8%' }}>หญิง</th>
+                    <th style={{ width: '8%' }}>รวม</th>
+                    <th>ครูประจำชั้น</th>
+                    <th style={{ width: '15%' }}>หมายเหตุ</th>
+                    <th style={{ width: '50px' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentRows.map((r, i) => (
+                    <tr key={i}>
+                      <td><input className="form-control form-control-sm" value={r.class} onChange={e => updateStudentRow(i, 'class', e.target.value)} /></td>
+                      <td><input type="number" min="0" className="form-control form-control-sm" value={r.male} onChange={e => updateStudentRow(i, 'male', Number(e.target.value))} /></td>
+                      <td><input type="number" min="0" className="form-control form-control-sm" value={r.female} onChange={e => updateStudentRow(i, 'female', Number(e.target.value))} /></td>
+                      <td className="fw-bold text-center" style={{ color: '#FF6A01' }}>{(r.male || 0) + (r.female || 0)}</td>
+                      <td><input className="form-control form-control-sm" value={r.teacher} onChange={e => updateStudentRow(i, 'teacher', e.target.value)} /></td>
+                      <td><input className="form-control form-control-sm" value={r.note} onChange={e => updateStudentRow(i, 'note', e.target.value)} /></td>
+                      <td><button className="btn btn-sm btn-light text-danger" onClick={() => removeStudentRow(i)}><Trash2 size={12} /></button></td>
+                    </tr>
+                  ))}
+                  <tr style={{ background: '#FFF7ED' }}>
+                    <td className="fw-bold">รวมทั้งสิ้น</td>
+                    <td className="fw-bold">{studentRows.reduce((s, r) => s + (Number(r.male) || 0), 0)}</td>
+                    <td className="fw-bold">{studentRows.reduce((s, r) => s + (Number(r.female) || 0), 0)}</td>
+                    <td className="fw-bold" style={{ color: '#FF6A01' }}>
+                      {studentRows.reduce((s, r) => s + (Number(r.male) || 0) + (Number(r.female) || 0), 0)}
+                    </td>
+                    <td colSpan={3}></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="d-flex gap-2 mt-3">
+              <button className="btn btn-light border" onClick={addStudentRow}>+ เพิ่มแถว</button>
+              <button className="btn text-white fw-bold ms-auto" style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)' }} onClick={saveStudents} disabled={loading}>
+                <Save size={16} className="me-2" /> {loading ? 'กำลังบันทึก...' : 'บันทึกข้อมูลนักเรียน'}
+              </button>
             </div>
           </div>
         )}

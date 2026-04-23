@@ -37,8 +37,10 @@ export default function Footer() {
               {info.motto || 'การศึกษาปฐมวัย และ ขั้นพื้นฐานที่มุ่งเน้นการพัฒนาทักษะชีวิตคู่ความรู้'}
             </p>
             <div className="social-links">
+              <a href="https://web.facebook.com/BnKhlngMddang" target="_blank" rel="noreferrer" className="social-link" title="Facebook" style={{ background: '#1877F2', color: '#fff' }}>FB</a>
+              <a href="https://www.tiktok.com/@kmdschool198" target="_blank" rel="noreferrer" className="social-link" title="TikTok" style={{ background: '#000', color: '#fff' }}>TT</a>
+              <a href="https://www.youtube.com/@KMDSchool" target="_blank" rel="noreferrer" className="social-link" title="YouTube" style={{ background: '#FF0000', color: '#fff' }}>YT</a>
               <a href="https://drive.google.com/drive/folders/1hhSsvlvoW5BoqokbraAb7JNneVwDtMb2" target="_blank" rel="noreferrer" className="social-link" title="Google Drive">GD</a>
-              <a href="/timetable.html" target="_blank" className="social-link" title="Timetable">TB</a>
             </div>
           </div>
 
