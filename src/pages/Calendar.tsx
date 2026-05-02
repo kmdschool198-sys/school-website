@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, MapPin, Clock, AlertCircle, Image as ImageIcon, FileText, Link as LinkIcon, Newspaper, Images } from 'lucide-react';
 import Header from '../components/Header';
@@ -51,6 +51,48 @@ export default function CalendarPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [attStats, setAttStats] = useState<{ classId: string; label: string; p: number; a: number; l: number; tot: number }[] | null>(null);
+  const [attLoading, setAttLoading] = useState(false);
+
+  // Load attendance stats for the selected date
+  useEffect(() => {
+    if (!selectedDate) { setAttStats(null); return; }
+    setAttLoading(true);
+    (async () => {
+      try {
+        // Get class roster (label lookup)
+        const rosterSnap = await getDocs(query(collection(db, 'config')));
+        let classes: Array<{ classId: string; label: string }> = [];
+        rosterSnap.forEach(d => {
+          if (d.id === 'attendance_classes') {
+            const data = d.data() as any;
+            if (Array.isArray(data.classes)) classes = data.classes.map((c: any) => ({ classId: c.classId, label: c.label }));
+          }
+        });
+        const labelMap = new Map(classes.map(c => [c.classId, c.label]));
+
+        const q = query(collection(db, 'attendance'), where('date', '==', selectedDate));
+        const snap = await getDocs(q);
+        const stats: typeof attStats = [];
+        snap.forEach(d => {
+          const data = d.data() as any;
+          let p = 0, a = 0, l = 0;
+          Object.values(data.records || {}).forEach((r: any) => {
+            if (r.status === 'present') p++;
+            else if (r.status === 'absent') a++;
+            else if (r.status === 'leave') l++;
+          });
+          if (p + a + l > 0) stats!.push({
+            classId: data.classId, label: labelMap.get(data.classId) || data.classId,
+            p, a, l, tot: p + a + l,
+          });
+        });
+        stats!.sort((x, y) => x.label.localeCompare(y.label, 'th'));
+        setAttStats(stats);
+      } catch (e) { console.error(e); setAttStats([]); }
+      finally { setAttLoading(false); }
+    })();
+  }, [selectedDate]);
 
   useEffect(() => {
     const q = query(collection(db, 'activities'), orderBy('date', 'asc'));
@@ -173,27 +215,35 @@ export default function CalendarPage() {
                     onMouseOut={e => (e.currentTarget.style.transform = 'scale(1)')}
                   >
                     <span style={{ fontSize: '0.95rem' }}>{d}</span>
-                    {(acts.length > 0 || dayPosts.length > 0) && (
-                      <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                        {acts.slice(0, 3).map((a, j) => (
-                          <span key={j} style={{ width: '6px', height: '6px', borderRadius: '50%', background: a.isHoliday ? '#EF4444' : (a.color || (isSelected ? 'white' : '#FF6A01')) }} />
-                        ))}
-                        {dayPosts.length > 0 && (
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isSelected ? 'white' : '#10B981' }} />
-                        )}
-                      </div>
-                    )}
+                    {(acts.length > 0 || dayPosts.length > 0) && (() => {
+                      const hasActivity = acts.some(a => !a.isHoliday);
+                      const hasAlbum = dayPosts.some(p => p.albumUrl || (p.imageUrl && p.imageType !== 'pdf'));
+                      const hasPdf = dayPosts.some(p => (p.imageUrl && p.imageType === 'pdf') || p.documentUrl);
+                      const hasLink = dayPosts.some(p => p.websiteUrl || p.tiktokUrl);
+                      const hasNews = dayPosts.length > 0 && !hasAlbum && !hasPdf && !hasLink;
+                      return (
+                        <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.7rem', lineHeight: 1 }}>
+                          {hasHoliday && <span title="วันหยุด">🚫</span>}
+                          {hasActivity && <span title="กิจกรรม">📌</span>}
+                          {hasNews && <span title="ข่าว/ประชาสัมพันธ์">📣</span>}
+                          {hasAlbum && <span title="ภาพ/อัลบั้ม">🖼️</span>}
+                          {hasPdf && <span title="เอกสาร PDF">📄</span>}
+                          {hasLink && <span title="ลิงก์เว็บไซต์">🔗</span>}
+                        </div>
+                      );
+                    })()}
                   </button>
                 );
               })}
             </div>
 
-            <div style={{ display: 'flex', gap: '14px', marginTop: '1.5rem', flexWrap: 'wrap', fontSize: '0.8rem', color: '#64748B' }}>
-              <Legend color="#3B82F6" label="กิจกรรม" />
-              <Legend color="#EF4444" label="วันหยุดราชการ" />
-              <Legend color="#F59E0B" label="วันพระ / วันสำคัญทางศาสนา" />
-              <Legend color="#A855F7" label="เปิด-ปิดภาคเรียน" />
-              <Legend color="#10B981" label="มีข่าว/สื่อ" />
+            <div style={{ display: 'flex', gap: '14px', marginTop: '1.5rem', flexWrap: 'wrap', fontSize: '0.8rem', color: '#64748B', alignItems: 'center' }}>
+              <span>📌 กิจกรรม</span>
+              <span>🚫 วันหยุด</span>
+              <span>📣 ข่าว/ประชาสัมพันธ์</span>
+              <span>🖼️ ภาพ/อัลบั้ม</span>
+              <span>📄 PDF</span>
+              <span>🔗 ลิงก์</span>
               <Legend color="#FFFFFF" border="#FF6A01" label="วันนี้" />
             </div>
           </div>
@@ -225,6 +275,57 @@ export default function CalendarPage() {
             </button>
             <div style={{ color: '#FF6A01', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' }}>วันที่</div>
             <h3 style={{ fontWeight: 900, color: '#0F172A', marginBottom: '1.5rem' }}>{selectedDate}</h3>
+
+            {/* Attendance stats for this date */}
+            <div style={{ marginBottom: '1.25rem', padding: '14px', background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span style={{ fontSize: '1.1rem' }}>📋</span>
+                <div style={{ fontWeight: 800, color: '#7C2D12', fontSize: '0.95rem' }}>สถิติการเช็คชื่อ</div>
+              </div>
+              {attLoading ? (
+                <div style={{ color: '#94A3B8', fontSize: '0.85rem' }}>กำลังโหลด…</div>
+              ) : !attStats || attStats.length === 0 ? (
+                <div style={{ color: '#94A3B8', fontSize: '0.85rem' }}>ยังไม่มีการเช็คชื่อในวันนี้</div>
+              ) : (
+                <>
+                  {/* Total summary */}
+                  {(() => {
+                    const tp = attStats.reduce((s, x) => s + x.p, 0);
+                    const ta = attStats.reduce((s, x) => s + x.a, 0);
+                    const tl = attStats.reduce((s, x) => s + x.l, 0);
+                    const tot = tp + ta + tl;
+                    const pct = tot ? Math.round((tp / tot) * 100) : 0;
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 10 }}>
+                        <Mini label="มา" value={tp} color="#FF6A01" />
+                        <Mini label="ขาด" value={ta} color="#EF4444" />
+                        <Mini label="ลา" value={tl} color="#F59E0B" />
+                        <Mini label={`${pct}%`} value={tot} color="#0F172A" sub="รวม" />
+                      </div>
+                    );
+                  })()}
+                  {/* Per class */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {attStats.map(s => (
+                      <div key={s.classId} style={{
+                        background: 'white', borderRadius: 10, padding: '8px 12px',
+                        display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.82rem',
+                      }}>
+                        <span style={{ fontWeight: 800, color: '#0F172A', minWidth: 60 }}>{s.label}</span>
+                        <div style={{ flex: 1, display: 'flex', height: 16, borderRadius: 8, overflow: 'hidden', background: '#F1F5F9' }}>
+                          {s.p > 0 && <div style={{ width: `${(s.p / s.tot) * 100}%`, background: '#FF6A01' }} />}
+                          {s.a > 0 && <div style={{ width: `${(s.a / s.tot) * 100}%`, background: '#EF4444' }} />}
+                          {s.l > 0 && <div style={{ width: `${(s.l / s.tot) * 100}%`, background: '#F59E0B' }} />}
+                        </div>
+                        <span style={{ color: '#64748B', fontWeight: 700, minWidth: 60, textAlign: 'right' }}>
+                          {s.p}/{s.tot}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {selectedActs.length === 0 && selectedPosts.length === 0 ? (
               <div style={{ padding: '2rem', background: '#FAFAFA', borderRadius: '16px', textAlign: 'center', color: '#94A3B8' }}>
@@ -320,5 +421,15 @@ function Legend({ color, label, border }: { color: string; label: string; border
       <span style={{ width: 14, height: 14, borderRadius: '4px', background: color, border: border ? `2px solid ${border}` : 'none' }} />
       {label}
     </span>
+  );
+}
+
+function Mini({ label, value, color, sub }: { label: string; value: number; color: string; sub?: string }) {
+  return (
+    <div style={{ background: 'white', padding: '6px 4px', borderRadius: 8, textAlign: 'center', borderTop: `2px solid ${color}` }}>
+      <div style={{ fontSize: '1.05rem', fontWeight: 900, color }}>{value}</div>
+      <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>{sub || label}</div>
+      {sub && <div style={{ fontSize: '0.6rem', color }}>{label}</div>}
+    </div>
   );
 }

@@ -17,7 +17,7 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
     icon: '👥',
     links: [
       { path: 'directors', label: 'ฝ่ายบริหาร' },
-      { path: '/personnel/teacher', label: 'คณะครู' },
+      { path: '/personnel/teacher', label: 'บุคลากร' },
       { path: '/personnel/support', label: 'บุคลากรสายสนับสนุน' },
       { path: 'board', label: 'คณะกรรมการสถานศึกษา' },
     ]
@@ -53,9 +53,8 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
   'E-Service': {
     icon: '💻',
     links: [
-      { path: 'grades', label: 'ตรวจสอบผลการเรียน' },
-      { path: 'admission', label: 'รับสมัครนักเรียน' },
-      { path: 'e-document', label: 'สารบรรณอิเล็กทรอนิกส์' },
+      { path: 'timetable', label: '📅 ตารางสอน-ตารางเรียน' },
+      { path: '/attendance', label: '📋 ระบบเช็คชื่อนักเรียน' },
     ]
   }
 };

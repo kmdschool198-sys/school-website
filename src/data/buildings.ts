@@ -12,6 +12,12 @@ export interface Building {
   floors: 1 | 2;             // 1 or 2 stories
   width: number;             // relative width 1-3
   shape?: 'house' | 'long' | 'block';
+  images?: {
+    front?: string;
+    back?: string;
+    left?: string;
+    right?: string;
+  };
 }
 
 export const BUILDINGS: Building[] = [

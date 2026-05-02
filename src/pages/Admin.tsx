@@ -21,8 +21,11 @@ import {
   Type,
   AlignLeft,
   Minus,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  ExternalLink
 } from 'lucide-react';
+import TimetableSmart from '../components/TimetableSmart';
+import RosterManager from '../components/RosterManager';
 import {
   collection, addDoc, getDocs, deleteDoc, doc, orderBy, query,
   updateDoc, setDoc, getDoc
@@ -83,7 +86,7 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'settings';
 
 interface StudentRow { class: string; male: number; female: number; teacher: string; note: string; }
 
@@ -172,6 +175,8 @@ function Admin() {
   const [pMajor, setPMajor] = useState('');
   const [pPosNum, setPPosNum] = useState('');
   const [pPhone, setPPhone] = useState('');
+  const [pWebsite, setPWebsite] = useState('');
+  const [pEmail, setPEmail] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Highlights
@@ -427,7 +432,7 @@ function Admin() {
   const resetPersonnelForm = () => {
     setEditingId(null); setPName(''); setPPos(''); setPImage(''); setPIsHead(false);
     setPCat('teacher'); setPWorkGroup('none');
-    setPMajor(''); setPPosNum(''); setPPhone('');
+    setPMajor(''); setPPosNum(''); setPPhone(''); setPWebsite(''); setPEmail('');
   };
 
   const handleSubmitPersonnel = async (e: FormEvent) => {
@@ -440,6 +445,8 @@ function Admin() {
         major: pMajor,
         positionNumber: pPosNum,
         phone: pPhone,
+        websiteUrl: pWebsite,
+        email: pEmail,
         category: pCat, 
         workGroup: pWorkGroup,
         image: pImage, 
@@ -634,6 +641,8 @@ function Admin() {
     contents: 'จัดการเนื้อหาหน้าเว็บ',
     activities: 'ปฏิทินกิจกรรม / วันหยุด',
     students: 'จำนวนนักเรียน',
+    timetable: 'ตารางสอน-ตารางเรียน',
+    roster: 'รายชื่อนักเรียน (เช็คชื่อ)',
     settings: 'ตั้งค่าระบบ'
   };
 
@@ -659,6 +668,8 @@ function Admin() {
             ['contents', <Globe size={18} key="c" />, 'เนื้อหาหน้าเว็บ'],
             ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม'],
             ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
+            ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
+            ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
             ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
           ] as [AdminTab, ReactNode, string][]).map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
@@ -950,6 +961,8 @@ function Admin() {
                       <input type="text" className="form-control" placeholder="เบอร์โทรศัพท์" value={pPhone} onChange={e => setPPhone(e.target.value)} />
                     </div>
                   </div>
+                  <input type="url" className="form-control mb-3" placeholder="ลิงก์เว็บไซต์ครู (เช่น Google Site, Classroom)" value={pWebsite} onChange={e => setPWebsite(e.target.value)} />
+                  <input type="email" className="form-control mb-3" placeholder="อีเมล (ไม่บังคับ)" value={pEmail} onChange={e => setPEmail(e.target.value)} />
                   <DriveImageInput label="รูปบุคลากร (Google Drive)" value={pImage} onChange={setPImage} />
                   <div className="mb-4 form-check"><input type="checkbox" className="form-check-input" id="isHead" checked={pIsHead} onChange={e => setPIsHead(e.target.checked)} /><label className="form-check-label small fw-bold" htmlFor="isHead">เป็นหัวหน้ากลุ่มงาน</label></div>
                   <div className="d-flex gap-2">
@@ -988,6 +1001,8 @@ function Admin() {
                             setPMajor(p.major || '');
                             setPPosNum(p.positionNumber || '');
                             setPPhone(p.phone || '');
+                            setPWebsite((p as any).websiteUrl || '');
+                            setPEmail((p as any).email || '');
                             setPCat(p.category); 
                             setPWorkGroup(p.workGroup || 'none');
                             setPImage(p.image); 
@@ -1240,6 +1255,41 @@ function Admin() {
                 <Save size={16} className="me-2" /> {loading ? 'กำลังบันทึก...' : 'บันทึกข้อมูลนักเรียน'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Timetable embed */}
+        {activeTab === 'timetable' && (
+          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
+            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <div>
+                <h5 className="fw-bold mb-1">📅 โปรแกรมจัดการตารางสอน</h5>
+                <p className="text-muted small mb-0">โปรแกรมเต็มรูปแบบ — สร้าง/แก้ไข/พิมพ์ตารางสอน-ตารางเรียน + Backup/Restore JSON</p>
+              </div>
+              <div className="d-flex gap-2">
+                <a href="/timetable.html" target="_blank" rel="noreferrer" className="btn btn-outline-primary fw-bold">
+                  <ExternalLink size={14} className="me-1" /> เปิดเต็มหน้าจอ
+                </a>
+                <a href="/timetable_data.json" download className="btn btn-outline-success fw-bold">
+                  <Save size={14} className="me-1" /> ดาวน์โหลด Backup
+                </a>
+              </div>
+            </div>
+            <TimetableSmart />
+            <div className="alert alert-warning small mt-3 mb-0">
+              💡 <b>หมายเหตุ:</b> โปรแกรมนี้บันทึกข้อมูลใน LocalStorage ของเบราว์เซอร์ — ใช้ปุ่ม "Export JSON" ในตัวโปรแกรมเพื่อสำรองข้อมูลเป็นประจำ และอัปโหลดไฟล์ JSON ไปไว้ใน Google Drive
+            </div>
+          </div>
+        )}
+
+        {/* Roster — students for attendance system */}
+        {activeTab === 'roster' && (
+          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
+            <div className="mb-3">
+              <h5 className="fw-bold mb-1">📋 รายชื่อนักเรียน (สำหรับระบบเช็คชื่อ)</h5>
+              <p className="text-muted small mb-0">เพิ่ม/แก้ไข/นำเข้ารายชื่อนักเรียนของแต่ละชั้น — ใช้ในหน้า /attendance</p>
+            </div>
+            <RosterManager />
           </div>
         )}
 

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, orderBy, where, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { 
-  ChevronRight, 
-  Home as HomeIcon, 
+import {
+  ChevronRight,
+  Home as HomeIcon,
   Calendar,
   Image as ImageIcon
 } from 'lucide-react';
@@ -19,10 +19,26 @@ import { DEFAULT_STUDENTS } from '../data/defaultStudents';
 import { BUILDINGS, STATUS_COLOR, CATEGORY_ICON } from '../data/buildings';
 import Building3D from '../components/Building3D';
 import CampusMap from '../components/CampusMap';
+import TimetableSmart from '../components/TimetableSmart';
 import { FileText, ExternalLink, Video, Globe } from 'lucide-react';
 
 const thStyle: React.CSSProperties = { padding: '12px 14px', textAlign: 'left', fontWeight: 800, fontSize: '0.85rem', borderBottom: '2px solid #FFEDD5' };
 const tdStyle: React.CSSProperties = { padding: '12px 14px', color: '#334155' };
+
+const infoRow: React.CSSProperties = {
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  padding: '10px 14px', background: '#F8FAFC', borderRadius: 12,
+  borderLeft: '3px solid #FFEDD5',
+};
+const infoLabel: React.CSSProperties = { color: '#64748B', fontWeight: 700, fontSize: '0.85rem' };
+const infoVal: React.CSSProperties = { color: '#0F172A', fontWeight: 700, fontSize: '0.95rem', textAlign: 'right' };
+const modalBtn = (color: string): React.CSSProperties => ({
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+  padding: '10px 14px', borderRadius: 12, background: color, color: 'white',
+  fontWeight: 800, textDecoration: 'none', fontSize: '0.85rem',
+  boxShadow: `0 6px 16px ${color}40`, border: 'none', cursor: 'pointer',
+  whiteSpace: 'nowrap', flex: 1, minWidth: 0,
+});
 
 const actionBtn = (color: string): React.CSSProperties => ({
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -47,9 +63,10 @@ function ContentPage() {
   const [firePersonnel, setFirePersonnel] = useState<any[]>([]);
   const [firebasePosts, setFirebasePosts] = useState<any[]>([]);
   const [studentsData, setStudentsData] = useState<{ title?: string; subtitle?: string; rows: any[] } | null>(null);
-  const [dynamicPage, setDynamicPage] = useState<{title?: string, content?: string, bannerUrl?: string, blocks?: any[]} | null>(null);
+  const [dynamicPage, setDynamicPage] = useState<{ title?: string, content?: string, bannerUrl?: string, blocks?: any[] } | null>(null);
   const [activePost, setActivePost] = useState<NewsItem | null>(null);
   const [mapMode, setMapMode] = useState<string>('hybrid');
+  const [activePerson, setActivePerson] = useState<any | null>(null);
 
   useEffect(() => {
     let unsubPosts: any = null;
@@ -128,7 +145,7 @@ function ContentPage() {
       unsubPers = onSnapshot(q, (snapshot) => {
         let results: any[] = [];
         snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
-        
+
         results.sort((a, b) => (a.order || 0) - (b.order || 0));
         setFirePersonnel(results);
       });
@@ -144,9 +161,9 @@ function ContentPage() {
       if (unsubStu) unsubStu();
     };
   }, [activeSlug]);
-  
+
   // Find which category this route belongs to
-  let catKey = Object.keys(sidebarMenus)[0]; 
+  let catKey = Object.keys(sidebarMenus)[0];
   Object.entries(sidebarMenus).forEach(([key, val]) => {
     if (val.links.some(l => {
       const fullPath = l.path.startsWith('/') ? l.path : `/page/${l.path}`;
@@ -156,7 +173,7 @@ function ContentPage() {
       catKey = key;
     }
   });
-  
+
   const currentSidebar = sidebarMenus[catKey];
   const staticData = pageContent[activeSlug] || {
     title: 'กำลังอัปเดตข้อมูล',
@@ -599,54 +616,59 @@ function ContentPage() {
           <CampusMap />
         </div>
 
-        {/* Legend */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: '1.5rem', padding: '12px 16px', background: '#FFF7ED', borderRadius: 14, border: '1px solid #FFEDD5' }}>
-          <span style={{ fontWeight: 800, color: '#7C2D12' }}>สถานะ:</span>
-          {(['ดี', 'พอใช้', 'ทรุดโทรม'] as const).map(s => (
-            <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#0F172A' }}>
-              <span style={{ width: 12, height: 12, borderRadius: '50%', background: STATUS_COLOR[s] }} />
-              {s}
-            </span>
-          ))}
+        {/* Controls */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: '1.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', padding: '10px 16px', background: '#FFF7ED', borderRadius: 14, border: '1px solid #FFEDD5' }}>
+            <span style={{ fontWeight: 800, color: '#7C2D12' }}>สถานะ:</span>
+            {(['ดี', 'พอใช้', 'ทรุดโทรม'] as const).map(s => (
+              <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700, color: '#0F172A' }}>
+                <span style={{ width: 12, height: 12, borderRadius: '50%', background: STATUS_COLOR[s] }} />
+                {s}
+              </span>
+            ))}
+          </div>
+
         </div>
 
-        {Object.entries(grouped).map(([cat, items]) => (
-          <div key={cat} style={{ marginBottom: '2.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
-              <span style={{ fontSize: '1.6rem' }}>{CATEGORY_ICON[cat] || '🏗️'}</span>
-              <h3 style={{ margin: 0, fontWeight: 900, color: '#0F172A', fontSize: '1.3rem' }}>{cat}</h3>
-              <span style={{ background: '#FFEDD5', color: '#7C2D12', padding: '2px 12px', borderRadius: 50, fontSize: '0.78rem', fontWeight: 800 }}>{items.length} หลัง</span>
-              <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#FFEDD5,transparent)' }} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
-              {items.map(b => (
-                <div key={b.id} style={{
-                  position: 'relative',
-                  background: 'linear-gradient(180deg, #F0F9FF 0%, #FFF 60%, #FFFBEB 100%)',
-                  borderRadius: 20,
-                  padding: '0.5rem 1rem 1.1rem',
-                  border: '1px solid #E2E8F0',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
-                  transition: 'transform .25s, box-shadow .25s',
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 14px 30px rgba(255,106,1,0.15)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(0,0,0,0.05)'; }}
-                >
-                  <Building3D b={b} />
-                  <div style={{
-                    borderTop: '1px dashed #E2E8F0',
-                    paddingTop: 10, marginTop: 4,
-                  }}>
-                    <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.98rem' }}>{b.name}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: 2 }}>
-                      {b.floors} ชั้น · {b.shape === 'house' ? 'หลังคาจั่ว' : 'หลังคาเรียบ'}
-                    </div>
-                  </div>
+        <div>
+            {Object.entries(grouped).map(([cat, items]) => (
+              <div key={cat} style={{ marginBottom: '2.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '1.6rem' }}>{CATEGORY_ICON[cat] || '🏗️'}</span>
+                  <h3 style={{ margin: 0, fontWeight: 900, color: '#0F172A', fontSize: '1.3rem' }}>{cat}</h3>
+                  <span style={{ background: '#FFEDD5', color: '#7C2D12', padding: '2px 12px', borderRadius: 50, fontSize: '0.78rem', fontWeight: 800 }}>{items.length} หลัง</span>
+                  <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#FFEDD5,transparent)' }} />
                 </div>
-              ))}
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
+                  {items.map(b => (
+                    <div key={b.id} style={{
+                      position: 'relative',
+                      background: 'linear-gradient(180deg, #F0F9FF 0%, #FFF 60%, #FFFBEB 100%)',
+                      borderRadius: 20,
+                      padding: '0.5rem 1rem 1.1rem',
+                      border: '1px solid #E2E8F0',
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
+                      transition: 'transform .25s, box-shadow .25s',
+                    }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 14px 30px rgba(255,106,1,0.15)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(0,0,0,0.05)'; }}
+                    >
+                      <Building3D b={b} />
+                      <div style={{
+                        borderTop: '1px dashed #E2E8F0',
+                        paddingTop: 10, marginTop: 4,
+                      }}>
+                        <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.98rem' }}>{b.name}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: 2 }}>
+                          {b.floors} ชั้น · {b.shape === 'house' ? 'หลังคาจั่ว' : 'หลังคาเรียบ'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
       </div>
     );
   };
@@ -661,6 +683,22 @@ function ContentPage() {
     if (activeSlug === 'campus' || activeSlug === 'buildings' || activeSlug === 'school-buildings') {
       return renderBuildingsPage();
     }
+    if (activeSlug === 'e-service' || activeSlug === 'timetable' || activeSlug === 'eservice') {
+      return (
+        <div className="animate-fade-in">
+          <div style={{
+            background: 'linear-gradient(135deg,#0F172A,#1E3A8A,#FF6A01)',
+            color: 'white', borderRadius: 24, padding: '1.8rem',
+            marginBottom: '1.5rem', boxShadow: '0 20px 50px rgba(15,23,42,0.2)',
+          }}>
+            <div style={{ fontSize: '0.85rem', opacity: 0.85, fontWeight: 700, letterSpacing: 2 }}>E-SERVICE</div>
+            <h2 style={{ margin: '6px 0 4px', fontSize: '1.8rem', fontWeight: 900 }}>📅 ระบบตารางสอน</h2>
+            <p style={{ opacity: 0.9, margin: 0 }}>ตารางสอน-ตารางเรียน · โรงเรียนบ้านคลองมดแดง</p>
+          </div>
+          <TimetableSmart readOnly />
+        </div>
+      );
+    }
     if (dynamicPage?.blocks && dynamicPage.blocks.length > 0) {
       return renderBlocks(dynamicPage.blocks);
     }
@@ -669,17 +707,18 @@ function ContentPage() {
     }
 
     if (data.type === 'personnel' || data.type === 'personnel-groups') {
-      const displayPersonnel = firePersonnel.length > 0 ? firePersonnel : (data.personnelData || []);
-      const heads = displayPersonnel.filter(p => p.isHead);
-      const others = displayPersonnel.filter(p => !p.isHead);
-
       const renderPersonCard = (person: any, isBig = false) => (
-        <div key={person.id || person.name} style={{ 
-          background: 'white', borderRadius: '24px', overflow: 'hidden', 
-          boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
-          textAlign: 'center', transition: 'all 0.3s ease',
-          height: '100%'
-        }}>
+        <div key={person.id || person.name}
+          onClick={() => setActivePerson(person)}
+          style={{
+            background: 'white', borderRadius: '24px', overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9',
+            textAlign: 'center', transition: 'all 0.3s ease',
+            height: '100%', cursor: 'pointer',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 18px 40px rgba(255,106,1,0.18)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.04)'; }}
+        >
           <div style={{ height: isBig ? '450px' : '320px', background: '#f8fafc', overflow: 'hidden' }}>
             <DriveImage src={person.image || person.imageUrl} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
@@ -708,30 +747,52 @@ function ContentPage() {
         </div>
       );
 
+      // Handle Static Personnel Groups (e.g. Academic Affairs)
+      if (data.type === 'personnel-groups' && firePersonnel.length === 0 && data.personnelGroups) {
+        return (
+          <div className="animate-fade-in">
+            {data.personnelGroups.map((group: any, idx: number) => (
+              <div key={idx} style={{ marginBottom: '4rem' }}>
+                <SectionHeading text={group.title} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
+                  {group.personnel.map((person: any, pIdx: number) => (
+                    <div key={pIdx}>{renderPersonCard(person)}</div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      const displayPersonnel = firePersonnel.length > 0 ? firePersonnel : (data.personnelData || []);
+      const heads = displayPersonnel.filter(p => p.isHead);
+      const others = displayPersonnel.filter(p => !p.isHead);
+
       return (
         <div className="animate-fade-in">
           {heads.length > 0 && (
             <div style={{ marginBottom: '4rem' }}>
-               <SectionHeading text="หัวหน้างาน" />
-               <div style={{
-                 display: 'flex',
-                 flexWrap: 'wrap',
-                 justifyContent: 'center',
-                 gap: '3rem',
-                 maxWidth: '1000px',
-                 margin: '0 auto'
-               }}>
-                 {heads.map(h => (
-                   <div key={h.id} style={{ width: heads.length === 1 ? '400px' : '350px' }}>
-                     {renderPersonCard(h, heads.length === 1)}
-                   </div>
-                 ))}
-               </div>
+              <SectionHeading text="หัวหน้างาน" />
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: '3rem',
+                maxWidth: '1000px',
+                margin: '0 auto'
+              }}>
+                {heads.map(h => (
+                  <div key={h.id || h.name} style={{ width: heads.length === 1 ? '400px' : '350px' }}>
+                    {renderPersonCard(h, heads.length === 1)}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {others.length > 0 && (
             <>
-              <SectionHeading text="สมาชิกกลุ่มงาน" />
+              <SectionHeading text={heads.length > 0 ? "สมาชิกกลุ่มงาน" : "คณะครูและบุคลากร"} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
                 {others.map(person => renderPersonCard(person))}
               </div>
@@ -808,49 +869,49 @@ function ContentPage() {
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(255,106,1,0.15)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)'; }}
             >
-               <div style={{ height: '200px', background: '#f8fafc' }}>
-                  <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-               </div>
-               <div style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.8rem', marginBottom: '0.8rem' }}>
-                    <Calendar size={14} /> {post.date}
-                  </div>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: '#1e293b', lineHeight: 1.4 }}>{post.title}</h4>
-                  <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, marginBottom: '1.5rem' }}>{post.content.substring(0, 90)}...</p>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <span style={{ color: '#FF6A01', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      อ่านรายละเอียด <ChevronRight size={16} />
-                    </span>
-                    {post.imageType === 'pdf' && (
-                      <a href={post.imageUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#64748b', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
-                        <FileText size={16} /> ดู PDF <ExternalLink size={14} />
-                      </a>
-                    )}
-                  </div>
-                  
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1rem' }}>
-                    {post.albumUrl && post.albumUrl.trim() !== '' && (
-                      <div style={{ color: '#FF6A01', fontSize: '0.8rem', textDecoration: 'none', background: '#FFF7ED', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid #FFEDD5' }}>
-                        <ImageIcon size={14} /> อัลบั้มภาพ
-                      </div>
-                    )}
-                    {post.tiktokUrl && post.tiktokUrl.trim() !== '' && (
-                      <a href={post.tiktokUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#000', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Video size={14} /> TikTok
-                      </a>
-                    )}
-                    {post.websiteUrl && post.websiteUrl.trim() !== '' && (
-                      <a href={post.websiteUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#3B82F6', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Globe size={14} /> เว็บไซต์
-                      </a>
-                    )}
-                    {post.documentUrl && post.documentUrl.trim() !== '' && (
-                      <a href={post.documentUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#10B981', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <FileText size={14} /> เอกสาร
-                      </a>
-                    )}
-                  </div>
-               </div>
+              <div style={{ height: '200px', background: '#f8fafc' }}>
+                <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.8rem', marginBottom: '0.8rem' }}>
+                  <Calendar size={14} /> {post.date}
+                </div>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: '#1e293b', lineHeight: 1.4 }}>{post.title}</h4>
+                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, marginBottom: '1.5rem' }}>{post.content.substring(0, 90)}...</p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <span style={{ color: '#FF6A01', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    อ่านรายละเอียด <ChevronRight size={16} />
+                  </span>
+                  {post.imageType === 'pdf' && (
+                    <a href={post.imageUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#64748b', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
+                      <FileText size={16} /> ดู PDF <ExternalLink size={14} />
+                    </a>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1rem' }}>
+                  {post.albumUrl && post.albumUrl.trim() !== '' && (
+                    <div style={{ color: '#FF6A01', fontSize: '0.8rem', textDecoration: 'none', background: '#FFF7ED', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid #FFEDD5' }}>
+                      <ImageIcon size={14} /> อัลบั้มภาพ
+                    </div>
+                  )}
+                  {post.tiktokUrl && post.tiktokUrl.trim() !== '' && (
+                    <a href={post.tiktokUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#000', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Video size={14} /> TikTok
+                    </a>
+                  )}
+                  {post.websiteUrl && post.websiteUrl.trim() !== '' && (
+                    <a href={post.websiteUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#3B82F6', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Globe size={14} /> เว็บไซต์
+                    </a>
+                  )}
+                  {post.documentUrl && post.documentUrl.trim() !== '' && (
+                    <a href={post.documentUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#10B981', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <FileText size={14} /> เอกสาร
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
           {firebasePosts.length === 0 && (
@@ -873,63 +934,63 @@ function ContentPage() {
       <section style={{ height: '350px', background: dynamicPage?.bannerUrl ? `linear-gradient(135deg, rgba(255,106,1,0.85), rgba(251,146,60,0.7)), url(${getDirectImageUrl(dynamicPage.bannerUrl)}) center/cover` : 'linear-gradient(135deg, #FF6A01 0%, #FB923C 100%)', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
         {!dynamicPage?.bannerUrl && (
           <div style={{ position: 'absolute', opacity: 0.15, right: '-50px', bottom: '-50px', transform: 'rotate(-15deg)' }}>
-             <GraduationCap size={400} color="white" />
+            <GraduationCap size={400} color="white" />
           </div>
         )}
         <div className="container" style={{ position: 'relative', zIndex: 10 }}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 600 }}>
-             <HomeIcon size={16} /> <ChevronRight size={14} /> {catKey}
-           </div>
-           <h1 style={{ color: 'white', fontSize: '3.5rem', fontWeight: 900, marginBottom: '0', letterSpacing: '-1px' }}>{data.title}</h1>
-           <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.2rem', marginTop: '1rem' }}>{data.subtitle}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 600 }}>
+            <HomeIcon size={16} /> <ChevronRight size={14} /> {catKey}
+          </div>
+          <h1 style={{ color: 'white', fontSize: '3.5rem', fontWeight: 900, marginBottom: '0', letterSpacing: '-1px' }}>{data.title}</h1>
+          <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.2rem', marginTop: '1rem' }}>{data.subtitle}</p>
         </div>
       </section>
 
       {/* Main Content Area */}
       <main className="container" style={{ marginTop: '-4rem', paddingBottom: '8rem', position: 'relative', zIndex: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: '3rem', alignItems: 'start' }}>
-          
+
           {/* MWIT Style Sidebar */}
           <aside style={{ position: 'sticky', top: '100px' }}>
             <div style={{ background: 'white', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 10px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
-               <div style={{ padding: '2rem', background: '#FF6A01', color: 'white' }}>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>{catKey}</h3>
-               </div>
-               <div style={{ padding: '1rem 0' }}>
-                  {currentSidebar.links.map(link => (
-                    <Link 
-                      key={link.path} 
-                      to={link.path.startsWith('/') ? link.path : `/page/${link.path}`} 
-                      style={{ 
-                        display: 'flex', alignItems: 'center', gap: '12px', padding: '1rem 2rem', 
-                        textDecoration: 'none', 
-                        color: (activeSlug === link.path || (link.path.startsWith('/') && location.pathname === link.path)) ? '#FF6A01' : '#64748b',
-                        fontWeight: (activeSlug === link.path || (link.path.startsWith('/') && location.pathname === link.path)) ? 700 : 500,
-                        background: (activeSlug === link.path || (link.path.startsWith('/') && location.pathname === link.path)) ? '#FFF7ED' : 'transparent',
-                        borderLeft: (activeSlug === link.path || (link.path.startsWith('/') && location.pathname === link.path)) ? '4px solid #FF6A01' : '4px solid transparent',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={e => { if (activeSlug !== link.path) e.currentTarget.style.color='#FF6A01'; }}
-                      onMouseOut={e => { if (activeSlug !== link.path) e.currentTarget.style.color='#64748b'; }}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-               </div>
+              <div style={{ padding: '2rem', background: '#FF6A01', color: 'white' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>{catKey}</h3>
+              </div>
+              <div style={{ padding: '1rem 0' }}>
+                {currentSidebar.links.map(link => (
+                  <Link
+                    key={link.path}
+                    to={link.path.startsWith('/') ? link.path : `/page/${link.path}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px', padding: '1rem 2rem',
+                      textDecoration: 'none',
+                      color: (activeSlug === link.path || (link.path.startsWith('/') && location.pathname === link.path)) ? '#FF6A01' : '#64748b',
+                      fontWeight: (activeSlug === link.path || (link.path.startsWith('/') && location.pathname === link.path)) ? 700 : 500,
+                      background: (activeSlug === link.path || (link.path.startsWith('/') && location.pathname === link.path)) ? '#FFF7ED' : 'transparent',
+                      borderLeft: (activeSlug === link.path || (link.path.startsWith('/') && location.pathname === link.path)) ? '4px solid #FF6A01' : '4px solid transparent',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={e => { if (activeSlug !== link.path) e.currentTarget.style.color = '#FF6A01'; }}
+                    onMouseOut={e => { if (activeSlug !== link.path) e.currentTarget.style.color = '#64748b'; }}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             <div style={{ marginTop: '2rem', padding: '2rem', background: 'linear-gradient(to bottom right, #FFFFFF, #FFF7ED)', borderRadius: '24px', border: '1px solid #FFEDD5', textAlign: 'center' }}>
-               <h5 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#C2410C', marginBottom: '0.8rem' }}>ติดต่อสอบถาม</h5>
-               <p style={{ fontSize: '0.85rem', color: '#9a3412', lineHeight: 1.6, margin: 0 }}>
-                 ฝ่ายบริหารงานโรงเรียน<br />โทร: 055-xxx-xxx
-               </p>
+              <h5 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#C2410C', marginBottom: '0.8rem' }}>ติดต่อสอบถาม</h5>
+              <p style={{ fontSize: '0.85rem', color: '#9a3412', lineHeight: 1.6, margin: 0 }}>
+                ฝ่ายบริหารงานโรงเรียน<br />โทร: 055-xxx-xxx
+              </p>
             </div>
           </aside>
 
           {/* Premium Content Card */}
           <section style={{ background: 'white', padding: '4rem', borderRadius: '32px', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', minHeight: '600px' }}>
-             {/* Dynamic Content */}
-             {renderContent()}
+            {/* Dynamic Content */}
+            {renderContent()}
           </section>
 
         </div>
@@ -939,8 +1000,126 @@ function ContentPage() {
 
       <NewsModal post={activePost} onClose={() => setActivePost(null)} />
 
+      {/* Personnel detail modal */}
+      {activePerson && (
+        <div
+          onClick={() => setActivePerson(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem', animation: 'fadeIn .25s ease-out',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'white', borderRadius: 24, maxWidth: 900, width: '100%',
+              maxHeight: '92vh', overflow: 'auto',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
+              display: 'grid', gridTemplateColumns: 'minmax(0,420px) 1fr',
+              animation: 'modalIn .3s cubic-bezier(.2,.9,.3,1.2)',
+            }}
+          >
+            {/* Image side */}
+            <div style={{ background: '#0F172A', minHeight: 360, position: 'relative' }}>
+              <DriveImage
+                src={activePerson.image || activePerson.imageUrl}
+                alt={activePerson.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 360 }}
+              />
+              {activePerson.isHead && (
+                <div style={{
+                  position: 'absolute', top: 16, left: 16,
+                  background: 'linear-gradient(135deg,#FF6A01,#FB923C)',
+                  color: 'white', padding: '6px 14px', borderRadius: 50,
+                  fontSize: '0.78rem', fontWeight: 800,
+                  boxShadow: '0 8px 20px rgba(255,106,1,0.45)',
+                }}>★ หัวหน้างาน</div>
+              )}
+            </div>
+
+            {/* Info side */}
+            <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column' }}>
+              <button
+                onClick={() => setActivePerson(null)}
+                style={{
+                  alignSelf: 'flex-end', background: '#F1F5F9', border: 'none',
+                  width: 36, height: 36, borderRadius: '50%', cursor: 'pointer',
+                  fontSize: '1.2rem', fontWeight: 800, color: '#475569',
+                }}
+                aria-label="ปิด"
+              >×</button>
+
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0F172A', margin: '0 0 6px' }}>
+                {activePerson.name}
+              </h2>
+              <div style={{ color: '#FF6A01', fontWeight: 800, marginBottom: '1.5rem' }}>
+                {activePerson.position}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {activePerson.major && (
+                  <div style={infoRow}><span style={infoLabel}>วิชาเอก</span><span style={infoVal}>{activePerson.major}</span></div>
+                )}
+                {activePerson.workGroup && (
+                  <div style={infoRow}><span style={infoLabel}>กลุ่มงาน</span><span style={infoVal}>{activePerson.workGroup}</span></div>
+                )}
+                {activePerson.positionNumber && (
+                  <div style={infoRow}><span style={infoLabel}>เลขที่ตำแหน่ง</span><span style={infoVal}>{activePerson.positionNumber}</span></div>
+                )}
+                {activePerson.phone && (
+                  <div style={infoRow}>
+                    <span style={infoLabel}>โทรศัพท์</span>
+                    <a href={`tel:${activePerson.phone}`} style={{ ...infoVal, color: '#0EA5E9', textDecoration: 'none' }}>
+                      {activePerson.phone}
+                    </a>
+                  </div>
+                )}
+                {activePerson.email && (
+                  <div style={infoRow}>
+                    <span style={infoLabel}>อีเมล</span>
+                    <a href={`mailto:${activePerson.email}`} style={{ ...infoVal, color: '#0EA5E9', textDecoration: 'none' }}>
+                      {activePerson.email}
+                    </a>
+                  </div>
+                )}
+                {activePerson.category && (
+                  <div style={infoRow}><span style={infoLabel}>สังกัด</span><span style={infoVal}>{activePerson.category}</span></div>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ marginTop: 'auto', paddingTop: '1.5rem', display: 'flex', gap: 8, flexWrap: 'nowrap', alignItems: 'center' }}>
+                {activePerson.websiteUrl && (
+                  <a href={activePerson.websiteUrl} target="_blank" rel="noreferrer"
+                    style={modalBtn('#FF6A01')}>
+                    🌐 เข้าเว็บไซต์ครู
+                  </a>
+                )}
+                {activePerson.phone && (
+                  <a href={`tel:${activePerson.phone}`} style={modalBtn('#10B981')}>
+                    📞 โทร
+                  </a>
+                )}
+                {activePerson.id && (
+                  <Link to={`/admin?edit=personnel&id=${activePerson.id}`} style={modalBtn('#475569')}>
+                    ⚙ แก้ไขในระบบ
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Premium Specific CSS Effects */}
       <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @media (max-width: 720px) {
+          [data-personnel-modal] { grid-template-columns: 1fr !important; }
+        }
         .animate-fade-in {
           animation: pageIn 0.6s ease-out forwards;
         }
@@ -954,7 +1133,7 @@ function ContentPage() {
 }
 
 const GraduationCap = ({ size, color }: { size: number, color: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
 );
 
 export default ContentPage;

@@ -4,7 +4,31 @@
       "Bash(npm run *)",
       "Bash(npx tsc *)",
       "Bash(node -e ' *)",
-      "WebFetch(domain:maps.app.goo.gl)"
+      "WebFetch(domain:maps.app.goo.gl)",
+      "Read(//mnt/c/Users/KruJames/Downloads/**)",
+      "Read(//mnt/d/เอกสารโรงเรียน/KMD/2568/**)",
+      "Bash(powershell.exe -Command \"Get-Item 'C:\\\\Users\\\\KruJames\\\\Downloads\\\\timetable_backup_2026-04-23.json' | Select-Object Length; Get-Item 'D:\\\\เอกสารโรงเรียน\\\\KMD\\\\2568\\\\โปรแกรมตารางสอน\\\\timetable-opportunity v7.html' | Select-Object Length\")",
+      "Bash(powershell.exe -Command \"Copy-Item 'D:\\\\เอกสารโรงเรียน\\\\KMD\\\\2568\\\\โปรแกรมตารางสอน\\\\timetable-opportunity v7.html' 'C:\\\\Users\\\\KruJames\\\\.gemini\\\\antigravity\\\\scratch\\\\school-website\\\\public\\\\timetable.html' -Force; Copy-Item 'C:\\\\Users\\\\KruJames\\\\Downloads\\\\timetable_backup_2026-04-23.json' 'C:\\\\Users\\\\KruJames\\\\.gemini\\\\antigravity\\\\scratch\\\\school-website\\\\public\\\\timetable_data.json' -Force; Get-Item 'C:\\\\Users\\\\KruJames\\\\.gemini\\\\antigravity\\\\scratch\\\\school-website\\\\public\\\\timetable.html', 'C:\\\\Users\\\\KruJames\\\\.gemini\\\\antigravity\\\\scratch\\\\school-website\\\\public\\\\timetable_data.json' | Select-Object Name, Length\")",
+      "Bash(powershell.exe -Command \"\\(Get-Content 'C:\\\\Users\\\\KruJames\\\\.gemini\\\\antigravity\\\\scratch\\\\school-website\\\\public\\\\timetable_data.json' -Raw -Encoding UTF8\\).Substring\\(0,500\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const data=fs.readFileSync\\('C:/Users/KruJames/.gemini/antigravity/scratch/school-website/public/timetable_data.json','utf8'\\); const json=JSON.parse\\(data\\); const ts='// Auto-generated from timetable backup. Bundled with the app for instant load.\\\\nexport const TIMETABLE_BACKUP = '+JSON.stringify\\(json,null,2\\)+' as const;\\\\n'; fs.writeFileSync\\('C:/Users/KruJames/.gemini/antigravity/scratch/school-website/src/data/timetableData.ts', ts, 'utf8'\\); console.log\\('Wrote',ts.length,'chars; profiles:',Object.keys\\(json.profiles\\).length\\);\")",
+      "Bash(grep -iE \"firebase|vercel|netlify|deploy|\\\\.json$\")",
+      "Bash(npx vercel *)",
+      "Bash(node -e \"const j=require\\('C:/Users/KruJames/.gemini/antigravity/scratch/school-website/public/timetable_data.json'\\); const pid=Object.keys\\(j.profiles\\)[0]; const p=j.profiles[pid]; console.log\\('PROFILE KEYS:',Object.keys\\(p\\)\\); console.log\\('DATA KEYS:',Object.keys\\(p.data\\)\\); for\\(const k of Object.keys\\(p.data\\)\\){const v=p.data[k]; console.log\\(' ',k,Array.isArray\\(v\\)?'[arr len='+v.length+']':typeof v\\);}\")",
+      "Bash(node -e \"const j=require\\('C:/Users/KruJames/.gemini/antigravity/scratch/school-website/public/timetable_data.json'\\); const p=j.profiles[Object.keys\\(j.profiles\\)[0]].data; console.log\\('SCHOOL:',JSON.stringify\\(p.school,null,2\\).slice\\(0,400\\)\\); console.log\\('---T0:',JSON.stringify\\(p.teachers[0]\\)\\); console.log\\('---S0:',JSON.stringify\\(p.subjects[0]\\)\\); console.log\\('---R0:',JSON.stringify\\(p.rooms[0]\\)\\); console.log\\('---SLOT0:',JSON.stringify\\(p.slots[0]\\)\\); console.log\\('---DAY0:',JSON.stringify\\(p.days[0]\\)\\); console.log\\('---SCHED keys \\(first 3\\):',Object.keys\\(p.sched\\).slice\\(0,3\\)\\); const k1=Object.keys\\(p.sched\\)[0]; console.log\\('---SCHED['+k1+']:',JSON.stringify\\(p.sched[k1]\\).slice\\(0,500\\)\\);\")",
+      "Bash(node -e \"const {TIMETABLE_BACKUP}=require\\('./src/data/timetableData.ts'.replace\\('.ts',''\\)\\); \")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(Object.keys\\({...p.dependencies,...p.devDependencies}\\).filter\\(k=>/chart|recharts|vis|plot/i.test\\(k\\)\\).join\\('\\\\n'\\)||'no chart lib'\\)\")",
+      "Read(//c/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/data/**)",
+      "WebFetch(domain:www.scimath.org)",
+      "Bash(grep -n \"      ],$\\\\|      ]$\" \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/data/unitExtras.ts\")",
+      "Read(//c/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/**)",
+      "Bash(python3)",
+      "Bash(node -e \"const XLSX=require\\('xlsx'\\);const wb=XLSX.readFile\\('C:/Users/KruJames/Downloads/รายชื่อนักเรียน-บ้านคลองมดแดง-1-2569-22-เม.ย.2569-ไม่เป็นทางการ.xls'\\);console.log\\('Sheets:',wb.SheetNames\\);wb.SheetNames.forEach\\(n=>{const r=XLSX.utils.sheet_to_json\\(wb.Sheets[n],{header:1}\\);console.log\\('---',n,'rows:',r.length\\);console.log\\(JSON.stringify\\(r.slice\\(0,5\\)\\)\\);}\\);\")",
+      "Bash(npm i *)",
+      "Bash(node -e \"const XLSX=require\\('xlsx'\\);const wb=XLSX.readFile\\('C:/Users/KruJames/Downloads/รายชื่อนักเรียน-บ้านคลองมดแดง-1-2569-22-เม.ย.2569-ไม่เป็นทางการ.xls'\\);console.log\\('Sheets:',JSON.stringify\\(wb.SheetNames\\)\\);\")",
+      "Bash(node -e \"const XLSX=require\\('xlsx'\\);const wb=XLSX.readFile\\('C:/Users/KruJames/Downloads/รายชื่อนักเรียน-บ้านคลองมดแดง-1-2569-22-เม.ย.2569-ไม่เป็นทางการ.xls'\\);const r=XLSX.utils.sheet_to_json\\(wb.Sheets['ป.1'],{header:1}\\);r.slice\\(0,15\\).forEach\\(\\(row,i\\)=>console.log\\(i,JSON.stringify\\(row\\)\\)\\);\")",
+      "Bash(node -e \"const d=require\\('./src/data/timetableData.ts'\\);\")",
+      "Bash(node scripts/import_students.cjs)",
+      "Bash(node -e \"const X=require\\('xlsx'\\);['ปพ5','ปพ6'].forEach\\(n=>{const wb=X.readFile\\('C:/Users/KruJames/Downloads/'+n+'.xlsx'\\);console.log\\('===',n,'===','sheets:',wb.SheetNames\\);wb.SheetNames.slice\\(0,3\\).forEach\\(s=>{const r=X.utils.sheet_to_json\\(wb.Sheets[s],{header:1}\\);console.log\\('--',s,'rows:',r.length\\);r.slice\\(0,12\\).forEach\\(\\(row,i\\)=>console.log\\(i,JSON.stringify\\(row\\).slice\\(0,200\\)\\)\\);}\\);}\\);\")"
     ]
   }
 }

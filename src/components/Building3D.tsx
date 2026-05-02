@@ -23,8 +23,8 @@ export default function Building3D({ b }: { b: Building }) {
   const COS = Math.cos(Math.PI / 6);
   const SIN = Math.sin(Math.PI / 6);
   const proj = (x: number, y: number, z: number) => ({
-    sx: (x - y) * COS,
-    sy: (x + y) * SIN - z,
+    sx: (x + y) * COS,
+    sy: (x - y) * SIN - z,
   });
   const P = (x: number, y: number, z: number) => {
     const p = proj(x, y, z);

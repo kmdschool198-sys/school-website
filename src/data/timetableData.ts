@@ -1,0 +1,5234 @@
+// Auto-generated from timetable backup. Bundled with the app for instant load.
+export const TIMETABLE_BACKUP = {
+  "version": "3.0",
+  "exportedAt": "2026-04-23T08:03:33.723Z",
+  "profiles": {
+    "mn62kocmbsz43": {
+      "id": "mn62kocmbsz43",
+      "name": "โรงเรียนบ้านคลองมดแดง",
+      "data": {
+        "school": {
+          "name": "โรงเรียนบ้านคลองมดแดง",
+          "address": "ที่อยู่ 198 หมู่ 3 ตำบลโป่งน้ำร้อน อำเภอคลองลาน จังหวัดกำแพงเพชร 62180",
+          "year": "2569",
+          "semester": "1",
+          "acadName": "นางสาวนริศรา  ทำจิตรเหมาะ",
+          "acadPos": "ครู คศ.1",
+          "principalName": "นายปรัชญา ปรางค์ชัยภูมิ",
+          "principalPos": "ครู คศ.3",
+          "logoDataUrl": "",
+          "logoSize": "small"
+        },
+        "teachers": [
+          {
+            "id": "mnneymfis84hs",
+            "prefix": "นาย",
+            "first": "พีระ",
+            "last": "เดชะผล",
+            "edu": "-",
+            "rank": "ครูชำนาญการ",
+            "dept": "ศิลปะ",
+            "subjects": [
+              "ศิลปะ",
+              "การงานอาชีพ",
+              "เศรษฐกิจและการเงิน6",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455886
+          },
+          {
+            "id": "mnneymfju6fgm",
+            "prefix": "นางสาว",
+            "first": "วิมลรัตน์",
+            "last": "เจริญธัญญากร",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "subjects": [
+              "วิทยาศาสตร์ สิ่งแวดล้อม1",
+              "คณิตศาสตร์4",
+              "คณิตศาสตร์5",
+              "วิทยาศาสตร์ สิ่งแวดล้อม2",
+              "วิทยาศาสตร์ สิ่งแวดล้อม3",
+              "วิทยาศาสตร์ สิ่งแวดล้อม4",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjyinej",
+            "prefix": "นางสาว",
+            "first": "จิราภา",
+            "last": "พานชัย",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "ภาษาไทย",
+            "subjects": [
+              "ภาษาอังกฤษ4",
+              "ภาษาอังกฤษ5",
+              "ภาษาไทย",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjbn7w8",
+            "prefix": "นางสาว",
+            "first": "นริศรา",
+            "last": "ทำจิตรเหมาะ",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "ภาษาไทย",
+            "subjects": [
+              "การงานอาชีพ",
+              "ภาษาไทย3",
+              "ภาษาไทย4",
+              "ภาษาไทย5",
+              "ภาษาไทย6",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjzskpt",
+            "prefix": "นางสาว",
+            "first": "อาริษา",
+            "last": "ฉิมสุพร",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "subjects": [
+              "สุขศึกษาพละ",
+              "สุขภาพกายและจิต4",
+              "สุขภาพกายและจิต5",
+              "สุขภาพกายและจิต6"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjfff44",
+            "prefix": "นางสาว",
+            "first": "ธิดารัตน์",
+            "last": "แรตสอน",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "คณิตศาสตร์",
+            "subjects": [
+              "คณิตศาสตร์1",
+              "คณิตศาสตร์2",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfj0po3m",
+            "prefix": "นาย",
+            "first": "อนันตชัย",
+            "last": "เพ็ชรรี่",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "subjects": [
+              "เทคโนโลยี1",
+              "เทคโนโลยี2",
+              "เทคโนโลยี3",
+              "เทคโนโลยี4",
+              "เทคโนโลยี5",
+              "เทคโนโลยี6",
+              "วิทยาการคำนวณ",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjyz4g0",
+            "prefix": "นางสาว",
+            "first": "ไอยรดา",
+            "last": "อาจจีน",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "ศิลปะ",
+            "subjects": [
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ1",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ2",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ3",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjhjhod",
+            "prefix": "นางสาว",
+            "first": "อรปภา",
+            "last": "หมื่นอภัย",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "คณิตศาสตร์",
+            "subjects": [
+              "คณิตศาสตร์ เพิ่มเติม",
+              "คณิตศาสตร์6",
+              "คณิตศาสตร์"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfj6groz",
+            "prefix": "นาย",
+            "first": "ธิติวุฒิ",
+            "last": "เตยไธสง",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "subjects": [
+              "สังคมศึกษา",
+              "ประวัติศาสตร์",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjwotzm",
+            "prefix": "นาย",
+            "first": "นวพานิชณ์",
+            "last": "วังคีรี",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "ภาษาไทย",
+            "subjects": [
+              "ภาษาไทย1",
+              "สุขภาพกายและจิต1",
+              "ภาษาไทย2",
+              "สุขภาพกายและจิต2",
+              "สุขภาพกายและจิต3",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjbxbdu",
+            "prefix": "นาย",
+            "first": "อรรถชัย",
+            "last": "แก้วเอี่ยม",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "ภาษาต่างประเทศ",
+            "subjects": [
+              "ภาษาอังกฤษ",
+              "ภาษาอังกฤษเพื่อการสื่อสาร",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfj71l0m",
+            "prefix": "นาย",
+            "first": "พิศุทธิ์",
+            "last": "เชาวลิตโรจน์",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "subjects": [
+              "วิทยาศาสตร์และเทคโนโลยี",
+              "คณิตศาสตร์3",
+              "วิทยาศาสตร์3",
+              "วิทยาศาสตร์ สิ่งแวดล้อม5",
+              "วิทยาศาสตร์ สิ่งแวดล้อม6"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjpdrcf",
+            "prefix": "นางสาว",
+            "first": "ธญาภรณ์",
+            "last": "คล้ายเพ็ง",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "ภาษาต่างประเทศ",
+            "subjects": [
+              "ภาษาอังกฤษ1",
+              "ภาษาอังกฤษ2",
+              "ภาษาอังกฤษ3",
+              "ภาษาอังกฤษ6",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjcpyzz",
+            "prefix": "นาย",
+            "first": "กิตติชัย",
+            "last": "การะภักดี",
+            "edu": "-",
+            "rank": "ครูอัตราจ้าง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "subjects": [
+              "สังคมและความเป็นพลเมือง4",
+              "สังคมและความเป็นพลเมือง5",
+              "สังคมและความเป็นพลเมือง6",
+              "เศรษฐกิจและการเงิน4",
+              "เศรษฐกิจและการเงิน5"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjhnc49",
+            "prefix": "นางสาว",
+            "first": "ภัทรสุดา",
+            "last": "สุหงษา",
+            "edu": "-",
+            "rank": "ธุรการ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "subjects": [
+              "สังคมและความเป็นพลเมือง1",
+              "สังคมและความเป็นพลเมือง2",
+              "สังคมและความเป็นพลเมือง3",
+              "เศรษฐกิจและการเงิน1",
+              "เศรษฐกิจและการเงิน2",
+              "เศรษฐกิจและการเงิน3"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          }
+        ],
+        "subjects": [
+          {
+            "id": "mnnbhd8opk9ne",
+            "name": "ลูกเสือ/เนตรนารี",
+            "code": "ลส",
+            "dept": "กิจกรรมพัฒนาผู้เรียน",
+            "hours": 1,
+            "color": "#E0F2FE"
+          },
+          {
+            "id": "mnnbhd8o056q1",
+            "name": "กิจกรรมแนะแนว",
+            "code": "กน",
+            "dept": "กิจกรรมพัฒนาผู้เรียน",
+            "hours": 1,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnnbhd8oy3zsa",
+            "name": "ภาษาไทย1",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 2.5,
+            "color": "#DBEAFE"
+          },
+          {
+            "id": "mnnbhd8owdaet",
+            "name": "ภาษาอังกฤษ1",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 5,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnnbhd8ogbfvk",
+            "name": "เทคโนโลยี1",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#CFFAFE"
+          },
+          {
+            "id": "mnnbhd8o6lmzn",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม1",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FEE2E2"
+          },
+          {
+            "id": "mnnbhd8o1hll7",
+            "name": "คณิตศาสตร์1",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 5,
+            "color": "#DCFCE7"
+          },
+          {
+            "id": "mnnbhd8owgiku",
+            "name": "สังคมและความเป็นพลเมือง1",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#FFF7ED"
+          },
+          {
+            "id": "mnnbhd8ovuodx",
+            "name": "เศรษฐกิจและการเงิน1",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#F0FDF4"
+          },
+          {
+            "id": "mnnbhd8oqfc7y",
+            "name": "สุขภาพกายและจิต1",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 1,
+            "color": "#FDF4FF"
+          },
+          {
+            "id": "mnnbhd8obab9x",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ1",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 1,
+            "color": "#F0F9FF"
+          },
+          {
+            "id": "mnnbhd8oxn8r4",
+            "name": "ชุมนุม",
+            "code": "ชน",
+            "dept": "กิจกรรมพัฒนาผู้เรียน",
+            "hours": 1,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnnctqt3y3swc",
+            "name": "วิทยาศาสตร์และเทคโนโลยี",
+            "code": "ว",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 2,
+            "color": "#F7FEE7"
+          },
+          {
+            "id": "mnncy57bz5vei",
+            "name": "สังคมศึกษา",
+            "code": "ส",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 3,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnnd01guex4nn",
+            "name": "สุขศึกษาพละ",
+            "code": "พ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 2,
+            "color": "#EFF6FF"
+          },
+          {
+            "id": "mnnd0tj46ftlw",
+            "name": "ศิลปะ",
+            "code": "ศ",
+            "dept": "ศิลปะ",
+            "hours": 2,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnnd2y73t0ed6",
+            "name": "การงานอาชีพ",
+            "code": "ง",
+            "dept": "การงานอาชีพ",
+            "hours": 2,
+            "color": "#E0F2FE"
+          },
+          {
+            "id": "mnnd4cdaxq7h3",
+            "name": "ประวัติศาสตร์",
+            "code": "ป",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#DBEAFE"
+          },
+          {
+            "id": "mnnd6auvszgko",
+            "name": "ภาษาอังกฤษ",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 3,
+            "color": "#DCFCE7"
+          },
+          {
+            "id": "mnnd7bbtmvx5s",
+            "name": "คณิตศาสตร์ เพิ่มเติม",
+            "code": "คพ",
+            "dept": "คณิตศาสตร์",
+            "hours": 1,
+            "color": "#FEF3C7"
+          },
+          {
+            "id": "mnnd8i3fospsh",
+            "name": "ทักษะอาชีพ",
+            "code": "อ",
+            "dept": "การงานอาชีพ",
+            "hours": 2,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnnd92sxl7fh1",
+            "name": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "code": "อพ",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 2,
+            "color": "#EDE9FE"
+          },
+          {
+            "id": "mnndbswe555p9",
+            "name": "ภาษาไทย2",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 5,
+            "color": "#D1FAE5"
+          },
+          {
+            "id": "mnne8i3fdg6a5",
+            "name": "ภาษาไทย3",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 4,
+            "color": "#FEE2E2"
+          },
+          {
+            "id": "mnne94kels0hy",
+            "name": "ภาษาไทย4",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 3,
+            "color": "#CFFAFE"
+          },
+          {
+            "id": "mnne9nlz8ctpb",
+            "name": "ภาษาไทย5",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 3,
+            "color": "#FFF7ED"
+          },
+          {
+            "id": "mnnebekb8usod",
+            "name": "ภาษาไทย6",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 1,
+            "color": "#F0FDF4"
+          },
+          {
+            "id": "mnnecbenpaix3",
+            "name": "คณิตศาสตร์2",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 5,
+            "color": "#FDF4FF"
+          },
+          {
+            "id": "mnnecmkcdyclp",
+            "name": "คณิตศาสตร์3",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 4,
+            "color": "#F0F9FF"
+          },
+          {
+            "id": "mnnecvt1sqihy",
+            "name": "คณิตศาสตร์4",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 4,
+            "color": "#FFF1F2"
+          },
+          {
+            "id": "mnned6eu6ldlg",
+            "name": "คณิตศาสตร์5",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 3,
+            "color": "#F7FEE7"
+          },
+          {
+            "id": "mnnedenyp8svx",
+            "name": "คณิตศาสตร์6",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 2,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnneew2ap0ox0",
+            "name": "ภาษาอังกฤษ2",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 4,
+            "color": "#EFF6FF"
+          },
+          {
+            "id": "mnneg59ti87ia",
+            "name": "ภาษาอังกฤษ3",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 4,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnneguiv9ehah",
+            "name": "ภาษาอังกฤษ4",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 3,
+            "color": "#E0F2FE"
+          },
+          {
+            "id": "mnneheyjoth2t",
+            "name": "ภาษาอังกฤษ5",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 2,
+            "color": "#DBEAFE"
+          },
+          {
+            "id": "mnnehnnocizxu",
+            "name": "ภาษาอังกฤษ6",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 2,
+            "color": "#DCFCE7"
+          },
+          {
+            "id": "mnnej1h14r2pr",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม2",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FEF3C7"
+          },
+          {
+            "id": "mnnej8ftdmd7i",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม3",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnnejik085j1g",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม4",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 2,
+            "color": "#EDE9FE"
+          },
+          {
+            "id": "mnnejpozdp8wp",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม5",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 2,
+            "color": "#D1FAE5"
+          },
+          {
+            "id": "mnnek1b0bi08z",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม6",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 2,
+            "color": "#FEE2E2"
+          },
+          {
+            "id": "mnnekrsyp9ife",
+            "name": "เทคโนโลยี2",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#CFFAFE"
+          },
+          {
+            "id": "mnnekxaxvaz71",
+            "name": "เทคโนโลยี3",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FFF7ED"
+          },
+          {
+            "id": "mnnel6hhk2zha",
+            "name": "เทคโนโลยี4",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#F0FDF4"
+          },
+          {
+            "id": "mnnelgbe549nf",
+            "name": "เทคโนโลยี5",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FDF4FF"
+          },
+          {
+            "id": "mnnelmx86klys",
+            "name": "เทคโนโลยี6",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#F0F9FF"
+          },
+          {
+            "id": "mnnena9nwnusc",
+            "name": "สังคมและความเป็นพลเมือง2",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#FFF1F2"
+          },
+          {
+            "id": "mnnenq1lta4i9",
+            "name": "สังคมและความเป็นพลเมือง3",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#F7FEE7"
+          },
+          {
+            "id": "mnnenz0inbjbi",
+            "name": "สังคมและความเป็นพลเมือง4",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 2,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnneo817st6at",
+            "name": "สังคมและความเป็นพลเมือง5",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 3,
+            "color": "#EFF6FF"
+          },
+          {
+            "id": "mnneohw34wq7x",
+            "name": "สังคมและความเป็นพลเมือง6",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 4,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnnepaa0kys1b",
+            "name": "เศรษฐกิจและการเงิน2",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 2,
+            "color": "#E0F2FE"
+          },
+          {
+            "id": "mnnepgkekbdl2",
+            "name": "เศรษฐกิจและการเงิน3",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 2,
+            "color": "#DBEAFE"
+          },
+          {
+            "id": "mnneq4a1v0e3h",
+            "name": "เศรษฐกิจและการเงิน4",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 3,
+            "color": "#DCFCE7"
+          },
+          {
+            "id": "mnneqfxgrboar",
+            "name": "เศรษฐกิจและการเงิน5",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 3,
+            "color": "#FEF3C7"
+          },
+          {
+            "id": "mnneqqzqmfnaf",
+            "name": "เศรษฐกิจและการเงิน6",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 4,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnnesrtzo003d",
+            "name": "สุขภาพกายและจิต2",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 1,
+            "color": "#EDE9FE"
+          },
+          {
+            "id": "mnnet5woi7i82",
+            "name": "สุขภาพกายและจิต3",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 2,
+            "color": "#D1FAE5"
+          },
+          {
+            "id": "mnnetetxby79j",
+            "name": "สุขภาพกายและจิต4",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 2,
+            "color": "#FEE2E2"
+          },
+          {
+            "id": "mnnetsrjzuosv",
+            "name": "สุขภาพกายและจิต5",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 3,
+            "color": "#CFFAFE"
+          },
+          {
+            "id": "mnneu73vs1fah",
+            "name": "สุขภาพกายและจิต6",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 3,
+            "color": "#FFF7ED"
+          },
+          {
+            "id": "mnnevfzhm7o7x",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ2",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 1,
+            "color": "#F0FDF4"
+          },
+          {
+            "id": "mnnevo69jqht9",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ3",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 2,
+            "color": "#FDF4FF"
+          },
+          {
+            "id": "mnnevwlv68k9z",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 2,
+            "color": "#F0F9FF"
+          },
+          {
+            "id": "mnnewa93wrb4l",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 3,
+            "color": "#FFF1F2"
+          },
+          {
+            "id": "mnnewk6959nti",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 3,
+            "color": "#F7FEE7"
+          },
+          {
+            "id": "mnnf0fuvr93um",
+            "name": "ภาษาไทย",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 3,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnnfhsrk0vnlu",
+            "name": "สวดมนต์",
+            "code": "กส",
+            "dept": "",
+            "hours": 1,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnnfjf7zzt2os",
+            "name": "ตลาดนัดอาชีพ",
+            "code": "กต",
+            "dept": "",
+            "hours": 1,
+            "color": "#EFF6FF"
+          },
+          {
+            "id": "mnolg1a62yje3",
+            "name": "คณิตศาสตร์",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 1,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnoljgrne3qut",
+            "name": "วิทยาการคำนวณ",
+            "code": "ว",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnorr1kuxil67",
+            "name": "กิจกรรมตามความสนใจ",
+            "code": "กส",
+            "dept": "",
+            "hours": 1,
+            "color": "#DBEAFE"
+          }
+        ],
+        "rooms": [
+          {
+            "id": "mnnbhd8om45cr",
+            "level": "ประถมศึกษา",
+            "grade": "ป.1",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.1/1"
+          },
+          {
+            "id": "mnnbhd8ofiyyb",
+            "level": "ประถมศึกษา",
+            "grade": "ป.2",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.2/1"
+          },
+          {
+            "id": "mnnbhd8onrgma",
+            "level": "ประถมศึกษา",
+            "grade": "ป.3",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.3/1"
+          },
+          {
+            "id": "mnnbhd8on7ezz",
+            "level": "ประถมศึกษา",
+            "grade": "ป.4",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.4/1"
+          },
+          {
+            "id": "mnnbhd8o4kr0l",
+            "level": "ประถมศึกษา",
+            "grade": "ป.5",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.5/1"
+          },
+          {
+            "id": "mnnbhd8ofr96k",
+            "level": "ประถมศึกษา",
+            "grade": "ป.6",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.6/1"
+          },
+          {
+            "id": "mnnbhd8of8yjf",
+            "level": "มัธยมศึกษาตอนต้น",
+            "grade": "ม.1",
+            "room": "1",
+            "homeroom": "",
+            "label": "ม.1/1"
+          },
+          {
+            "id": "mnnbhd8oqp1am",
+            "level": "มัธยมศึกษาตอนต้น",
+            "grade": "ม.2",
+            "room": "1",
+            "homeroom": "",
+            "label": "ม.2/1"
+          },
+          {
+            "id": "mnnbhd8o0bky9",
+            "level": "มัธยมศึกษาตอนต้น",
+            "grade": "ม.3",
+            "room": "1",
+            "homeroom": "",
+            "label": "ม.3/1"
+          }
+        ],
+        "slots": [
+          {
+            "id": 1,
+            "label": "คาบที่ 1",
+            "start": "08:30",
+            "end": "09:20"
+          },
+          {
+            "id": 2,
+            "label": "คาบที่ 2",
+            "start": "09:20",
+            "end": "10:10"
+          },
+          {
+            "id": 3,
+            "label": "คาบที่ 3",
+            "start": "10:10",
+            "end": "11:00"
+          },
+          {
+            "id": 4,
+            "label": "คาบที่ 4",
+            "start": "11:00",
+            "end": "11:50"
+          },
+          {
+            "id": 6,
+            "label": "คาบที่ 5",
+            "start": "13:00",
+            "end": "13:50"
+          },
+          {
+            "id": 7,
+            "label": "คาบที่ 6",
+            "start": "13:50",
+            "end": "14:40"
+          },
+          {
+            "id": 8,
+            "label": "คาบที่ 7",
+            "start": "14:40",
+            "end": "15:30"
+          }
+        ],
+        "days": [
+          "จันทร์",
+          "อังคาร",
+          "พุธ",
+          "พฤหัสบดี",
+          "ศุกร์"
+        ],
+        "sched": {
+          "mnnbhd8of8yjf_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_1_จันทร์": {
+            "subject": "วิทยาการคำนวณ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8of8yjf_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_2_พฤหัสบดี": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ1",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofiyyb_2_พฤหัสบดี": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_1_พฤหัสบดี": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ2",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8om45cr_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_1_จันทร์": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_1_อังคาร": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_2_อังคาร": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_3_พุธ": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_4_พฤหัสบดี": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_4_ศุกร์": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_1_ศุกร์": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_1_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_2_พุธ": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_3_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_4_จันทร์": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_2_จันทร์": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_3_อังคาร": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_4_พุธ": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_2_ศุกร์": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_3_ศุกร์": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม1",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8om45cr_1_พุธ": {
+            "subject": "เทคโนโลยี1",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8om45cr_3_จันทร์": {
+            "subject": "สังคมและความเป็นพลเมือง1",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8om45cr_4_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน1",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8om45cr_6_อังคาร": {
+            "subject": "สุขภาพกายและจิต1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_1_จันทร์": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_2_อังคาร": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_3_พุธ": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_4_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_4_ศุกร์": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_1_ศุกร์": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_4_พุธ": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_3_อังคาร": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_2_จันทร์": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_1_พุธ": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_3_จันทร์": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_4_จันทร์": {
+            "subject": "สังคมและความเป็นพลเมือง2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8ofiyyb_4_อังคาร": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_3_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_1_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8ofiyyb_2_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8ofiyyb_2_ศุกร์": {
+            "subject": "เทคโนโลยี2",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8ofiyyb_3_ศุกร์": {
+            "subject": "สุขภาพกายและจิต2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_6_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม2",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8onrgma_1_จันทร์": {
+            "subject": "คณิตศาสตร์3",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8onrgma_2_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8onrgma_1_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์3",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8onrgma_2_ศุกร์": {
+            "subject": "คณิตศาสตร์3",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8onrgma_2_จันทร์": {
+            "subject": "ภาษาไทย3",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_3_อังคาร": {
+            "subject": "ภาษาไทย3",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_4_พุธ": {
+            "subject": "ภาษาไทย3",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_1_ศุกร์": {
+            "subject": "ภาษาไทย3",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_4_จันทร์": {
+            "subject": "ภาษาอังกฤษ3",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8onrgma_4_อังคาร": {
+            "subject": "คณิตศาสตร์3",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8onrgma_1_อังคาร": {
+            "subject": "ภาษาอังกฤษ3",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8onrgma_3_พุธ": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม3",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8onrgma_3_พฤหัสบดี": {
+            "subject": "สุขภาพกายและจิต3",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8onrgma_2_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ3",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8onrgma_1_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน3",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8onrgma_2_พุธ": {
+            "subject": "สุขภาพกายและจิต3",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8onrgma_3_จันทร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ3",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8onrgma_4_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม3",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8onrgma_4_ศุกร์": {
+            "subject": "เทคโนโลยี3",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8onrgma_6_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน3",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8onrgma_3_ศุกร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ3",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8on7ezz_1_จันทร์": {
+            "subject": "ภาษาไทย4",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8on7ezz_2_จันทร์": {
+            "subject": "คณิตศาสตร์4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_1_อังคาร": {
+            "subject": "คณิตศาสตร์4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_2_พุธ": {
+            "subject": "คณิตศาสตร์4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_1_ศุกร์": {
+            "subject": "คณิตศาสตร์4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_3_จันทร์": {
+            "subject": "ภาษาอังกฤษ4",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8on7ezz_1_พุธ": {
+            "subject": "ภาษาอังกฤษ4",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8on7ezz_2_พฤหัสบดี": {
+            "subject": "ภาษาไทย4",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8on7ezz_4_อังคาร": {
+            "subject": "ภาษาไทย4",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8on7ezz_3_ศุกร์": {
+            "subject": "ภาษาอังกฤษ4",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8on7ezz_4_จันทร์": {
+            "subject": "เศรษฐกิจและการเงิน4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_4_พุธ": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_1_พฤหัสบดี": {
+            "subject": "สังคมและความเป็นพลเมือง4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_3_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_2_อังคาร": {
+            "subject": "เทคโนโลยี4",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8on7ezz_2_ศุกร์": {
+            "subject": "เศรษฐกิจและการเงิน4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_3_พุธ": {
+            "subject": "สังคมและความเป็นพลเมือง4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_3_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_4_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ4",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8on7ezz_6_อังคาร": {
+            "subject": "สุขภาพกายและจิต4",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8on7ezz_4_ศุกร์": {
+            "subject": "สุขภาพกายและจิต4",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8on7ezz_6_พุธ": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8o4kr0l_4_จันทร์": {
+            "subject": "คณิตศาสตร์5",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8o4kr0l_3_อังคาร": {
+            "subject": "คณิตศาสตร์5",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8o4kr0l_1_ศุกร์": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม5",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8o4kr0l_3_ศุกร์": {
+            "subject": "สุขภาพกายและจิต5",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o4kr0l_2_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์5",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8o4kr0l_2_จันทร์": {
+            "subject": "ภาษาอังกฤษ5",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o4kr0l_1_อังคาร": {
+            "subject": "ภาษาไทย5",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o4kr0l_1_พุธ": {
+            "subject": "สังคมและความเป็นพลเมือง5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_1_พฤหัสบดี": {
+            "subject": "เทคโนโลยี5",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8o4kr0l_3_จันทร์": {
+            "subject": "สังคมและความเป็นพลเมือง5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_2_พุธ": {
+            "subject": "ภาษาอังกฤษ5",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o4kr0l_1_จันทร์": {
+            "subject": "เศรษฐกิจและการเงิน5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_2_อังคาร": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8o4kr0l_3_พฤหัสบดี": {
+            "subject": "สังคมและความเป็นพลเมือง5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_4_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_4_ศุกร์": {
+            "subject": "ภาษาไทย5",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o4kr0l_6_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_3_พุธ": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม5",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8o4kr0l_2_ศุกร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8o4kr0l_4_พุธ": {
+            "subject": "สุขภาพกายและจิต5",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o4kr0l_4_พฤหัสบดี": {
+            "subject": "สุขภาพกายและจิต5",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o4kr0l_6_พฤหัสบดี": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_1_จันทร์": {
+            "subject": "คณิตศาสตร์6",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8ofr96k_1_ศุกร์": {
+            "subject": "คณิตศาสตร์6",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8ofr96k_1_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_1_พฤหัสบดี": {
+            "subject": "สุขภาพกายและจิต6",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8ofr96k_2_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_3_จันทร์": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม6",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8ofr96k_1_อังคาร": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม6",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8ofr96k_4_จันทร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_2_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง6",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8ofr96k_2_พุธ": {
+            "subject": "สังคมและความเป็นพลเมือง6",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8ofr96k_2_ศุกร์": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_2_พฤหัสบดี": {
+            "subject": "สังคมและความเป็นพลเมือง6",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8ofr96k_3_ศุกร์": {
+            "subject": "สังคมและความเป็นพลเมือง6",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8ofr96k_3_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_3_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_3_พฤหัสบดี": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_6_อังคาร": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม6",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8ofr96k_6_พุธ": {
+            "subject": "สุขภาพกายและจิต6",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8ofr96k_6_พฤหัสบดี": {
+            "subject": "สุขภาพกายและจิต6",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8ofr96k_4_ศุกร์": {
+            "subject": "ภาษาอังกฤษ6",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofr96k_4_อังคาร": {
+            "subject": "สุขภาพกายและจิต6",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8ofr96k_4_พฤหัสบดี": {
+            "subject": "เทคโนโลยี6",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8ofr96k_4_พุธ": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8of8yjf_2_อังคาร": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8of8yjf_3_พุธ": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8of8yjf_1_อังคาร": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8of8yjf_2_พุธ": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8of8yjf_3_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_1_พุธ": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8of8yjf_2_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8of8yjf_2_ศุกร์": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8of8yjf_1_ศุกร์": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_1_พฤหัสบดี": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8of8yjf_4_พุธ": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_3_อังคาร": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8of8yjf_2_จันทร์": {
+            "subject": "ประวัติศาสตร์",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8of8yjf_3_จันทร์": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8of8yjf_4_พฤหัสบดี": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8of8yjf_4_ศุกร์": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8of8yjf_3_ศุกร์": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8of8yjf_6_อังคาร": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_4_อังคาร": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_1_จันทร์": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8oqp1am_1_อังคาร": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o0bky9_2_จันทร์": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o0bky9_2_อังคาร": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8of8yjf_4_จันทร์": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8of8yjf_6_พุธ": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8of8yjf_6_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_7_จันทร์": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8of8yjf_7_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8of8yjf_8_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8of8yjf_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8of8yjf_8_จันทร์": {
+            "subject": "คณิตศาสตร์ เพิ่มเติม",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_2_จันทร์": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_3_อังคาร": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8oqp1am_4_พุธ": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_6_พฤหัสบดี": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8oqp1am_2_อังคาร": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_4_ศุกร์": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8oqp1am_4_จันทร์": {
+            "subject": "ประวัติศาสตร์",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_2_พุธ": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8oqp1am_1_พุธ": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_2_พฤหัสบดี": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_1_ศุกร์": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_3_จันทร์": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_1_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_2_ศุกร์": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_3_พุธ": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_3_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์ เพิ่มเติม",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_4_อังคาร": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8oqp1am_6_พุธ": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8oqp1am_4_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8oqp1am_3_ศุกร์": {
+            "subject": "วิทยาการคำนวณ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8oqp1am_7_จันทร์": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_8_จันทร์": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8oqp1am_6_อังคาร": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8oqp1am_7_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8oqp1am_8_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8o0bky9_1_ศุกร์": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o0bky9_2_พฤหัสบดี": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o0bky9_1_พุธ": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_1_อังคาร": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_1_จันทร์": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_1_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_2_พุธ": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_2_ศุกร์": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_4_ศุกร์": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_6_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8o0bky9_3_ศุกร์": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_7_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_8_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_3_พฤหัสบดี": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8o0bky9_8_จันทร์": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8o0bky9_6_พุธ": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o0bky9_7_พุธ": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o0bky9_3_จันทร์": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8o0bky9_4_พุธ": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o0bky9_7_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_4_จันทร์": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_3_อังคาร": {
+            "subject": "วิทยาการคำนวณ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8o0bky9_3_พุธ": {
+            "subject": "คณิตศาสตร์ เพิ่มเติม",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_4_พฤหัสบดี": {
+            "subject": "ประวัติศาสตร์",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_4_อังคาร": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_6_อังคาร": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8om45cr_6_พุธ": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_7_จันทร์": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_6_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8ofiyyb_7_จันทร์": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_6_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8ofiyyb_8_จันทร์": {
+            "subject": "สังคมและความเป็นพลเมือง2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8om45cr_8_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_7_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_8_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_6_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8om45cr_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8onrgma_7_จันทร์": {
+            "subject": "เศรษฐกิจและการเงิน3",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8onrgma_6_พุธ": {
+            "subject": "สังคมและความเป็นพลเมือง3",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8on7ezz_6_พฤหัสบดี": {
+            "subject": "ภาษาไทย4",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8on7ezz_8_จันทร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8on7ezz_8_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_7_จันทร์": {
+            "subject": "สุขภาพกายและจิต4",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8on7ezz_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_7_อังคาร": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8o4kr0l_7_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_6_อังคาร": {
+            "subject": "ภาษาอังกฤษ5",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o4kr0l_7_จันทร์": {
+            "subject": "ภาษาไทย5",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o4kr0l_7_พฤหัสบดี": {
+            "subject": "เศรษฐกิจและการเงิน5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_8_อังคาร": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม5",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8ofr96k_8_จันทร์": {
+            "subject": "ภาษาไทย6",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8ofr96k_8_อังคาร": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_7_อังคาร": {
+            "subject": "ภาษาไทย6",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8ofr96k_7_จันทร์": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_7_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ6",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_7_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofiyyb_8_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofiyyb_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8ofiyyb_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8onrgma_8_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_8_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_7_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8onrgma_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8onrgma_6_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8onrgma_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8oqp1am_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8o4kr0l_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8o4kr0l_8_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8on7ezz_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8ofr96k_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          }
+        },
+        "substitute": {
+          "2026-05-27": {
+            "absentList": []
+          }
+        },
+        "schedule": {
+          "0": {
+            "จันทร์": {
+              "p1": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p2": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p3": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p4": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p5": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p6": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p7": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p8": {
+                "subject": "1",
+                "teacher": "1"
+              }
+            },
+            "อังคาร": {
+              "p1": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p2": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p3": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p4": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p5": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p6": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p7": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p8": {
+                "subject": "4",
+                "teacher": "0"
+              }
+            },
+            "พุธ": {
+              "p1": {
+                "subject": "5",
+                "teacher": "0"
+              },
+              "p2": {
+                "subject": "11",
+                "teacher": "0"
+              },
+              "p5": {
+                "subject": "6",
+                "teacher": "1"
+              },
+              "p6": {
+                "subject": "8",
+                "teacher": "2"
+              },
+              "p7": {
+                "subject": "10",
+                "teacher": "2"
+              }
+            },
+            "พฤหัสบดี": {
+              "p1": {
+                "subject": "12",
+                "teacher": "2"
+              }
+            }
+          },
+          "1": {
+            "จันทร์": {
+              "p6": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p7": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p1": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p2": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p3": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p4": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p5": {
+                "subject": "1",
+                "teacher": "1"
+              }
+            },
+            "อังคาร": {
+              "p1": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p2": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p3": {
+                "subject": "6",
+                "teacher": "1"
+              }
+            },
+            "พุธ": {
+              "p1": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p2": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p3": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p4": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p5": {
+                "subject": "4",
+                "teacher": "0"
+              },
+              "p7": {
+                "subject": "5",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "8",
+                "teacher": "2"
+              }
+            },
+            "พฤหัสบดี": {
+              "p1": {
+                "subject": "11",
+                "teacher": "0"
+              },
+              "p2": {
+                "subject": "10",
+                "teacher": "2"
+              },
+              "p3": {
+                "subject": "12",
+                "teacher": "2"
+              }
+            }
+          },
+          "2": {
+            "อังคาร": {
+              "p3": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p4": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p5": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p6": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p7": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "1",
+                "teacher": "1"
+              }
+            },
+            "พุธ": {
+              "p1": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p2": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p3": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p4": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p6": {
+                "subject": "4",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "5",
+                "teacher": "0"
+              },
+              "p7": {
+                "subject": "6",
+                "teacher": "1"
+              }
+            },
+            "จันทร์": {
+              "p1": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p2": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p3": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p4": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p5": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p6": {
+                "subject": "8",
+                "teacher": "2"
+              },
+              "p7": {
+                "subject": "10",
+                "teacher": "2"
+              },
+              "p8": {
+                "subject": "12",
+                "teacher": "2"
+              }
+            },
+            "พฤหัสบดี": {
+              "p2": {
+                "subject": "11",
+                "teacher": "0"
+              }
+            }
+          }
+        }
+      },
+      "savedAt": 1775895576196,
+      "year": "2569"
+    },
+    "mnpn05nm2zaob": {
+      "id": "mnpn05nm2zaob",
+      "name": "โรงเรียนบ้านคลองมดแดง",
+      "data": {
+        "school": {
+          "name": "โรงเรียนบ้านคลองมดแดง",
+          "address": "ที่อยู่ 198 หมู่ 3 ตำบลโป่งน้ำร้อน อำเภอคลองลาน จังหวัดกำแพงเพชร 62180",
+          "year": "2569",
+          "semester": "1",
+          "acadName": "นางสาวนริศรา  ทำจิตรเหมาะ",
+          "acadPos": "ครู คศ.1",
+          "principalName": "นายปรัชญา ปรางค์ชัยภูมิ",
+          "principalPos": "ครู คศ.3",
+          "logoDataUrl": "",
+          "logoSize": "small"
+        },
+        "teachers": [
+          {
+            "id": "mnneymfis84hs",
+            "prefix": "นาย",
+            "first": "พีระ",
+            "last": "เดชะผล",
+            "edu": "-",
+            "rank": "ครูชำนาญการ",
+            "dept": "ศิลปะ",
+            "subjects": [
+              "ศิลปะ",
+              "การงานอาชีพ",
+              "เศรษฐกิจและการเงิน6",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455886
+          },
+          {
+            "id": "mnneymfju6fgm",
+            "prefix": "นางสาว",
+            "first": "วิมลรัตน์",
+            "last": "เจริญธัญญากร",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "subjects": [
+              "วิทยาศาสตร์ สิ่งแวดล้อม1",
+              "คณิตศาสตร์4",
+              "คณิตศาสตร์5",
+              "วิทยาศาสตร์ สิ่งแวดล้อม2",
+              "วิทยาศาสตร์ สิ่งแวดล้อม3",
+              "วิทยาศาสตร์ สิ่งแวดล้อม4",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjyinej",
+            "prefix": "นางสาว",
+            "first": "จิราภา",
+            "last": "พานชัย",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "ภาษาไทย",
+            "subjects": [
+              "ภาษาอังกฤษ4",
+              "ภาษาอังกฤษ5",
+              "ภาษาไทย",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjbn7w8",
+            "prefix": "นางสาว",
+            "first": "นริศรา",
+            "last": "ทำจิตรเหมาะ",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "ภาษาไทย",
+            "subjects": [
+              "การงานอาชีพ",
+              "ภาษาไทย3",
+              "ภาษาไทย4",
+              "ภาษาไทย5",
+              "ภาษาไทย6",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjzskpt",
+            "prefix": "นางสาว",
+            "first": "อาริษา",
+            "last": "ฉิมสุพร",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "subjects": [
+              "สุขศึกษาพละ",
+              "สุขภาพกายและจิต4",
+              "สุขภาพกายและจิต5",
+              "สุขภาพกายและจิต6"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjfff44",
+            "prefix": "นางสาว",
+            "first": "ธิดารัตน์",
+            "last": "แรตสอน",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "คณิตศาสตร์",
+            "subjects": [
+              "คณิตศาสตร์1",
+              "คณิตศาสตร์2",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfj0po3m",
+            "prefix": "นาย",
+            "first": "อนันตชัย",
+            "last": "เพ็ชรรี่",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "subjects": [
+              "เทคโนโลยี1",
+              "เทคโนโลยี2",
+              "เทคโนโลยี3",
+              "เทคโนโลยี4",
+              "เทคโนโลยี5",
+              "เทคโนโลยี6",
+              "วิทยาการคำนวณ",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjyz4g0",
+            "prefix": "นางสาว",
+            "first": "ไอยรดา",
+            "last": "อาจจีน",
+            "edu": "-",
+            "rank": "ครู คศ.1",
+            "dept": "ศิลปะ",
+            "subjects": [
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ1",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ2",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ3",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+              "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjhjhod",
+            "prefix": "นางสาว",
+            "first": "อรปภา",
+            "last": "หมื่นอภัย",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "คณิตศาสตร์",
+            "subjects": [
+              "คณิตศาสตร์ เพิ่มเติม",
+              "คณิตศาสตร์6",
+              "คณิตศาสตร์"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfj6groz",
+            "prefix": "นาย",
+            "first": "ธิติวุฒิ",
+            "last": "เตยไธสง",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "subjects": [
+              "สังคมศึกษา",
+              "ประวัติศาสตร์",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjwotzm",
+            "prefix": "นาย",
+            "first": "นวพานิชณ์",
+            "last": "วังคีรี",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "ภาษาไทย",
+            "subjects": [
+              "ภาษาไทย1",
+              "สุขภาพกายและจิต1",
+              "ภาษาไทย2",
+              "สุขภาพกายและจิต2",
+              "สุขภาพกายและจิต3",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjbxbdu",
+            "prefix": "นาย",
+            "first": "อรรถชัย",
+            "last": "แก้วเอี่ยม",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "ภาษาต่างประเทศ",
+            "subjects": [
+              "ภาษาอังกฤษ",
+              "ภาษาอังกฤษเพื่อการสื่อสาร",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfj71l0m",
+            "prefix": "นาย",
+            "first": "พิศุทธิ์",
+            "last": "เชาวลิตโรจน์",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "subjects": [
+              "วิทยาศาสตร์และเทคโนโลยี",
+              "คณิตศาสตร์3",
+              "วิทยาศาสตร์3",
+              "วิทยาศาสตร์ สิ่งแวดล้อม5",
+              "วิทยาศาสตร์ สิ่งแวดล้อม6"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjpdrcf",
+            "prefix": "นางสาว",
+            "first": "ธญาภรณ์",
+            "last": "คล้ายเพ็ง",
+            "edu": "-",
+            "rank": "ครูผู้ช่วย",
+            "dept": "ภาษาต่างประเทศ",
+            "subjects": [
+              "ภาษาอังกฤษ1",
+              "ภาษาอังกฤษ2",
+              "ภาษาอังกฤษ3",
+              "ภาษาอังกฤษ6",
+              "กิจกรรมตามความสนใจ"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjcpyzz",
+            "prefix": "นาย",
+            "first": "กิตติชัย",
+            "last": "การะภักดี",
+            "edu": "-",
+            "rank": "ครูอัตราจ้าง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "subjects": [
+              "สังคมและความเป็นพลเมือง4",
+              "สังคมและความเป็นพลเมือง5",
+              "สังคมและความเป็นพลเมือง6",
+              "เศรษฐกิจและการเงิน4",
+              "เศรษฐกิจและการเงิน5"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          },
+          {
+            "id": "mnneymfjhnc49",
+            "prefix": "นางสาว",
+            "first": "ภัทรสุดา",
+            "last": "สุหงษา",
+            "edu": "-",
+            "rank": "ธุรการ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "subjects": [
+              "สังคมและความเป็นพลเมือง1",
+              "สังคมและความเป็นพลเมือง2",
+              "สังคมและความเป็นพลเมือง3",
+              "เศรษฐกิจและการเงิน1",
+              "เศรษฐกิจและการเงิน2",
+              "เศรษฐกิจและการเงิน3"
+            ],
+            "phone": "-",
+            "email": "-",
+            "note": "",
+            "createdAt": 1775493455887
+          }
+        ],
+        "subjects": [
+          {
+            "id": "mnnbhd8opk9ne",
+            "name": "ลูกเสือ/เนตรนารี",
+            "code": "ลส",
+            "dept": "กิจกรรมพัฒนาผู้เรียน",
+            "hours": 1,
+            "color": "#E0F2FE"
+          },
+          {
+            "id": "mnnbhd8o056q1",
+            "name": "กิจกรรมแนะแนว",
+            "code": "กน",
+            "dept": "กิจกรรมพัฒนาผู้เรียน",
+            "hours": 1,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnnbhd8oy3zsa",
+            "name": "ภาษาไทย1",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 2.5,
+            "color": "#DBEAFE"
+          },
+          {
+            "id": "mnnbhd8owdaet",
+            "name": "ภาษาอังกฤษ1",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 5,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnnbhd8ogbfvk",
+            "name": "เทคโนโลยี1",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#CFFAFE"
+          },
+          {
+            "id": "mnnbhd8o6lmzn",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม1",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FEE2E2"
+          },
+          {
+            "id": "mnnbhd8o1hll7",
+            "name": "คณิตศาสตร์1",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 5,
+            "color": "#DCFCE7"
+          },
+          {
+            "id": "mnnbhd8owgiku",
+            "name": "สังคมและความเป็นพลเมือง1",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#FFF7ED"
+          },
+          {
+            "id": "mnnbhd8ovuodx",
+            "name": "เศรษฐกิจและการเงิน1",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#F0FDF4"
+          },
+          {
+            "id": "mnnbhd8oqfc7y",
+            "name": "สุขภาพกายและจิต1",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 1,
+            "color": "#FDF4FF"
+          },
+          {
+            "id": "mnnbhd8obab9x",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ1",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 1,
+            "color": "#F0F9FF"
+          },
+          {
+            "id": "mnnbhd8oxn8r4",
+            "name": "ชุมนุม",
+            "code": "ชน",
+            "dept": "กิจกรรมพัฒนาผู้เรียน",
+            "hours": 1,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnnctqt3y3swc",
+            "name": "วิทยาศาสตร์และเทคโนโลยี",
+            "code": "ว",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 2,
+            "color": "#F7FEE7"
+          },
+          {
+            "id": "mnncy57bz5vei",
+            "name": "สังคมศึกษา",
+            "code": "ส",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 3,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnnd01guex4nn",
+            "name": "สุขศึกษาพละ",
+            "code": "พ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 2,
+            "color": "#EFF6FF"
+          },
+          {
+            "id": "mnnd0tj46ftlw",
+            "name": "ศิลปะ",
+            "code": "ศ",
+            "dept": "ศิลปะ",
+            "hours": 2,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnnd2y73t0ed6",
+            "name": "การงานอาชีพ",
+            "code": "ง",
+            "dept": "การงานอาชีพ",
+            "hours": 2,
+            "color": "#E0F2FE"
+          },
+          {
+            "id": "mnnd4cdaxq7h3",
+            "name": "ประวัติศาสตร์",
+            "code": "ป",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#DBEAFE"
+          },
+          {
+            "id": "mnnd6auvszgko",
+            "name": "ภาษาอังกฤษ",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 3,
+            "color": "#DCFCE7"
+          },
+          {
+            "id": "mnnd7bbtmvx5s",
+            "name": "คณิตศาสตร์ เพิ่มเติม",
+            "code": "คพ",
+            "dept": "คณิตศาสตร์",
+            "hours": 1,
+            "color": "#FEF3C7"
+          },
+          {
+            "id": "mnnd8i3fospsh",
+            "name": "ทักษะอาชีพ",
+            "code": "อ",
+            "dept": "การงานอาชีพ",
+            "hours": 2,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnnd92sxl7fh1",
+            "name": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "code": "อพ",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 2,
+            "color": "#EDE9FE"
+          },
+          {
+            "id": "mnndbswe555p9",
+            "name": "ภาษาไทย2",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 5,
+            "color": "#D1FAE5"
+          },
+          {
+            "id": "mnne8i3fdg6a5",
+            "name": "ภาษาไทย3",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 4,
+            "color": "#FEE2E2"
+          },
+          {
+            "id": "mnne94kels0hy",
+            "name": "ภาษาไทย4",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 3,
+            "color": "#CFFAFE"
+          },
+          {
+            "id": "mnne9nlz8ctpb",
+            "name": "ภาษาไทย5",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 3,
+            "color": "#FFF7ED"
+          },
+          {
+            "id": "mnnebekb8usod",
+            "name": "ภาษาไทย6",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 1,
+            "color": "#F0FDF4"
+          },
+          {
+            "id": "mnnecbenpaix3",
+            "name": "คณิตศาสตร์2",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 5,
+            "color": "#FDF4FF"
+          },
+          {
+            "id": "mnnecmkcdyclp",
+            "name": "คณิตศาสตร์3",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 4,
+            "color": "#F0F9FF"
+          },
+          {
+            "id": "mnnecvt1sqihy",
+            "name": "คณิตศาสตร์4",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 4,
+            "color": "#FFF1F2"
+          },
+          {
+            "id": "mnned6eu6ldlg",
+            "name": "คณิตศาสตร์5",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 3,
+            "color": "#F7FEE7"
+          },
+          {
+            "id": "mnnedenyp8svx",
+            "name": "คณิตศาสตร์6",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 2,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnneew2ap0ox0",
+            "name": "ภาษาอังกฤษ2",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 4,
+            "color": "#EFF6FF"
+          },
+          {
+            "id": "mnneg59ti87ia",
+            "name": "ภาษาอังกฤษ3",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 4,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnneguiv9ehah",
+            "name": "ภาษาอังกฤษ4",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 3,
+            "color": "#E0F2FE"
+          },
+          {
+            "id": "mnneheyjoth2t",
+            "name": "ภาษาอังกฤษ5",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 2,
+            "color": "#DBEAFE"
+          },
+          {
+            "id": "mnnehnnocizxu",
+            "name": "ภาษาอังกฤษ6",
+            "code": "ต",
+            "dept": "ภาษาต่างประเทศ",
+            "hours": 2,
+            "color": "#DCFCE7"
+          },
+          {
+            "id": "mnnej1h14r2pr",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม2",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FEF3C7"
+          },
+          {
+            "id": "mnnej8ftdmd7i",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม3",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnnejik085j1g",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม4",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 2,
+            "color": "#EDE9FE"
+          },
+          {
+            "id": "mnnejpozdp8wp",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม5",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 2,
+            "color": "#D1FAE5"
+          },
+          {
+            "id": "mnnek1b0bi08z",
+            "name": "วิทยาศาสตร์ สิ่งแวดล้อม6",
+            "code": "วส",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 2,
+            "color": "#FEE2E2"
+          },
+          {
+            "id": "mnnekrsyp9ife",
+            "name": "เทคโนโลยี2",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#CFFAFE"
+          },
+          {
+            "id": "mnnekxaxvaz71",
+            "name": "เทคโนโลยี3",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FFF7ED"
+          },
+          {
+            "id": "mnnel6hhk2zha",
+            "name": "เทคโนโลยี4",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#F0FDF4"
+          },
+          {
+            "id": "mnnelgbe549nf",
+            "name": "เทคโนโลยี5",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FDF4FF"
+          },
+          {
+            "id": "mnnelmx86klys",
+            "name": "เทคโนโลยี6",
+            "code": "ท",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#F0F9FF"
+          },
+          {
+            "id": "mnnena9nwnusc",
+            "name": "สังคมและความเป็นพลเมือง2",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#FFF1F2"
+          },
+          {
+            "id": "mnnenq1lta4i9",
+            "name": "สังคมและความเป็นพลเมือง3",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 1,
+            "color": "#F7FEE7"
+          },
+          {
+            "id": "mnnenz0inbjbi",
+            "name": "สังคมและความเป็นพลเมือง4",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 2,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnneo817st6at",
+            "name": "สังคมและความเป็นพลเมือง5",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 3,
+            "color": "#EFF6FF"
+          },
+          {
+            "id": "mnneohw34wq7x",
+            "name": "สังคมและความเป็นพลเมือง6",
+            "code": "สพ",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 4,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnnepaa0kys1b",
+            "name": "เศรษฐกิจและการเงิน2",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 2,
+            "color": "#E0F2FE"
+          },
+          {
+            "id": "mnnepgkekbdl2",
+            "name": "เศรษฐกิจและการเงิน3",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 2,
+            "color": "#DBEAFE"
+          },
+          {
+            "id": "mnneq4a1v0e3h",
+            "name": "เศรษฐกิจและการเงิน4",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 3,
+            "color": "#DCFCE7"
+          },
+          {
+            "id": "mnneqfxgrboar",
+            "name": "เศรษฐกิจและการเงิน5",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 3,
+            "color": "#FEF3C7"
+          },
+          {
+            "id": "mnneqqzqmfnaf",
+            "name": "เศรษฐกิจและการเงิน6",
+            "code": "ศง",
+            "dept": "สังคมศึกษา ศาสนา และวัฒนธรรม",
+            "hours": 4,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnnesrtzo003d",
+            "name": "สุขภาพกายและจิต2",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 1,
+            "color": "#EDE9FE"
+          },
+          {
+            "id": "mnnet5woi7i82",
+            "name": "สุขภาพกายและจิต3",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 2,
+            "color": "#D1FAE5"
+          },
+          {
+            "id": "mnnetetxby79j",
+            "name": "สุขภาพกายและจิต4",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 2,
+            "color": "#FEE2E2"
+          },
+          {
+            "id": "mnnetsrjzuosv",
+            "name": "สุขภาพกายและจิต5",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 3,
+            "color": "#CFFAFE"
+          },
+          {
+            "id": "mnneu73vs1fah",
+            "name": "สุขภาพกายและจิต6",
+            "code": "สจ",
+            "dept": "สุขศึกษาและพลศึกษา",
+            "hours": 3,
+            "color": "#FFF7ED"
+          },
+          {
+            "id": "mnnevfzhm7o7x",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ2",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 1,
+            "color": "#F0FDF4"
+          },
+          {
+            "id": "mnnevo69jqht9",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ3",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 2,
+            "color": "#FDF4FF"
+          },
+          {
+            "id": "mnnevwlv68k9z",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 2,
+            "color": "#F0F9FF"
+          },
+          {
+            "id": "mnnewa93wrb4l",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 3,
+            "color": "#FFF1F2"
+          },
+          {
+            "id": "mnnewk6959nti",
+            "name": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "code": "ศว",
+            "dept": "ศิลปะ",
+            "hours": 3,
+            "color": "#F7FEE7"
+          },
+          {
+            "id": "mnnf0fuvr93um",
+            "name": "ภาษาไทย",
+            "code": "ท",
+            "dept": "ภาษาไทย",
+            "hours": 3,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnnfhsrk0vnlu",
+            "name": "สวดมนต์",
+            "code": "กส",
+            "dept": "",
+            "hours": 1,
+            "color": "#ECFDF5"
+          },
+          {
+            "id": "mnnfjf7zzt2os",
+            "name": "ตลาดนัดอาชีพ",
+            "code": "กต",
+            "dept": "",
+            "hours": 1,
+            "color": "#EFF6FF"
+          },
+          {
+            "id": "mnolg1a62yje3",
+            "name": "คณิตศาสตร์",
+            "code": "ค",
+            "dept": "คณิตศาสตร์",
+            "hours": 1,
+            "color": "#FFF8F0"
+          },
+          {
+            "id": "mnoljgrne3qut",
+            "name": "วิทยาการคำนวณ",
+            "code": "ว",
+            "dept": "วิทยาศาสตร์และเทคโนโลยี",
+            "hours": 1,
+            "color": "#FCE7F3"
+          },
+          {
+            "id": "mnorr1kuxil67",
+            "name": "กิจกรรมตามความสนใจ",
+            "code": "กส",
+            "dept": "",
+            "hours": 1,
+            "color": "#DBEAFE"
+          }
+        ],
+        "rooms": [
+          {
+            "id": "mnnbhd8om45cr",
+            "level": "ประถมศึกษา",
+            "grade": "ป.1",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.1/1"
+          },
+          {
+            "id": "mnnbhd8ofiyyb",
+            "level": "ประถมศึกษา",
+            "grade": "ป.2",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.2/1"
+          },
+          {
+            "id": "mnnbhd8onrgma",
+            "level": "ประถมศึกษา",
+            "grade": "ป.3",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.3/1"
+          },
+          {
+            "id": "mnnbhd8on7ezz",
+            "level": "ประถมศึกษา",
+            "grade": "ป.4",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.4/1"
+          },
+          {
+            "id": "mnnbhd8o4kr0l",
+            "level": "ประถมศึกษา",
+            "grade": "ป.5",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.5/1"
+          },
+          {
+            "id": "mnnbhd8ofr96k",
+            "level": "ประถมศึกษา",
+            "grade": "ป.6",
+            "room": "1",
+            "homeroom": "",
+            "label": "ป.6/1"
+          },
+          {
+            "id": "mnnbhd8of8yjf",
+            "level": "มัธยมศึกษาตอนต้น",
+            "grade": "ม.1",
+            "room": "1",
+            "homeroom": "",
+            "label": "ม.1/1"
+          },
+          {
+            "id": "mnnbhd8oqp1am",
+            "level": "มัธยมศึกษาตอนต้น",
+            "grade": "ม.2",
+            "room": "1",
+            "homeroom": "",
+            "label": "ม.2/1"
+          },
+          {
+            "id": "mnnbhd8o0bky9",
+            "level": "มัธยมศึกษาตอนต้น",
+            "grade": "ม.3",
+            "room": "1",
+            "homeroom": "",
+            "label": "ม.3/1"
+          }
+        ],
+        "slots": [
+          {
+            "id": 1,
+            "label": "คาบที่ 1",
+            "start": "08:30",
+            "end": "09:20"
+          },
+          {
+            "id": 2,
+            "label": "คาบที่ 2",
+            "start": "09:20",
+            "end": "10:10"
+          },
+          {
+            "id": 3,
+            "label": "คาบที่ 3",
+            "start": "10:10",
+            "end": "11:00"
+          },
+          {
+            "id": 4,
+            "label": "คาบที่ 4",
+            "start": "11:00",
+            "end": "11:50"
+          },
+          {
+            "id": 6,
+            "label": "คาบที่ 5",
+            "start": "13:00",
+            "end": "13:50"
+          },
+          {
+            "id": 7,
+            "label": "คาบที่ 6",
+            "start": "13:50",
+            "end": "14:40"
+          },
+          {
+            "id": 8,
+            "label": "คาบที่ 7",
+            "start": "14:40",
+            "end": "15:30"
+          }
+        ],
+        "days": [
+          "จันทร์",
+          "อังคาร",
+          "พุธ",
+          "พฤหัสบดี",
+          "ศุกร์"
+        ],
+        "sched": {
+          "mnnbhd8of8yjf_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_1_จันทร์": {
+            "subject": "วิทยาการคำนวณ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8of8yjf_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_2_พฤหัสบดี": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ1",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofiyyb_2_พฤหัสบดี": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_1_พฤหัสบดี": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ2",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8om45cr_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_8_ศุกร์": {
+            "subject": "สวดมนต์",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_7_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_6_ศุกร์": {
+            "subject": "ตลาดนัดอาชีพ",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_6_จันทร์": {
+            "subject": "กิจกรรมแนะแนว",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_8_พุธ": {
+            "subject": "ลูกเสือ/เนตรนารี",
+            "teacher": ""
+          },
+          "mnnbhd8om45cr_1_จันทร์": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_1_อังคาร": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_2_อังคาร": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_3_พุธ": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_4_พฤหัสบดี": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_4_ศุกร์": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_1_ศุกร์": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_1_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_2_พุธ": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_3_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_4_จันทร์": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_2_จันทร์": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_3_อังคาร": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_4_พุธ": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_2_ศุกร์": {
+            "subject": "ภาษาอังกฤษ1",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8om45cr_3_ศุกร์": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม1",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8om45cr_1_พุธ": {
+            "subject": "เทคโนโลยี1",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8om45cr_3_จันทร์": {
+            "subject": "สังคมและความเป็นพลเมือง1",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8om45cr_4_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน1",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8om45cr_6_อังคาร": {
+            "subject": "สุขภาพกายและจิต1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8om45cr_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8on7ezz_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8o4kr0l_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8ofr96k_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8of8yjf_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8oqp1am_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8o0bky9_8_พฤหัสบดี": {
+            "subject": "ชุมนุม",
+            "teacher": ""
+          },
+          "mnnbhd8ofiyyb_1_จันทร์": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_2_อังคาร": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_3_พุธ": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_4_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_4_ศุกร์": {
+            "subject": "คณิตศาสตร์2",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8ofiyyb_1_ศุกร์": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_4_พุธ": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_3_อังคาร": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_2_จันทร์": {
+            "subject": "ภาษาไทย2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_1_พุธ": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_3_จันทร์": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_4_จันทร์": {
+            "subject": "สังคมและความเป็นพลเมือง2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8ofiyyb_4_อังคาร": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_3_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_1_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8ofiyyb_2_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8ofiyyb_2_ศุกร์": {
+            "subject": "เทคโนโลยี2",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8ofiyyb_3_ศุกร์": {
+            "subject": "สุขภาพกายและจิต2",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_6_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม2",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8onrgma_1_จันทร์": {
+            "subject": "คณิตศาสตร์3",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8onrgma_2_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8onrgma_1_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์3",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8onrgma_2_ศุกร์": {
+            "subject": "คณิตศาสตร์3",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8onrgma_2_จันทร์": {
+            "subject": "ภาษาไทย3",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_3_อังคาร": {
+            "subject": "ภาษาไทย3",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_4_พุธ": {
+            "subject": "ภาษาไทย3",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_1_ศุกร์": {
+            "subject": "ภาษาไทย3",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_4_จันทร์": {
+            "subject": "ภาษาอังกฤษ3",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8onrgma_4_อังคาร": {
+            "subject": "เทคโนโลยี3",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8onrgma_1_อังคาร": {
+            "subject": "ภาษาอังกฤษ3",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8onrgma_3_พุธ": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม3",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8onrgma_3_พฤหัสบดี": {
+            "subject": "สุขภาพกายและจิต3",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8onrgma_2_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ3",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8onrgma_1_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน3",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8onrgma_2_พุธ": {
+            "subject": "สุขภาพกายและจิต3",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8onrgma_3_จันทร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ3",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8onrgma_4_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม3",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8onrgma_4_ศุกร์": {
+            "subject": "คณิตศาสตร์3",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8onrgma_6_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน3",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8onrgma_3_ศุกร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ3",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8on7ezz_1_จันทร์": {
+            "subject": "ภาษาไทย4",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8on7ezz_2_จันทร์": {
+            "subject": "คณิตศาสตร์4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_1_อังคาร": {
+            "subject": "คณิตศาสตร์4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_2_พุธ": {
+            "subject": "คณิตศาสตร์4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_1_ศุกร์": {
+            "subject": "คณิตศาสตร์4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_3_จันทร์": {
+            "subject": "ภาษาอังกฤษ4",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8on7ezz_1_พุธ": {
+            "subject": "ภาษาอังกฤษ4",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8on7ezz_2_พฤหัสบดี": {
+            "subject": "ภาษาไทย4",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8on7ezz_4_อังคาร": {
+            "subject": "ภาษาไทย4",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8on7ezz_3_ศุกร์": {
+            "subject": "ภาษาอังกฤษ4",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8on7ezz_4_จันทร์": {
+            "subject": "เศรษฐกิจและการเงิน4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_4_พุธ": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_1_พฤหัสบดี": {
+            "subject": "เศรษฐกิจและการเงิน4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_3_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม4",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_2_อังคาร": {
+            "subject": "เทคโนโลยี4",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8on7ezz_2_ศุกร์": {
+            "subject": "เศรษฐกิจและการเงิน4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_3_พุธ": {
+            "subject": "สังคมและความเป็นพลเมือง4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_3_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_4_พฤหัสบดี": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8on7ezz_6_อังคาร": {
+            "subject": "สุขภาพกายและจิต4",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8on7ezz_4_ศุกร์": {
+            "subject": "สุขภาพกายและจิต4",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8on7ezz_6_พุธ": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8o4kr0l_4_จันทร์": {
+            "subject": "คณิตศาสตร์5",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8o4kr0l_3_อังคาร": {
+            "subject": "คณิตศาสตร์5",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8o4kr0l_1_ศุกร์": {
+            "subject": "สังคมและความเป็นพลเมือง5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_3_ศุกร์": {
+            "subject": "ภาษาไทย5",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o4kr0l_2_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์5",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8o4kr0l_2_จันทร์": {
+            "subject": "ภาษาอังกฤษ5",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o4kr0l_1_อังคาร": {
+            "subject": "ภาษาไทย5",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o4kr0l_1_พุธ": {
+            "subject": "สังคมและความเป็นพลเมือง5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_1_พฤหัสบดี": {
+            "subject": "สุขภาพกายและจิต5",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o4kr0l_3_จันทร์": {
+            "subject": "สังคมและความเป็นพลเมือง5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_2_พุธ": {
+            "subject": "ภาษาอังกฤษ5",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o4kr0l_1_จันทร์": {
+            "subject": "เศรษฐกิจและการเงิน5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_2_อังคาร": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม5",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8o4kr0l_3_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม5",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8o4kr0l_4_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_4_ศุกร์": {
+            "subject": "เทคโนโลยี5",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8o4kr0l_6_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_3_พุธ": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8o4kr0l_2_ศุกร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8o4kr0l_4_พุธ": {
+            "subject": "สุขภาพกายและจิต5",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o4kr0l_4_พฤหัสบดี": {
+            "subject": "สุขภาพกายและจิต5",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o4kr0l_6_พฤหัสบดี": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ5",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_1_จันทร์": {
+            "subject": "คณิตศาสตร์6",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8ofr96k_1_ศุกร์": {
+            "subject": "คณิตศาสตร์6",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8ofr96k_1_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_1_พฤหัสบดี": {
+            "subject": "ภาษาไทย6",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8ofr96k_2_จันทร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_3_จันทร์": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม6",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8ofr96k_1_อังคาร": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม6",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8ofr96k_4_จันทร์": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_2_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง6",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8ofr96k_2_พุธ": {
+            "subject": "สังคมและความเป็นพลเมือง6",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8ofr96k_2_ศุกร์": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_2_พฤหัสบดี": {
+            "subject": "สังคมและความเป็นพลเมือง6",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8ofr96k_3_ศุกร์": {
+            "subject": "สังคมและความเป็นพลเมือง6",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8ofr96k_3_อังคาร": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_3_พุธ": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_3_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_6_อังคาร": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม6",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8ofr96k_6_พุธ": {
+            "subject": "สุขภาพกายและจิต6",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8ofr96k_6_พฤหัสบดี": {
+            "subject": "สุขภาพกายและจิต6",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8ofr96k_4_ศุกร์": {
+            "subject": "ภาษาอังกฤษ6",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofr96k_4_อังคาร": {
+            "subject": "สุขภาพกายและจิต6",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8ofr96k_4_พฤหัสบดี": {
+            "subject": "เทคโนโลยี6",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8ofr96k_4_พุธ": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8of8yjf_2_อังคาร": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8of8yjf_3_พุธ": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8of8yjf_1_อังคาร": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8of8yjf_2_พุธ": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8of8yjf_3_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_1_พุธ": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8of8yjf_2_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8of8yjf_2_ศุกร์": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8of8yjf_1_ศุกร์": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_1_พฤหัสบดี": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8of8yjf_4_พุธ": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_3_อังคาร": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8of8yjf_2_จันทร์": {
+            "subject": "ประวัติศาสตร์",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8of8yjf_3_จันทร์": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8of8yjf_4_พฤหัสบดี": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8of8yjf_4_ศุกร์": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8of8yjf_3_ศุกร์": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8of8yjf_6_อังคาร": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_4_อังคาร": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_1_จันทร์": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8oqp1am_1_อังคาร": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o0bky9_2_จันทร์": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8o0bky9_2_อังคาร": {
+            "subject": "สุขศึกษาพละ",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8of8yjf_4_จันทร์": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8of8yjf_6_พุธ": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8of8yjf_6_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_7_จันทร์": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8of8yjf_7_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8of8yjf_8_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8of8yjf_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8of8yjf_8_จันทร์": {
+            "subject": "คณิตศาสตร์ เพิ่มเติม",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_2_จันทร์": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_3_อังคาร": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8oqp1am_4_พุธ": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8oqp1am_6_พฤหัสบดี": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8oqp1am_2_อังคาร": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_4_ศุกร์": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_4_จันทร์": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8oqp1am_2_พุธ": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8oqp1am_1_พุธ": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_2_พฤหัสบดี": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_1_ศุกร์": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_3_จันทร์": {
+            "subject": "ประวัติศาสตร์",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8oqp1am_1_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_2_ศุกร์": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_3_พุธ": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_3_พฤหัสบดี": {
+            "subject": "วิทยาการคำนวณ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8oqp1am_4_อังคาร": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8oqp1am_6_พุธ": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8oqp1am_4_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_3_ศุกร์": {
+            "subject": "คณิตศาสตร์ เพิ่มเติม",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8oqp1am_7_จันทร์": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8oqp1am_8_จันทร์": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8oqp1am_6_อังคาร": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8oqp1am_7_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8oqp1am_8_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8o0bky9_1_ศุกร์": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o0bky9_2_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_1_พุธ": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_1_อังคาร": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o0bky9_1_จันทร์": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_1_พฤหัสบดี": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_2_พุธ": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_2_ศุกร์": {
+            "subject": "คณิตศาสตร์",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_4_ศุกร์": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_6_พฤหัสบดี": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8o0bky9_3_ศุกร์": {
+            "subject": "ภาษาอังกฤษเพื่อการสื่อสาร",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_7_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_8_อังคาร": {
+            "subject": "ทักษะอาชีพ",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_3_พฤหัสบดี": {
+            "subject": "ภาษาไทย",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o0bky9_8_จันทร์": {
+            "subject": "วิทยาศาสตร์และเทคโนโลยี",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8o0bky9_6_พุธ": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o0bky9_7_พุธ": {
+            "subject": "การงานอาชีพ",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o0bky9_3_จันทร์": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8o0bky9_4_พุธ": {
+            "subject": "ศิลปะ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8o0bky9_7_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_4_จันทร์": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_3_อังคาร": {
+            "subject": "วิทยาการคำนวณ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8o0bky9_3_พุธ": {
+            "subject": "คณิตศาสตร์ เพิ่มเติม",
+            "teacher": "นางสาวอรปภา หมื่นอภัย"
+          },
+          "mnnbhd8o0bky9_4_พฤหัสบดี": {
+            "subject": "ประวัติศาสตร์",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_4_อังคาร": {
+            "subject": "ภาษาอังกฤษ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8o0bky9_6_อังคาร": {
+            "subject": "สังคมศึกษา",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8o0bky9_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8om45cr_6_พุธ": {
+            "subject": "คณิตศาสตร์1",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_7_จันทร์": {
+            "subject": "ภาษาไทย1",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8ofiyyb_6_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8ofiyyb_7_จันทร์": {
+            "subject": "ภาษาอังกฤษ2",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_6_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8ofiyyb_8_จันทร์": {
+            "subject": "สังคมและความเป็นพลเมือง2",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8om45cr_8_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_7_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_8_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8om45cr_6_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8om45cr_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธิดารัตน์ แรตสอน"
+          },
+          "mnnbhd8onrgma_7_จันทร์": {
+            "subject": "เศรษฐกิจและการเงิน3",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8onrgma_6_พุธ": {
+            "subject": "สังคมและความเป็นพลเมือง3",
+            "teacher": "นางสาวภัทรสุดา สุหงษา"
+          },
+          "mnnbhd8on7ezz_6_พฤหัสบดี": {
+            "subject": "ภาษาไทย4",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8on7ezz_8_จันทร์": {
+            "subject": "ภาษาอังกฤษ4",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8on7ezz_8_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง4",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8on7ezz_7_จันทร์": {
+            "subject": "สุขภาพกายและจิต4",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8on7ezz_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8on7ezz_7_อังคาร": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ4",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8o4kr0l_7_อังคาร": {
+            "subject": "สังคมและความเป็นพลเมือง5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_6_อังคาร": {
+            "subject": "ภาษาอังกฤษ5",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8o4kr0l_7_จันทร์": {
+            "subject": "ภาษาไทย5",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8o4kr0l_7_พฤหัสบดี": {
+            "subject": "เศรษฐกิจและการเงิน5",
+            "teacher": "นายกิตติชัย การะภักดี"
+          },
+          "mnnbhd8o4kr0l_8_อังคาร": {
+            "subject": "วิทยาศาสตร์ สิ่งแวดล้อม5",
+            "teacher": "นายพิศุทธิ์ เชาวลิตโรจน์"
+          },
+          "mnnbhd8ofr96k_8_จันทร์": {
+            "subject": "ภาษาไทย6",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8ofr96k_8_อังคาร": {
+            "subject": "ศิลปะและวัฒนธรรมเพื่อสุนทรียภาพ6",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8ofr96k_7_อังคาร": {
+            "subject": "สุขภาพกายและจิต6",
+            "teacher": "นางสาวอาริษา ฉิมสุพร"
+          },
+          "mnnbhd8ofr96k_7_จันทร์": {
+            "subject": "เศรษฐกิจและการเงิน6",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofr96k_7_พฤหัสบดี": {
+            "subject": "ภาษาอังกฤษ6",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8ofiyyb_7_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofiyyb_8_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายพีระ เดชะผล"
+          },
+          "mnnbhd8ofiyyb_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8ofiyyb_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8onrgma_8_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": ""
+          },
+          "mnnbhd8onrgma_8_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวนริศรา ทำจิตรเหมาะ"
+          },
+          "mnnbhd8onrgma_7_อังคาร": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          },
+          "mnnbhd8onrgma_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวจิราภา พานชัย"
+          },
+          "mnnbhd8onrgma_6_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายธิติวุฒิ เตยไธสง"
+          },
+          "mnnbhd8onrgma_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวไอยรดา อาจจีน"
+          },
+          "mnnbhd8oqp1am_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอรรถชัย แก้วเอี่ยม"
+          },
+          "mnnbhd8of8yjf_7_พฤหัสบดี": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8o4kr0l_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายนวพานิชณ์ วังคีรี"
+          },
+          "mnnbhd8o4kr0l_8_จันทร์": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นายอนันตชัย เพ็ชรรี่"
+          },
+          "mnnbhd8on7ezz_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาววิมลรัตน์ เจริญธัญญากร"
+          },
+          "mnnbhd8ofr96k_7_พุธ": {
+            "subject": "กิจกรรมตามความสนใจ",
+            "teacher": "นางสาวธญาภรณ์ คล้ายเพ็ง"
+          }
+        },
+        "substitute": {},
+        "schedule": {
+          "0": {
+            "จันทร์": {
+              "p1": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p2": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p3": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p4": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p5": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p6": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p7": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p8": {
+                "subject": "1",
+                "teacher": "1"
+              }
+            },
+            "อังคาร": {
+              "p1": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p2": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p3": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p4": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p5": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p6": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p7": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p8": {
+                "subject": "4",
+                "teacher": "0"
+              }
+            },
+            "พุธ": {
+              "p1": {
+                "subject": "5",
+                "teacher": "0"
+              },
+              "p2": {
+                "subject": "11",
+                "teacher": "0"
+              },
+              "p5": {
+                "subject": "6",
+                "teacher": "1"
+              },
+              "p6": {
+                "subject": "8",
+                "teacher": "2"
+              },
+              "p7": {
+                "subject": "10",
+                "teacher": "2"
+              }
+            },
+            "พฤหัสบดี": {
+              "p1": {
+                "subject": "12",
+                "teacher": "2"
+              }
+            }
+          },
+          "1": {
+            "จันทร์": {
+              "p6": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p7": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p1": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p2": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p3": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p4": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p5": {
+                "subject": "1",
+                "teacher": "1"
+              }
+            },
+            "อังคาร": {
+              "p1": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p2": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p3": {
+                "subject": "6",
+                "teacher": "1"
+              }
+            },
+            "พุธ": {
+              "p1": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p2": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p3": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p4": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p5": {
+                "subject": "4",
+                "teacher": "0"
+              },
+              "p7": {
+                "subject": "5",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "8",
+                "teacher": "2"
+              }
+            },
+            "พฤหัสบดี": {
+              "p1": {
+                "subject": "11",
+                "teacher": "0"
+              },
+              "p2": {
+                "subject": "10",
+                "teacher": "2"
+              },
+              "p3": {
+                "subject": "12",
+                "teacher": "2"
+              }
+            }
+          },
+          "2": {
+            "อังคาร": {
+              "p3": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p4": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p5": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p6": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p7": {
+                "subject": "0",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "1",
+                "teacher": "1"
+              }
+            },
+            "พุธ": {
+              "p1": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p2": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p3": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p4": {
+                "subject": "1",
+                "teacher": "1"
+              },
+              "p6": {
+                "subject": "4",
+                "teacher": "0"
+              },
+              "p8": {
+                "subject": "5",
+                "teacher": "0"
+              },
+              "p7": {
+                "subject": "6",
+                "teacher": "1"
+              }
+            },
+            "จันทร์": {
+              "p1": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p2": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p3": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p4": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p5": {
+                "subject": "7",
+                "teacher": "2"
+              },
+              "p6": {
+                "subject": "8",
+                "teacher": "2"
+              },
+              "p7": {
+                "subject": "10",
+                "teacher": "2"
+              },
+              "p8": {
+                "subject": "12",
+                "teacher": "2"
+              }
+            },
+            "พฤหัสบดี": {
+              "p2": {
+                "subject": "11",
+                "teacher": "0"
+              }
+            }
+          }
+        }
+      },
+      "savedAt": 1775895576782,
+      "year": "2569"
+    }
+  },
+  "activeProfileId": "mn62kocmbsz43"
+} as const;
