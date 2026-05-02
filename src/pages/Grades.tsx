@@ -10,9 +10,10 @@ import {
   FileText, Edit2,
 } from 'lucide-react';
 import {
-  Subject, GradeEntry, LEARNING_GROUPS, LearningGroup,
+  LEARNING_GROUPS,
   computeGrade, gradeText, gradeColor, totalScore,
 } from '../data/grades';
+import type { Subject, GradeEntry, LearningGroup } from '../data/grades';
 
 const AUTH_KEY = 'grades_auth_v1';
 const ROLE_KEY = 'grades_role_v1';

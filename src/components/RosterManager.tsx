@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { Trash2, UserPlus, Upload, Download, Save } from 'lucide-react';
+import { Trash2, UserPlus, Upload, Download } from 'lucide-react';
 
 interface Student { id: string; code?: string; name: string; emoji?: string; }
 interface ClassRoster { classId: string; label: string; students: Student[]; }

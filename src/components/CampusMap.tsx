@@ -103,7 +103,6 @@ function IsoBuilding({ plot, building, hovered, onHover }: IsoBuildingProps) {
   const { x, y, w, d, h: rawH } = plot;
   const h = building.floors === 2 ? rawH * 1.15 : rawH * 0.85;
 
-  const g00 = project(x, y);
   const g10 = project(x + w, y);
   const g11 = project(x + w, y + d);
   const g01 = project(x, y + d);

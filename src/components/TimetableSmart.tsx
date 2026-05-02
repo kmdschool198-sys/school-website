@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { Printer, Save, AlertTriangle, X, Users, BookOpen, Calendar as Cal, Coffee, UserPlus, BarChart3, Download, Upload, RotateCcw } from 'lucide-react';
+import { Printer, Save, AlertTriangle, X, Users, BookOpen, Calendar as Cal, Coffee, UserPlus, Download, Upload, RotateCcw } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface Teacher { id: string; prefix?: string; first: string; last: string; dept?: string; rank?: string; subjects?: string[]; }
