@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import TimetableSmart from '../components/TimetableSmart';
 import RosterManager from '../components/RosterManager';
+import ResultsManager from '../components/ResultsManager';
 import {
   collection, addDoc, getDocs, deleteDoc, doc, orderBy, query,
   updateDoc, setDoc, getDoc
@@ -86,7 +87,7 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'results' | 'settings';
 
 interface StudentRow { class: string; male: number; female: number; teacher: string; note: string; }
 
@@ -643,6 +644,7 @@ function Admin() {
     students: 'จำนวนนักเรียน',
     timetable: 'ตารางสอน-ตารางเรียน',
     roster: 'รายชื่อนักเรียน (เช็คชื่อ)',
+    results: 'ประกาศผลสอบนักเรียน',
     settings: 'ตั้งค่าระบบ'
   };
 
@@ -670,6 +672,7 @@ function Admin() {
             ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
             ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
             ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
+            ['results', <Sparkles size={18} key="rs" />, 'ประกาศผลสอบ'],
             ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
           ] as [AdminTab, ReactNode, string][]).map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
@@ -1290,6 +1293,17 @@ function Admin() {
               <p className="text-muted small mb-0">เพิ่ม/แก้ไข/นำเข้ารายชื่อนักเรียนของแต่ละชั้น — ใช้ในหน้า /attendance</p>
             </div>
             <RosterManager />
+          </div>
+        )}
+
+        {/* Results — exam result announcements */}
+        {activeTab === 'results' && (
+          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
+            <div className="mb-3">
+              <h5 className="fw-bold mb-1">🏆 ประกาศผลสอบนักเรียน</h5>
+              <p className="text-muted small mb-0">สร้างประกาศผลสอบ → นำเข้า CSV → นักเรียนค้นด้วยรหัสประจำตัวที่หน้า /results</p>
+            </div>
+            <ResultsManager />
           </div>
         )}
 

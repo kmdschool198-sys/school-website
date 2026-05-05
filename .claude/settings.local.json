@@ -28,7 +28,9 @@
       "Bash(node -e \"const XLSX=require\\('xlsx'\\);const wb=XLSX.readFile\\('C:/Users/KruJames/Downloads/รายชื่อนักเรียน-บ้านคลองมดแดง-1-2569-22-เม.ย.2569-ไม่เป็นทางการ.xls'\\);const r=XLSX.utils.sheet_to_json\\(wb.Sheets['ป.1'],{header:1}\\);r.slice\\(0,15\\).forEach\\(\\(row,i\\)=>console.log\\(i,JSON.stringify\\(row\\)\\)\\);\")",
       "Bash(node -e \"const d=require\\('./src/data/timetableData.ts'\\);\")",
       "Bash(node scripts/import_students.cjs)",
-      "Bash(node -e \"const X=require\\('xlsx'\\);['ปพ5','ปพ6'].forEach\\(n=>{const wb=X.readFile\\('C:/Users/KruJames/Downloads/'+n+'.xlsx'\\);console.log\\('===',n,'===','sheets:',wb.SheetNames\\);wb.SheetNames.slice\\(0,3\\).forEach\\(s=>{const r=X.utils.sheet_to_json\\(wb.Sheets[s],{header:1}\\);console.log\\('--',s,'rows:',r.length\\);r.slice\\(0,12\\).forEach\\(\\(row,i\\)=>console.log\\(i,JSON.stringify\\(row\\).slice\\(0,200\\)\\)\\);}\\);}\\);\")"
+      "Bash(node -e \"const X=require\\('xlsx'\\);['ปพ5','ปพ6'].forEach\\(n=>{const wb=X.readFile\\('C:/Users/KruJames/Downloads/'+n+'.xlsx'\\);console.log\\('===',n,'===','sheets:',wb.SheetNames\\);wb.SheetNames.slice\\(0,3\\).forEach\\(s=>{const r=X.utils.sheet_to_json\\(wb.Sheets[s],{header:1}\\);console.log\\('--',s,'rows:',r.length\\);r.slice\\(0,12\\).forEach\\(\\(row,i\\)=>console.log\\(i,JSON.stringify\\(row\\).slice\\(0,200\\)\\)\\);}\\);}\\);\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(echo \"EXITCODE=$?\")"
     ]
   }
 }

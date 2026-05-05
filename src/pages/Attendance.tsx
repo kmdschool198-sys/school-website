@@ -5,69 +5,10 @@ import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import {
   Check, X as XIcon, Clock, Save, Download,
-  Users, BarChart3, Calendar, ChevronLeft, AlertCircle, Lock, LogOut, Plus, Trash2, Edit2,
+  Users, BarChart3, Calendar, ChevronLeft, AlertCircle, LogOut, Plus, Trash2, Edit2,
 } from 'lucide-react';
-
-const AUTH_KEY = 'attendance_auth_v1';
-const ROLE_KEY = 'attendance_role_v1';
-type Role = 'normal' | 'super';
-const ACCOUNTS: Record<string, { pass: string; role: Role }> = {
-  adminkmd:  { pass: '12345678kmd', role: 'normal' },
-  jameskmd:  { pass: '12345678kmd', role: 'super' },
-};
-
-function LoginGate({ onPass }: { onPass: (role: Role) => void }) {
-  const [u, setU] = useState('');
-  const [p, setP] = useState('');
-  const [err, setErr] = useState(false);
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const acc = ACCOUNTS[u.trim()];
-    if (acc && acc.pass === p) {
-      sessionStorage.setItem(AUTH_KEY, '1');
-      sessionStorage.setItem(ROLE_KEY, acc.role);
-      onPass(acc.role);
-    } else {
-      setErr(true);
-    }
-  };
-  return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(135deg,#FF6A01,#FFD400)', padding: '1.5rem',
-    }}>
-      <form onSubmit={submit} style={{
-        background: 'white', borderRadius: 24, padding: '2rem', maxWidth: 400, width: '100%',
-        boxShadow: '0 30px 60px rgba(0,0,0,0.2)',
-      }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%', background: '#FFEDD5',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 1rem', color: '#FF6A01',
-        }}>
-          <Lock size={28} />
-        </div>
-        <h3 style={{ textAlign: 'center', fontWeight: 900, color: '#0F172A', margin: '0 0 4px' }}>📋 ระบบเช็คชื่อ</h3>
-        <p style={{ textAlign: 'center', color: '#64748B', fontSize: '0.85rem', marginBottom: 20 }}>
-          กรุณาเข้าสู่ระบบสำหรับครู
-        </p>
-        {err && <div style={{ background: '#FEE2E2', color: '#DC2626', padding: '8px 12px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12, textAlign: 'center' }}>❌ ชื่อผู้ใช้/รหัสผ่านไม่ถูกต้อง</div>}
-        <input value={u} onChange={e => setU(e.target.value)} placeholder="ชื่อผู้ใช้"
-          style={{ width: '100%', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0', marginBottom: 10, fontSize: '0.95rem' }} required autoFocus />
-        <input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="รหัสผ่าน"
-          style={{ width: '100%', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0', marginBottom: 16, fontSize: '0.95rem' }} required />
-        <button type="submit" style={{
-          width: '100%', padding: 12, borderRadius: 10, border: 'none', cursor: 'pointer',
-          background: 'linear-gradient(135deg,#FF6A01,#FB923C)', color: 'white',
-          fontWeight: 800, fontSize: '0.95rem',
-        }}>เข้าสู่ระบบ</button>
-        <Link to="/" style={{ display: 'block', textAlign: 'center', marginTop: 12, color: '#94A3B8', fontSize: '0.8rem', textDecoration: 'none' }}>
-          ← กลับหน้าหลัก
-        </Link>
-      </form>
-    </div>
-  );
-}
+import { useTeacherAuth } from '../utils/teacherAuth';
+import TeacherLoginGate from '../components/TeacherLoginGate';
 
 type Status = 'present' | 'absent' | 'leave';
 interface Student { id: string; code?: string; name: string; emoji?: string; }
@@ -114,17 +55,12 @@ const seedClasses = (): ClassRoster[] => {
 type Tab = 'check' | 'summary' | 'stats' | 'history';
 
 export default function Attendance() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem(AUTH_KEY) === '1');
-  const [role, setRole] = useState<Role>(() => (sessionStorage.getItem(ROLE_KEY) as Role) || 'normal');
-  if (!authed) return <LoginGate onPass={(r) => { setRole(r); setAuthed(true); }} />;
-  return <AttendanceApp role={role} onLogout={() => {
-    sessionStorage.removeItem(AUTH_KEY);
-    sessionStorage.removeItem(ROLE_KEY);
-    setAuthed(false);
-  }} />;
+  const auth = useTeacherAuth();
+  if (!auth.authed) return <TeacherLoginGate title="📋 ระบบเช็คชื่อนักเรียน" />;
+  return <AttendanceApp role={auth.role} onLogout={auth.logout} />;
 }
 
-function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void }) {
+function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout: () => void }) {
   const isSuper = role === 'super';
   const today = todayStr();
   const [classes, setClasses] = useState<ClassRoster[]>(seedClasses);
@@ -202,8 +138,22 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
   };
   const markAll = (status: Status) => {
     const r: AttDoc['records'] = {};
-    students.forEach(s => { r[s.id] = { status, note: records[s.id]?.note }; });
+    students.forEach(s => {
+      const note = records[s.id]?.note;
+      r[s.id] = note ? { status, note } : { status };
+    });
     setRecords(r);
+  };
+
+  // Strip undefined values before sending to Firestore
+  const cleanRecords = (recs: AttDoc['records']): AttDoc['records'] => {
+    const out: AttDoc['records'] = {};
+    for (const [k, v] of Object.entries(recs)) {
+      const item: any = { status: v.status };
+      if (v.note !== undefined && v.note !== '') item.note = v.note;
+      out[k] = item;
+    }
+    return out;
   };
   const clearAll = () => setRecords({});
 
@@ -213,7 +163,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
     try {
       const id = `${classId}_${date}`;
       await setDoc(doc(db, 'attendance', id), {
-        classId, date, records, updatedAt: Date.now(),
+        classId, date, records: cleanRecords(records), updatedAt: Date.now(),
       });
       setSavedAt(new Date());
     } catch (e: any) {
