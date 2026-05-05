@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ChevronLeft, Search, Calendar, X as XIcon, FileText, Award, Printer } from 'lucide-react';
 import type { ResultAnnouncement, ResultRow } from '../data/results';
@@ -16,12 +16,13 @@ export default function ResultsPage() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    // Fetch all + filter/sort client-side (avoids needing a Firestore composite index)
     try {
-      const q = query(collection(db, 'results'), where('visible', '==', true), orderBy('publishedAt', 'desc'));
-      return onSnapshot(q, snap => {
+      return onSnapshot(collection(db, 'results'), snap => {
         const arr: ResultAnnouncement[] = [];
         snap.forEach(d => arr.push({ id: d.id, ...(d.data() as any) }));
-        setAnnouncements(arr);
+        const visible = arr.filter(a => a.visible).sort((a, b) => b.publishedAt - a.publishedAt);
+        setAnnouncements(visible);
       }, err => console.error('[results]', err));
     } catch (e) { console.error(e); }
   }, []);

@@ -98,16 +98,15 @@ function ContentPage() {
         'school-awards': 'ผลงานรางวัล'
       };
 
-      const q = query(
-        collection(db, 'posts'),
-        where('category', '==', catMap[activeSlug]),
-        orderBy('date', 'desc')
-      );
-
-      unsubPosts = onSnapshot(q, (snapshot) => {
+      // Filter+sort client-side to avoid needing a Firestore composite index
+      const targetCat = catMap[activeSlug];
+      unsubPosts = onSnapshot(collection(db, 'posts'), (snapshot) => {
         const results: any[] = [];
         snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
-        setFirebasePosts(results);
+        const filtered = results
+          .filter(p => p.category === targetCat)
+          .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        setFirebasePosts(filtered);
       }, (err) => {
         console.error("Posts snapshot error:", err);
       });

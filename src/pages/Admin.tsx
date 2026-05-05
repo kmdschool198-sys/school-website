@@ -27,6 +27,7 @@ import {
 import TimetableSmart from '../components/TimetableSmart';
 import RosterManager from '../components/RosterManager';
 import ResultsManager from '../components/ResultsManager';
+import ClubsManager from '../components/ClubsManager';
 import {
   collection, addDoc, getDocs, deleteDoc, doc, orderBy, query,
   updateDoc, setDoc, getDoc
@@ -87,7 +88,7 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'results' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'results' | 'clubs' | 'settings';
 
 interface StudentRow { class: string; male: number; female: number; teacher: string; note: string; }
 
@@ -645,6 +646,7 @@ function Admin() {
     timetable: 'ตารางสอน-ตารางเรียน',
     roster: 'รายชื่อนักเรียน (เช็คชื่อ)',
     results: 'ประกาศผลสอบนักเรียน',
+    clubs: 'ชุมนุม / กิจกรรม / ลูกเสือ',
     settings: 'ตั้งค่าระบบ'
   };
 
@@ -673,6 +675,7 @@ function Admin() {
             ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
             ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
             ['results', <Sparkles size={18} key="rs" />, 'ประกาศผลสอบ'],
+            ['clubs', <Users size={18} key="cb" />, 'ชุมนุม-กิจกรรม'],
             ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
           ] as [AdminTab, ReactNode, string][]).map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
@@ -1304,6 +1307,17 @@ function Admin() {
               <p className="text-muted small mb-0">สร้างประกาศผลสอบ → นำเข้า CSV → นักเรียนค้นด้วยรหัสประจำตัวที่หน้า /results</p>
             </div>
             <ResultsManager />
+          </div>
+        )}
+
+        {/* Clubs / Activities / Scouts */}
+        {activeTab === 'clubs' && (
+          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
+            <div className="mb-3">
+              <h5 className="fw-bold mb-1">🎯 ชุมนุม / กิจกรรม / ลูกเสือ</h5>
+              <p className="text-muted small mb-0">สร้างชุมนุม → เพิ่มสมาชิกข้ามชั้น → ครูเช็คชื่อที่หน้า /club-attendance</p>
+            </div>
+            <ClubsManager />
           </div>
         )}
 

@@ -8,6 +8,7 @@ import Attendance from './pages/Attendance';
 import Results from './pages/Results';
 import TeacherLeave from './pages/TeacherLeave';
 import TeacherTraining from './pages/TeacherTraining';
+import ClubAttendance from './pages/ClubAttendance';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/results" element={<Results />} />
           <Route path="/teacher-leave" element={<TeacherLeave />} />
           <Route path="/teacher-training" element={<TeacherTraining />} />
+          <Route path="/club-attendance" element={<ClubAttendance />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />
         </Routes>

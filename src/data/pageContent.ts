@@ -61,6 +61,7 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
     icon: '👨‍🏫',
     links: [
       { path: '/attendance', label: '📋 ระบบเช็คชื่อนักเรียน' },
+      { path: '/club-attendance', label: '🎯 เช็คชื่อชุมนุม-กิจกรรม-ลูกเสือ' },
       { path: '/teacher-leave', label: '📝 แบบฟอร์มลาออนไลน์ครู' },
       { path: '/teacher-training', label: '🎓 บันทึกข้อมูลการอบรมครู' },
     ]
