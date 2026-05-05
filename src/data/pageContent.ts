@@ -63,7 +63,6 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
       { path: '/attendance', label: '📋 ระบบเช็คชื่อนักเรียน' },
       { path: '/teacher-leave', label: '📝 แบบฟอร์มลาออนไลน์ครู' },
       { path: '/teacher-training', label: '🎓 บันทึกข้อมูลการอบรมครู' },
-      { path: '/body-metrics', label: '⚖️ บันทึกน้ำหนัก-ส่วนสูง' },
     ]
   }
 };
