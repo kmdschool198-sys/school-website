@@ -52,7 +52,7 @@ const seedClasses = (): ClassRoster[] => {
   return [...KG_ROOMS, ...rooms].map(r => ({ classId: r.id, label: r.label, students: [] }));
 };
 
-type Tab = 'check' | 'summary' | 'stats' | 'history';
+type Tab = 'check' | 'summary' | 'stats' | 'history' | 'school';
 
 export default function Attendance() {
   const auth = useTeacherAuth();
@@ -374,6 +374,7 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
             ['check', <Users size={14} />, 'เช็คชื่อ'],
             ['summary', <Calendar size={14} />, 'สรุป'],
             ['stats', <BarChart3 size={14} />, 'สถิติ'],
+            ['school', <BarChart3 size={14} />, '🏫 ทั้งโรงเรียน'],
             ...(isSuper ? [['history', <Calendar size={14} />, '🗓️ ประวัติย้อนหลัง']] : []),
           ] as any[]).map(([k, ic, l]: any) => (
             <button key={k} onClick={() => setTab(k)} style={{
@@ -595,6 +596,11 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
           </div>
         )}
 
+        {/* SCHOOL-WIDE TAB */}
+        {tab === 'school' && (
+          <SchoolStats classes={classes} onJump={(cid) => { setClassId(cid); setTab('check'); }} />
+        )}
+
         {/* HISTORY TAB — super only */}
         {tab === 'history' && isSuper && (
           <div style={{ background: 'white', borderRadius: 14, padding: '1rem' }}>
@@ -699,6 +705,270 @@ const Legend = () => (
     ))}
   </div>
 );
+
+// ════════════════════════════════════════════════════════════════
+// SCHOOL-WIDE STATISTICS
+// ════════════════════════════════════════════════════════════════
+function SchoolStats({ classes, onJump }: { classes: ClassRoster[]; onJump: (cid: string) => void }) {
+  const [allDocs, setAllDocs] = useState<AttDoc[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const snap = await getDocs(collection(db, 'attendance'));
+        const arr: AttDoc[] = [];
+        snap.forEach(d => arr.push(d.data() as AttDoc));
+        setAllDocs(arr);
+      } catch (e) { console.error(e); }
+      setLoading(false);
+    })();
+  }, []);
+
+  const today = todayStr();
+  const totalStudents = classes.reduce((s, c) => s + c.students.length, 0);
+
+  // ─── Per-class stats over all history ───
+  const classRates = useMemo(() => {
+    return classes.map(c => {
+      const docs = allDocs.filter(d => d.classId === c.classId);
+      let p = 0, a = 0, l = 0, days = 0;
+      docs.forEach(d => {
+        const recs = Object.values(d.records || {});
+        if (recs.length === 0) return;
+        days++;
+        recs.forEach(r => {
+          if (r.status === 'present') p++;
+          else if (r.status === 'absent') a++;
+          else if (r.status === 'leave') l++;
+        });
+      });
+      const tot = p + a + l;
+      const rate = tot ? Math.round((p / tot) * 100) : 0;
+      return { c, p, a, l, tot, rate, days };
+    }).sort((x, y) => y.rate - x.rate);
+  }, [classes, allDocs]);
+
+  // ─── Today's attendance per class ───
+  const todayPerClass = useMemo(() => {
+    const map = new Map<string, AttDoc>();
+    allDocs.filter(d => d.date === today).forEach(d => map.set(d.classId, d));
+    return classes.map(c => {
+      const doc = map.get(c.classId);
+      if (!doc) return { c, status: 'pending' as const, p: 0, a: 0, l: 0 };
+      let p = 0, a = 0, l = 0;
+      Object.values(doc.records || {}).forEach(r => {
+        if (r.status === 'present') p++;
+        else if (r.status === 'absent') a++;
+        else if (r.status === 'leave') l++;
+      });
+      return { c, status: 'done' as const, p, a, l };
+    });
+  }, [classes, allDocs, today]);
+
+  // ─── 30-day trend (whole school) ───
+  const trend = useMemo(() => {
+    const byDate: Record<string, { p: number; a: number; l: number }> = {};
+    allDocs.forEach(d => {
+      if (!byDate[d.date]) byDate[d.date] = { p: 0, a: 0, l: 0 };
+      Object.values(d.records || {}).forEach(r => {
+        if (r.status === 'present') byDate[d.date].p++;
+        else if (r.status === 'absent') byDate[d.date].a++;
+        else if (r.status === 'leave') byDate[d.date].l++;
+      });
+    });
+    return Object.entries(byDate)
+      .map(([date, v]) => ({ date, ...v }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-30);
+  }, [allDocs]);
+
+  // ─── Top absentees school-wide ───
+  const absentees = useMemo(() => {
+    const map: Record<string, { sid: string; name: string; classLabel: string; absent: number; total: number }> = {};
+    classes.forEach(c => {
+      c.students.forEach(s => {
+        map[s.id] = { sid: s.id, name: s.name, classLabel: c.label, absent: 0, total: 0 };
+      });
+    });
+    allDocs.forEach(d => {
+      Object.entries(d.records || {}).forEach(([sid, r]) => {
+        if (!map[sid]) return;
+        map[sid].total++;
+        if (r.status === 'absent') map[sid].absent++;
+      });
+    });
+    return Object.values(map)
+      .filter(s => s.absent > 0)
+      .sort((a, b) => b.absent - a.absent)
+      .slice(0, 15);
+  }, [classes, allDocs]);
+
+  // ─── Today's whole-school summary ───
+  const todayDone = todayPerClass.filter(x => x.status === 'done');
+  const todayP = todayDone.reduce((s, x) => s + x.p, 0);
+  const todayA = todayDone.reduce((s, x) => s + x.a, 0);
+  const todayL = todayDone.reduce((s, x) => s + x.l, 0);
+  const todayTot = todayP + todayA + todayL;
+  const todayPct = todayTot ? Math.round((todayP / todayTot) * 100) : 0;
+
+  if (loading) return (
+    <div style={{ background: 'white', padding: '3rem', textAlign: 'center', color: '#94A3B8', borderRadius: 14 }}>
+      ⏳ กำลังโหลดข้อมูลทั้งโรงเรียน...
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Today summary */}
+      <div style={{
+        background: 'linear-gradient(135deg,#0F172A,#1E3A8A)', color: 'white',
+        borderRadius: 14, padding: '1.25rem',
+      }}>
+        <div style={{ fontSize: '0.85rem', opacity: 0.85, fontWeight: 700, letterSpacing: 1 }}>📊 ภาพรวมวันนี้ — {fmtThai(today)}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10, marginTop: 12 }}>
+          <BigStat label="นักเรียนทั้งโรงเรียน" value={totalStudents} color="#60A5FA" />
+          <BigStat label="มาเรียน" value={todayP} color="#FF6A01" />
+          <BigStat label="ขาด" value={todayA} color="#EF4444" />
+          <BigStat label="ลา" value={todayL} color="#F59E0B" />
+          <BigStat label={`% มาเรียน`} value={todayPct} color="#10B981" />
+        </div>
+        <div style={{ marginTop: 10, fontSize: '0.85rem', opacity: 0.9 }}>
+          เช็คชื่อแล้ว <b>{todayDone.length}/{classes.length}</b> ชั้น ·
+          ยังไม่ได้เช็ค <b>{classes.length - todayDone.length}</b> ชั้น
+        </div>
+      </div>
+
+      {/* Today per class */}
+      <div style={{ background: 'white', borderRadius: 14, padding: '1rem' }}>
+        <h6 style={{ fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>
+          📋 สถานะวันนี้แยกตามชั้น (คลิกเพื่อไปเช็ค)
+        </h6>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 8 }}>
+          {todayPerClass.map(x => {
+            const tot = x.p + x.a + x.l;
+            const pct = tot ? Math.round((x.p / tot) * 100) : 0;
+            return (
+              <button key={x.c.classId} onClick={() => onJump(x.c.classId)} style={{
+                background: x.status === 'done' ? '#FFF7ED' : '#F1F5F9',
+                border: x.status === 'done' ? `2px solid ${BRAND}` : '2px dashed #CBD5E1',
+                borderRadius: 10, padding: '10px 12px', textAlign: 'left',
+                cursor: 'pointer',
+              }}>
+                <div style={{ fontWeight: 900, color: '#0F172A', marginBottom: 4 }}>{x.c.label}</div>
+                {x.status === 'done' ? (
+                  <>
+                    <div style={{ fontSize: '0.78rem', color: '#7C2D12' }}>
+                      มา <b style={{ color: BRAND }}>{x.p}</b> · ขาด <b style={{ color: '#EF4444' }}>{x.a}</b> · ลา <b style={{ color: '#F59E0B' }}>{x.l}</b>
+                    </div>
+                    <div style={{ marginTop: 4, height: 6, background: '#FFEDD5', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: BRAND }} />
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#94A3B8', marginTop: 2 }}>{pct}% มาเรียน</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: '0.78rem', color: '#94A3B8' }}>⏳ ยังไม่เช็คชื่อวันนี้</div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 30-day trend chart */}
+      <div style={{ background: 'white', borderRadius: 14, padding: '1rem' }}>
+        <h6 style={{ fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>📈 แนวโน้มการมาเรียน 30 วันล่าสุด (ทั้งโรงเรียน)</h6>
+        {trend.length === 0 ? (
+          <div style={{ color: '#94A3B8', fontSize: '0.85rem' }}>ยังไม่มีข้อมูล</div>
+        ) : (
+          <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', minHeight: 200, paddingBottom: 30, overflowX: 'auto' }}>
+            {trend.map(d => {
+              const tot = d.p + d.a + d.l || 1;
+              const max = Math.max(...trend.map(x => x.p + x.a + x.l), 1);
+              const h = ((d.p + d.a + d.l) / max) * 170;
+              return (
+                <div key={d.date} style={{ minWidth: 30, textAlign: 'center' }}>
+                  <div style={{ height: h, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderRadius: '4px 4px 0 0', overflow: 'hidden' }}>
+                    {d.l > 0 && <div title={`ลา ${d.l}`} style={{ background: STATUS_COLORS.leave, height: `${(d.l / tot) * 100}%` }} />}
+                    {d.a > 0 && <div title={`ขาด ${d.a}`} style={{ background: STATUS_COLORS.absent, height: `${(d.a / tot) * 100}%` }} />}
+                    {d.p > 0 && <div title={`มา ${d.p}`} style={{ background: STATUS_COLORS.present, height: `${(d.p / tot) * 100}%` }} />}
+                  </div>
+                  <div style={{ fontSize: '0.6rem', color: '#64748B', marginTop: 4, transform: 'rotate(-45deg)', transformOrigin: 'top left', whiteSpace: 'nowrap' }}>
+                    {d.date.slice(5)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <Legend />
+      </div>
+
+      {/* Class ranking */}
+      <div style={{ background: 'white', borderRadius: 14, padding: '1rem' }}>
+        <h6 style={{ fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>🏆 อัตราการมาเรียนแยกตามชั้น (จากประวัติทั้งหมด)</h6>
+        {classRates.filter(r => r.tot > 0).length === 0 ? (
+          <div style={{ color: '#94A3B8', fontSize: '0.85rem' }}>ยังไม่มีประวัติ — เริ่มเช็คชื่อก่อน</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {classRates.filter(r => r.tot > 0).map((r, i) => (
+              <div key={r.c.classId} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ minWidth: 30, fontWeight: 900, color: i < 3 ? '#FF6A01' : '#94A3B8' }}>{i + 1}</span>
+                <span style={{ minWidth: 80, fontWeight: 700, color: '#0F172A' }}>{r.c.label}</span>
+                <div style={{ flex: 1, height: 18, background: '#F1F5F9', borderRadius: 9, overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${r.rate}%`, height: '100%',
+                    background: r.rate >= 90 ? STATUS_COLORS.present : r.rate >= 70 ? STATUS_COLORS.leave : STATUS_COLORS.absent,
+                  }} />
+                </div>
+                <span style={{ minWidth: 45, fontWeight: 800, color: '#0F172A', textAlign: 'right' }}>{r.rate}%</span>
+                <span style={{ minWidth: 90, fontSize: '0.75rem', color: '#94A3B8' }}>{r.days} วันบันทึก</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Top absentees */}
+      {absentees.length > 0 && (
+        <div style={{ background: 'white', borderRadius: 14, padding: '1rem' }}>
+          <h6 style={{ fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>⚠️ นักเรียนที่ขาดเรียนสูงสุด (ทั้งโรงเรียน)</h6>
+          <p style={{ fontSize: '0.78rem', color: '#94A3B8', marginBottom: 12 }}>นับจากประวัติทั้งหมด · แสดง 15 อันดับ</p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ background: '#FFF7ED' }}>
+                  <th style={{ padding: 8, textAlign: 'center' }}>#</th>
+                  <th style={{ padding: 8, textAlign: 'left' }}>ชื่อ-สกุล</th>
+                  <th style={{ padding: 8 }}>ชั้น</th>
+                  <th style={{ padding: 8 }}>ขาด (วัน)</th>
+                  <th style={{ padding: 8 }}>จากทั้งหมด</th>
+                  <th style={{ padding: 8 }}>%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {absentees.map((s, i) => {
+                  const pct = s.total ? Math.round((s.absent / s.total) * 100) : 0;
+                  return (
+                    <tr key={s.sid} style={{ borderBottom: '1px solid #FFF7ED' }}>
+                      <td style={{ padding: 8, textAlign: 'center', fontWeight: 800, color: i < 3 ? '#EF4444' : '#94A3B8' }}>{i + 1}</td>
+                      <td style={{ padding: 8, fontWeight: 700 }}>{s.name}</td>
+                      <td style={{ padding: 8, textAlign: 'center' }}>{s.classLabel}</td>
+                      <td style={{ padding: 8, textAlign: 'center', fontWeight: 800, color: '#EF4444' }}>{s.absent}</td>
+                      <td style={{ padding: 8, textAlign: 'center', color: '#64748B' }}>{s.total}</td>
+                      <td style={{ padding: 8, textAlign: 'center', fontWeight: 800, color: pct >= 30 ? '#EF4444' : '#F59E0B' }}>{pct}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const lbl: React.CSSProperties = { fontSize: '0.78rem', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 4 };
 const inp: React.CSSProperties = { width: '100%', padding: '8px 12px', borderRadius: 10, border: '1px solid #E2E8F0', fontSize: '0.9rem' };
