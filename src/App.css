@@ -339,7 +339,10 @@
 
 @media (max-width: 768px) {
   .nav-links {
-    display: none;
+    display: none !important;
+  }
+  .mobile-menu-btn {
+    display: inline-flex !important;
   }
   .stats-grid {
     grid-template-columns: 1fr 1fr;
@@ -350,5 +353,35 @@
   .footer-grid {
     grid-template-columns: 1fr;
     gap: 2rem;
+  }
+  .hero-title {
+    font-size: 2.2rem !important;
+  }
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .nav-container {
+    padding: 0.6rem 1rem !important;
+  }
+  /* Make tables horizontally scroll on mobile */
+  table {
+    font-size: 0.78rem;
+  }
+  /* Admin sidebar collapses on mobile */
+  .admin-dashboard-layout {
+    flex-direction: column !important;
+  }
+  .admin-dashboard-layout > aside {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #FFEDD5;
+  }
+}
+
+/* Show hamburger only on mobile (default = hidden via inline display:none) */
+@media (min-width: 769px) {
+  .mobile-menu-btn {
+    display: none !important;
   }
 }
