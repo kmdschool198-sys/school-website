@@ -28,6 +28,8 @@ import TimetableSmart from '../components/TimetableSmart';
 import RosterManager from '../components/RosterManager';
 import ResultsManager from '../components/ResultsManager';
 import ClubsManager from '../components/ClubsManager';
+import LeavesManager from '../components/LeavesManager';
+import TrainingsManager from '../components/TrainingsManager';
 import {
   collection, addDoc, getDocs, deleteDoc, doc, orderBy, query,
   updateDoc, setDoc, getDoc
@@ -88,7 +90,7 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'results' | 'clubs' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'results' | 'clubs' | 'leaves' | 'trainings' | 'settings';
 
 interface StudentRow { class: string; male: number; female: number; teacher: string; note: string; }
 
@@ -647,6 +649,8 @@ function Admin() {
     roster: 'รายชื่อนักเรียน (เช็คชื่อ)',
     results: 'ประกาศผลสอบนักเรียน',
     clubs: 'ชุมนุม / กิจกรรม / ลูกเสือ',
+    leaves: 'ใบลาครู (อนุมัติ)',
+    trainings: 'ข้อมูลการอบรมครู',
     settings: 'ตั้งค่าระบบ'
   };
 
@@ -676,6 +680,8 @@ function Admin() {
             ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
             ['results', <Sparkles size={18} key="rs" />, 'ประกาศผลสอบ'],
             ['clubs', <Users size={18} key="cb" />, 'ชุมนุม-กิจกรรม'],
+            ['leaves', <Edit2 size={18} key="lv" />, 'ใบลาครู'],
+            ['trainings', <Sparkles size={18} key="tr" />, 'ข้อมูลอบรม'],
             ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
           ] as [AdminTab, ReactNode, string][]).map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
@@ -1318,6 +1324,28 @@ function Admin() {
               <p className="text-muted small mb-0">สร้างชุมนุม → เพิ่มสมาชิกข้ามชั้น → ครูเช็คชื่อที่หน้า /club-attendance</p>
             </div>
             <ClubsManager />
+          </div>
+        )}
+
+        {/* Teacher leave management */}
+        {activeTab === 'leaves' && (
+          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
+            <div className="mb-3">
+              <h5 className="fw-bold mb-1">📝 จัดการใบลาครู</h5>
+              <p className="text-muted small mb-0">อนุมัติ/ไม่อนุมัติ/ลบ ใบลาที่ครูส่งจากหน้า /teacher-leave</p>
+            </div>
+            <LeavesManager />
+          </div>
+        )}
+
+        {/* Teacher training management */}
+        {activeTab === 'trainings' && (
+          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
+            <div className="mb-3">
+              <h5 className="fw-bold mb-1">🎓 จัดการข้อมูลการอบรมครู</h5>
+              <p className="text-muted small mb-0">ดูสรุปทั้งหมด · ฟิลเตอร์รายครู/รายปี · Export CSV</p>
+            </div>
+            <TrainingsManager />
           </div>
         )}
 
