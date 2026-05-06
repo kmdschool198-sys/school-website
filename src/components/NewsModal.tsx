@@ -114,30 +114,31 @@ export default function NewsModal({ post, onClose }: Props) {
           )}
 
           {post.albumUrl && (
-            <div style={{ marginTop: '1rem', background: '#FFF7ED', padding: '1.5rem', borderRadius: '24px', border: '1px solid #FFEDD5', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ background: 'white', color: '#FF6A01', padding: '10px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(255,106,1,0.1)' }}>
-                  <ImageIcon size={22} />
+            <a href={post.albumUrl} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'block', textDecoration: 'none', marginTop: '1rem' }}
+              onMouseOver={e => e.currentTarget.style.transform='scale(1.01)'}
+              onMouseOut={e => e.currentTarget.style.transform='scale(1)'}
+            >
+              <div style={{ background: '#FFF7ED', padding: '1.5rem', borderRadius: '24px', border: '1px solid #FFEDD5', display: 'flex', flexDirection: 'column', gap: '1rem', cursor: 'pointer', transition: 'transform 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ background: 'white', color: '#FF6A01', padding: '10px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(255,106,1,0.1)' }}>
+                    <ImageIcon size={22} />
+                  </div>
+                  <div>
+                    <h5 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>ภาพกิจกรรมเพิ่มเติม</h5>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>คลิกเพื่อดูภาพทั้งหมดผ่านอัลบั้ม Google Photos</p>
+                  </div>
                 </div>
-                <div>
-                  <h5 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>ภาพกิจกรรมเพิ่มเติม</h5>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>รับชมภาพทั้งหมดผ่านอัลบั้ม Google Photos</p>
-                </div>
-              </div>
-              <a href={post.albumUrl} target="_blank" rel="noopener noreferrer"
-                style={{
+                <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
                   background: 'linear-gradient(135deg,#FF6A01,#FB923C)', color: 'white',
                   padding: '1rem', borderRadius: '14px', fontWeight: 800, fontSize: '1rem',
-                  textDecoration: 'none', boxShadow: '0 8px 20px rgba(255,106,1,0.25)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={e => e.currentTarget.style.transform='scale(1.02)'}
-                onMouseOut={e => e.currentTarget.style.transform='scale(1)'}
-              >
-                ดูอัลบั้มภาพบน Google Photos <ExternalLink size={16} />
-              </a>
-            </div>
+                  boxShadow: '0 8px 20px rgba(255,106,1,0.25)',
+                }}>
+                  ดูอัลบั้มภาพบน Google Photos <ExternalLink size={16} />
+                </div>
+              </div>
+            </a>
           )}
 
           {post.imageType === 'pdf' && post.imageUrl && (
