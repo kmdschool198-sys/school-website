@@ -51,11 +51,12 @@ export default function NewsModal({ post, onClose }: Props) {
         style={{
           background: 'white', borderRadius: '28px',
           maxWidth: post.imageUrl ? '1100px' : '640px', width: '100%',
-          maxHeight: '92vh', overflow: 'hidden', position: 'relative',
+          maxHeight: '92vh', overflowY: 'auto', position: 'relative',
           boxShadow: '0 30px 80px rgba(255,106,1,0.25)',
           animation: 'modalIn 0.35s cubic-bezier(0.4,0,0.2,1)',
           display: 'grid',
           gridTemplateColumns: post.imageUrl ? 'minmax(0, 1.1fr) minmax(0, 1fr)' : '1fr',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <button onClick={onClose} aria-label="ปิด" style={{
@@ -71,7 +72,7 @@ export default function NewsModal({ post, onClose }: Props) {
           <div style={{
             background: '#FFF7ED',
             display: 'flex', alignItems: post.imageType === 'pdf' ? 'stretch' : 'flex-start', justifyContent: 'center',
-            padding: post.imageType === 'pdf' ? '0' : '1.5rem', overflowY: post.imageType === 'pdf' ? 'hidden' : 'auto',
+            padding: post.imageType === 'pdf' ? '0' : '1.5rem',
           }}>
             {post.imageType === 'pdf' ? (
               <iframe
@@ -91,7 +92,7 @@ export default function NewsModal({ post, onClose }: Props) {
           </div>
         )}
 
-        <div style={{ padding: '2.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '1.25rem' }}>
             {post.category && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#FFF7ED', color: '#FF6A01', padding: '6px 14px', borderRadius: '50px', fontSize: '0.78rem', fontWeight: 800 }}>
