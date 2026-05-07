@@ -12,7 +12,7 @@ interface Room    { id: string; level?: string; grade: string; room?: string; ho
 interface Slot    { id: number; label: string; start: string; end: string; }
 interface SchedCell { subject?: string; teacher?: string; substitute?: string; free?: boolean; }
 interface School  { name: string; year?: string; semester?: string; principalName?: string; principalPos?: string; acadName?: string; acadPos?: string; }
-interface TTData  { school: School; teachers: Teacher[]; subjects: Subject[]; rooms: Room[]; slots: Slot[]; days: string[]; sched: Record<string, SchedCell>; }
+interface TTData  { school: School; teachers: Teacher[]; subjects: Subject[]; rooms: Room[]; slots: Slot[]; days: string[]; sched: Record<string, SchedCell>; substitute?: Record<string, any>; }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const seedData = (): TTData => {
@@ -331,24 +331,55 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
   // ─── Substitute teaching log ────────────────────────────────────────────
   const renderSubPanel = () => {
     const dayOrder = data.days;
-    const subs = Object.entries(data.sched)
+    const subs: any[] = Object.entries(data.sched)
       .filter(([, c]) => c.substitute)
       .map(([key, c]) => {
         const [roomId, slot, day] = parseKey(key);
         return {
-          key, slot: +slot, day,
+          key, slot: +slot, day, dateStr: 'ตารางสอนปกติ',
           room: data.rooms.find(r => r.id === roomId),
           slotInfo: data.slots.find(s => s.id === +slot),
           subject: c.subject || '-',
           original: c.teacher || '-',
           substitute: c.substitute!,
         };
-      })
-      .sort((a, b) => {
-        const di = dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
-        if (di !== 0) return di;
-        return a.slot - b.slot;
       });
+
+    // Add daily substitutes from timetable.html
+    if (data.substitute) {
+      Object.entries(data.substitute).forEach(([dateStr, dailyData]: [string, any]) => {
+        if (dailyData && dailyData.absentList) {
+          dailyData.absentList.forEach((absent: any) => {
+            const origTeacher = data.teachers.find(t => t.id === absent.teacherId);
+            absent.periods.forEach((p: any) => {
+              if (p.subTeacher) {
+                subs.push({
+                  key: `daily_${dateStr}_${absent.teacherId}_${p.slotId}`,
+                  slot: p.slotId,
+                  day: p.day || dayOrder[new Date(dateStr).getDay() - 1] || '-',
+                  dateStr: dateStr,
+                  room: data.rooms.find(r => r.id === p.roomId),
+                  slotInfo: data.slots.find(s => s.id === p.slotId),
+                  subject: p.subject || '-',
+                  original: teacherName(origTeacher) || '-',
+                  substitute: p.subTeacher,
+                });
+              }
+            });
+          });
+        }
+      });
+    }
+
+    subs.sort((a, b) => {
+      if (a.dateStr !== b.dateStr && a.dateStr !== 'ตารางสอนปกติ' && b.dateStr !== 'ตารางสอนปกติ') {
+         return b.dateStr.localeCompare(a.dateStr);
+      }
+      if (a.dateStr !== b.dateStr) return a.dateStr === 'ตารางสอนปกติ' ? 1 : -1;
+      const di = dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
+      if (di !== 0) return di;
+      return a.slot - b.slot;
+    });
 
     // Aggregate per substitute teacher
     const bySubTeacher: Record<string, number> = {};
@@ -360,7 +391,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
         <div style={{ background: 'white', padding: '2rem', borderRadius: 14, textAlign: 'center', color: '#94A3B8', border: '2px dashed #E2E8F0' }}>
           <UserPlus size={36} style={{ marginBottom: 10, opacity: 0.5 }} />
           <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>ยังไม่มีรายการสอนแทน</div>
-          <div style={{ fontSize: '0.8rem', marginTop: 4 }}>คลิก cell ในตาราง → กดปุ่ม "เพิ่มครูสอนแทน"</div>
+          <div style={{ fontSize: '0.8rem', marginTop: 4 }}>เพิ่มการสอนแทนในตารางรายวัน หรือคลิก cell ในตาราง → "เพิ่มครูสอนแทน"</div>
         </div>
       );
     }
@@ -383,9 +414,10 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
 
         {/* Detail table */}
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 700 }}>
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 800 }}>
             <thead>
               <tr>
+                <th style={th}>วันที่/ประเภท</th>
                 <th style={th}>วัน</th>
                 <th style={th}>คาบ</th>
                 <th style={th}>เวลา</th>
@@ -399,6 +431,9 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
             <tbody>
               {subs.map(s => (
                 <tr key={s.key}>
+                  <td style={{ ...td, fontWeight: 700, color: s.dateStr === 'ตารางสอนปกติ' ? '#64748B' : '#0F172A', background: '#F8FAFC' }}>
+                    {s.dateStr === 'ตารางสอนปกติ' ? '📌 สอนแทนประจำ' : `📅 ${s.dateStr}`}
+                  </td>
                   <td style={{ ...td, fontWeight: 700, color: '#7C2D12', background: '#FFF7ED' }}>{s.day}</td>
                   <td style={td}>{s.slotInfo?.label || s.slot}</td>
                   <td style={{ ...td, fontSize: '0.78rem', color: '#64748B' }}>{s.slotInfo ? `${s.slotInfo.start}-${s.slotInfo.end}` : '-'}</td>
@@ -408,14 +443,16 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
                   <td style={{ ...td, color: '#7C3AED', fontWeight: 800 }}>🔁 {s.substitute}</td>
                   {!readOnly && (
                     <td style={td}>
-                      <button onClick={() => {
-                        if (!confirm(`ยกเลิกการสอนแทนของ ${s.substitute}?`)) return;
-                        const cell = data.sched[s.key];
-                        updateCell(s.key, { ...cell, substitute: undefined });
-                      }}
-                        style={{ padding: '4px 10px', borderRadius: 8, border: '1px solid #FECACA', background: 'white', color: '#DC2626', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                        ยกเลิก
-                      </button>
+                      {s.dateStr === 'ตารางสอนปกติ' && (
+                        <button onClick={() => {
+                          if (!confirm(`ยกเลิกการสอนแทนประจำของ ${s.substitute}?`)) return;
+                          const cell = data.sched[s.key];
+                          if(cell) updateCell(s.key, { ...cell, substitute: undefined });
+                        }}
+                          style={{ padding: '4px 10px', borderRadius: 8, border: '1px solid #FECACA', background: 'white', color: '#DC2626', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                          ยกเลิก
+                        </button>
+                      )}
                     </td>
                   )}
                 </tr>
@@ -659,8 +696,14 @@ function CellEditor({ data, editing, onClose, onSave, currentCell }: {
   }, [subject, data.teachers, teacherNames]);
 
   const submit = () => {
-    if (free) onSave({ free: true });
-    else onSave({ subject, teacher, substitute: substitute || undefined });
+    if (free) {
+      onSave({ free: true });
+    } else {
+      onSave({ subject, teacher, substitute: substitute || undefined });
+      if (substitute && substitute !== currentCell?.substitute) {
+        alert(`✅ มอบหมายให้ ${substitute} สอนแทน ${teacher} ในคาบนี้เรียบร้อยแล้ว!`);
+      }
+    }
   };
 
   return (

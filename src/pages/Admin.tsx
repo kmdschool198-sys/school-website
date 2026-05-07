@@ -22,7 +22,8 @@ import {
   AlignLeft,
   Minus,
   Calendar as CalendarIcon,
-  ExternalLink
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import TimetableSmart from '../components/TimetableSmart';
 import RosterManager from '../components/RosterManager';
@@ -275,6 +276,40 @@ function Admin() {
   };
   const addStudentRow = () => setStudentRows(rows => [...rows, { class: '', male: 0, female: 0, teacher: '', note: '' }]);
   const removeStudentRow = (i: number) => setStudentRows(rows => rows.filter((_, idx) => idx !== i));
+
+  const syncFromRoster = async () => {
+    if (!window.confirm('คำเตือน: ยอดรวมชาย/หญิงจะถูกดึงจาก "รายชื่อนักเรียน" มาทับข้อมูลปัจจุบัน ยืนยันหรือไม่?')) return;
+    setLoading(true);
+    try {
+      const snap = await getDoc(doc(db, 'config', 'attendance_classes'));
+      if (snap.exists()) {
+        const data = snap.data() as { classes: any[] };
+        const isMale = (n: string) => /เด็กชาย|นาย|ด\.ช\./.test(n);
+        const isFemale = (n: string) => /เด็กหญิง|น\.ส\.|ด\.ญ\.|นางสาว|นาง/.test(n);
+        
+        const newRows = data.classes.map(c => {
+          const male = c.students.filter((s: any) => isMale(s.name)).length;
+          const female = c.students.filter((s: any) => isFemale(s.name)).length;
+          const existing = studentRows.find(r => r.class === c.label);
+          return {
+            class: c.label,
+            male,
+            female,
+            teacher: existing?.teacher || '',
+            note: existing?.note || ''
+          };
+        });
+        setStudentRows(newRows);
+        showToast('ดึงข้อมูลรายชื่อสำเร็จ! กรุณากดบันทึก', 'success');
+      } else {
+        showToast('ไม่พบข้อมูลรายชื่อนักเรียนในระบบ', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('เกิดข้อผิดพลาดในการดึงข้อมูล', 'error');
+    }
+    setLoading(false);
+  };
 
   const loadNews = async () => {
     const q = query(collection(db, 'posts'), orderBy('date', 'desc'));
@@ -1263,6 +1298,9 @@ function Admin() {
 
             <div className="d-flex gap-2 mt-3">
               <button className="btn btn-light border" onClick={addStudentRow}>+ เพิ่มแถว</button>
+              <button className="btn btn-warning fw-bold d-flex align-items-center gap-2" style={{ background: '#FDE047', color: '#854D0E', border: 'none' }} onClick={syncFromRoster} disabled={loading}>
+                <RefreshCw size={16} /> ดึงยอดจำนวนจากรายชื่อเช็คชื่อ
+              </button>
               <button className="btn text-white fw-bold ms-auto" style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)' }} onClick={saveStudents} disabled={loading}>
                 <Save size={16} className="me-2" /> {loading ? 'กำลังบันทึก...' : 'บันทึกข้อมูลนักเรียน'}
               </button>

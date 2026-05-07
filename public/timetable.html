@@ -466,6 +466,7 @@ textarea{resize:vertical;min-height:64px}
   <div class="tb-tag" id="tbYear">ปีการศึกษา –</div>
   <div class="save-ind" id="saveIndicator" title="สถานะการบันทึก"><div class="save-dot" id="saveDot"></div><span id="saveLabel">–</span></div>
   <button class="btn btn-ghost btn-sm" onclick="nav('storage')" style="color:#fff;border-color:rgba(255,255,255,.3)">💾 ข้อมูล</button>
+  <button class="btn btn-ghost btn-sm" id="btnSyncCloudTop" onclick="syncToCloud()" style="color:#fff;border-color:rgba(255,255,255,.3);background:#d84315">☁️ ซิงค์ขึ้นเว็บ</button>
   <button class="btn btn-ghost btn-sm" onclick="exportAllDocx()" style="color:#fff;border-color:rgba(255,255,255,.3)">📥 Word</button>
 </div>
 
@@ -848,6 +849,7 @@ textarea{resize:vertical;min-height:64px}
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-succ" style="font-size:15px;padding:12px 24px" onclick="saveNow()">💾 บันทึกทันที</button>
       <button class="btn btn-out" onclick="reloadFromStorage()">🔄 โหลดข้อมูลจากเครื่อง</button>
+      <button class="btn btn-pri" id="btnSyncCloud" style="font-size:15px;padding:12px 24px" onclick="syncToCloud()" style="background:#d84315;border:none">☁️ ซิงค์ข้อมูลขึ้นระบบหน้าเว็บ</button>
     </div>
     <div id="saveNowMsg" style="margin-top:10px"></div>
   </div>
@@ -25903,15 +25905,32 @@ function renderSubContent(){
       const slot = DB.slots.find(s=>String(s.id)===String(p.slotId));
       const room = DB.rooms.find(r=>r.id===p.roomId);
       // teacher options — suggest teachers who teach this subject or all teachers
+      const busyMap = getBusyTeachersAt(p.slotId, schedDay);
+      const subBusy = {};
+      day.absentList.forEach(ab => {
+        ab.periods.forEach(per => {
+          if (String(per.slotId) === String(p.slotId) && per.subTeacher) {
+            subBusy[per.subTeacher] = true;
+          }
+        });
+      });
+      const allAbsentTeacherIds = day.absentList.map(a => a.teacherId);
+      const isFree = (x) => {
+        if (allAbsentTeacherIds.includes(x.id)) return false;
+        const tName = x.prefix + x.first + ' ' + x.last;
+        if (p.subTeacher === tName) return true;
+        return !busyMap[tName] && !subBusy[tName];
+      };
+
       const eligible = p.subject
-        ? DB.teachers.filter(x=>x.id!==absent.teacherId&&(x.subjects||[]).includes(p.subject))
-        : DB.teachers.filter(x=>x.id!==absent.teacherId);
-      const allOthers = DB.teachers.filter(x=>x.id!==absent.teacherId);
+        ? DB.teachers.filter(x=>x.id!==absent.teacherId&&(x.subjects||[]).includes(p.subject)&&isFree(x))
+        : DB.teachers.filter(x=>x.id!==absent.teacherId&&isFree(x));
+      const allOthers = DB.teachers.filter(x=>x.id!==absent.teacherId&&isFree(x));
       const opts = '<option value="">-- เลือกครูสอนแทน --</option>'
         + (eligible.length
-          ? '<optgroup label="✅ สอนวิชานี้ได้">'+eligible.map(x=>`<option value="${x.prefix+x.first+' '+x.last}" ${p.subTeacher===x.prefix+x.first+' '+x.last?'selected':''}>${x.prefix+x.first+' '+x.last}</option>`).join('')+'</optgroup>'
+          ? '<optgroup label="✅ สอนวิชานี้ได้ (ว่าง)">'+eligible.map(x=>`<option value="${x.prefix+x.first+' '+x.last}" ${p.subTeacher===x.prefix+x.first+' '+x.last?'selected':''}>${x.prefix+x.first+' '+x.last}</option>`).join('')+'</optgroup>'
           : '')
-        + '<optgroup label="👨‍🏫 ครูทั้งหมด">'+allOthers.map(x=>`<option value="${x.prefix+x.first+' '+x.last}" ${p.subTeacher===x.prefix+x.first+' '+x.last?'selected':''}>${x.prefix+x.first+' '+x.last}</option>`).join('')+'</optgroup>';
+        + '<optgroup label="👨‍🏫 ครูทั้งหมด (ว่าง)">'+allOthers.map(x=>`<option value="${x.prefix+x.first+' '+x.last}" ${p.subTeacher===x.prefix+x.first+' '+x.last?'selected':''}>${x.prefix+x.first+' '+x.last}</option>`).join('')+'</optgroup>';
       return `<div class="period-sub-row">
         <div class="period-pill">${slot?slot.label:'คาบ '+p.slotId}</div>
         <div style="font-size:11px;color:var(--muted);min-width:80px">${slot?slot.start+'–'+slot.end:''}</div>
@@ -27101,6 +27120,78 @@ function loadDemoData(){
   }
 })();
 
+</script>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js';
+  import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDMQ21IocDvKkkgb-3HnHlz9OF4Nc-q7jk",
+    authDomain: "web-site-kmd.firebaseapp.com",
+    projectId: "web-site-kmd",
+    storageBucket: "web-site-kmd.firebasestorage.app",
+    messagingSenderId: "1084529861236",
+    appId: "1:1084529861236:web:e05c9ba62099c9ff036721"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.syncToCloud = async function() {
+    if (!confirm('ยืนยันอัปเดตตารางสอน/สอนแทนขึ้นระบบหน้าเว็บ? (ผู้ปกครองและนักเรียนจะเห็นข้อมูลล่าสุดทันที)')) return;
+    try {
+      const btn = document.getElementById('btnSyncCloud');
+      const btnTop = document.getElementById('btnSyncCloudTop');
+      if (btn) btn.innerHTML = '⏳ กำลังอัปโหลด...';
+      if (btnTop) btnTop.innerHTML = '⏳ กำลังอัปโหลด...';
+      
+      // Force a save to localStorage first
+      if (typeof window.persistNow === 'function') {
+        window.persistNow();
+      }
+      
+      let profiles = {};
+      try {
+        if (typeof window.getProfiles === 'function') {
+          profiles = window.getProfiles();
+        } else {
+          const ls = localStorage.getItem('timetable_v3_profiles');
+          if (ls && ls !== 'undefined') profiles = JSON.parse(ls);
+        }
+      } catch (err) {
+        throw new Error("ไม่สามารถอ่านข้อมูลจากเครื่องได้");
+      }
+      
+      const activeId = window.activeProfileId || localStorage.getItem('timetable_v3_active');
+      const targetId = (activeId && profiles[activeId]) ? activeId : Object.keys(profiles)[0];
+      
+      if (!targetId || !profiles[targetId] || !profiles[targetId].data) {
+        throw new Error("ไม่พบข้อมูลโปรไฟล์ที่กำลังใช้งาน ลองสร้างตารางหรือบันทึกข้อมูลก่อนครับ");
+      }
+      
+      const payload = profiles[targetId].data;
+
+      await setDoc(doc(db, 'config', 'timetable'), payload);
+      
+      if (btn) btn.innerHTML = '☁️ ซิงค์สำเร็จ!';
+      if (btnTop) btnTop.innerHTML = '☁️ ซิงค์สำเร็จ!';
+      setSaveInd('saved', 'อัปโหลดขึ้นคลาวด์เรียบร้อย!');
+      setTimeout(() => {
+         if (btn) btn.innerHTML = '☁️ ซิงค์ข้อมูลขึ้นระบบหน้าเว็บ';
+         if (btnTop) btnTop.innerHTML = '☁️ ซิงค์ขึ้นเว็บ';
+         setSaveInd('saved', 'บันทึกแล้ว · ' + fmtTime(Date.now()));
+      }, 4000);
+      toast('✅ ซิงค์ข้อมูลขึ้นระบบส่วนกลางสำเร็จ', 'succ');
+    } catch(e) {
+      console.error(e);
+      alert('Error syncing to cloud: ' + e.message);
+      const btn = document.getElementById('btnSyncCloud');
+      const btnTop = document.getElementById('btnSyncCloudTop');
+      if (btn) btn.innerHTML = '☁️ ซิงค์ข้อมูลขึ้นระบบหน้าเว็บ';
+      if (btnTop) btnTop.innerHTML = '☁️ ซิงค์ขึ้นเว็บ';
+    }
+  };
 </script>
 </body>
 </html>

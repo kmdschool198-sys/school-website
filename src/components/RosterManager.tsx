@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import { Trash2, UserPlus, Upload, Download, FileSpreadsheet } from 'lucide-react';
@@ -203,6 +203,63 @@ export default function RosterManager() {
     XLSX.writeFile(wb, `รายชื่อนักเรียนทั้งหมด_โรงเรียนบ้านคลองมดแดง.xlsx`);
   };
 
+  const exportAttendanceHistory = async () => {
+    try {
+      const q = collection(db, 'attendance');
+      const snap = await getDocs(q);
+      const docs: any[] = [];
+      snap.forEach(d => docs.push(d.data()));
+
+      const statusTh: Record<string, string> = {
+        present: 'มาเรียน',
+        absent: 'ขาดเรียน',
+        leave: 'ลา'
+      };
+
+      const wb = XLSX.utils.book_new();
+      
+      classes.forEach(c => {
+        const classDocs = docs.filter(d => d.classId === c.classId);
+        if (classDocs.length === 0) return;
+        
+        const data: any[][] = [['วันที่', 'รหัสประจำตัว', 'ชื่อ-สกุล', 'สถานะ', 'หมายเหตุ']];
+        
+        // Sort documents by date
+        classDocs.sort((a, b) => a.date.localeCompare(b.date));
+        
+        classDocs.forEach(d => {
+          c.students.forEach(s => {
+            const rec = d.records?.[s.id];
+            if (rec) {
+              data.push([
+                d.date,
+                s.code || '',
+                s.name,
+                statusTh[rec.status] || rec.status,
+                rec.note || ''
+              ]);
+            }
+          });
+        });
+
+        if (data.length > 1) {
+          const ws = XLSX.utils.aoa_to_sheet(data);
+          ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 30 }, { wch: 12 }, { wch: 20 }];
+          XLSX.utils.book_append_sheet(wb, ws, c.label.replace(/\//g, '-').slice(0, 31));
+        }
+      });
+      
+      if (wb.SheetNames.length === 0) {
+        alert('ยังไม่มีข้อมูลการมาเรียนในระบบ');
+        return;
+      }
+      XLSX.writeFile(wb, `ประวัติการมาเรียนทั้งหมด_โรงเรียนบ้านคลองมดแดง.xlsx`);
+    } catch (e) {
+      console.error(e);
+      alert('เกิดข้อผิดพลาดในการโหลดข้อมูลประวัติการมาเรียน');
+    }
+  };
+
   const downloadTemplate = () => {
     const csv = '\ufeff' + 'รหัส,ชื่อ,emoji\n68001,นาย ก. ใจดี,👦\n68002,น.ส. ข. ใจงาม,👧\n';
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -257,6 +314,9 @@ export default function RosterManager() {
         </button>
         <button onClick={exportExcelAll} style={xBtn('#0F172A')}>
           <FileSpreadsheet size={14} />Excel ภาพรวมทั้งหมด
+        </button>
+        <button onClick={exportAttendanceHistory} style={xBtn('#D97706')} title="ดาวน์โหลดประวัติการมาเรียนรายวัน">
+          <FileSpreadsheet size={14} />ประวัติเวลาเรียน
         </button>
         <button onClick={downloadTemplate} style={{
           background: 'white', color: '#7C2D12', padding: '6px 14px', borderRadius: 8, border: '1px solid #FFEDD5',
