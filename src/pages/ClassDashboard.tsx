@@ -4,7 +4,7 @@ import { collection, doc, onSnapshot, getDocs, query, where } from 'firebase/fir
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import {
-  ChevronLeft, LogOut, Users, Calendar, Award, Target, ClipboardList,
+  ChevronLeft, LogOut, Users, Calendar, Award, Target,
   BookOpen, DollarSign, Activity, Sparkles,
 } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
@@ -140,9 +140,9 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
     });
   }, [cls.id]);
 
-  // Generic logs (filter by classLabel field if present)
+  // Generic logs (filter by classLabel field if present) — student-facing only
   useEffect(() => {
-    const types = ['plc', 'media', 'saving', 'lesson_plan', 'remedial', 'project', 'body_metrics'];
+    const types = ['saving', 'remedial', 'body_metrics'];
     const unsubs = types.map(t => onSnapshot(collection(db, `log_${t}`), snap => {
       const arr: any[] = [];
       snap.forEach(d => arr.push(d.data()));
@@ -301,20 +301,6 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
           )}
         </Card>
 
-        {/* Lesson plans for this class */}
-        <Card title={`📋 แผนการสอน (${logs.lesson_plan?.length || 0})`} icon={<ClipboardList size={18} />} link="/teacher-log/lesson-plan">
-          {(logs.lesson_plan?.length || 0) === 0 ? <Empty msg="ยังไม่มีแผนการสอน" /> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {logs.lesson_plan.slice(0, 4).map((l: any) => (
-                <div key={l.id} style={{ padding: '8px 10px', background: '#FFF7ED', borderRadius: 8 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{l.lessonName}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{l.subject} · {l.date} · {l.teacherName}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
         {/* Remedial */}
         <Card title={`👨‍🏫 สอนซ่อมเสริม (${logs.remedial?.length || 0})`} icon={<BookOpen size={18} />} link="/teacher-log/remedial">
           {(logs.remedial?.length || 0) === 0 ? <Empty msg="ยังไม่มีบันทึก" /> : (
@@ -361,20 +347,6 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
                   <span style={{ flex: 1, fontWeight: 700 }}>{l.studentName}</span>
                   <span>{l.weight}kg / {l.height}cm</span>
                   {l.bmi && <span style={{ background: '#FFEDD5', padding: '0 6px', borderRadius: 4 }}>BMI {l.bmi}</span>}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        {/* Media usage */}
-        <Card title={`📚 การใช้สื่อ (${logs.media?.length || 0})`} icon={<BookOpen size={18} />} link="/teacher-log/media">
-          {(logs.media?.length || 0) === 0 ? <Empty msg="ยังไม่มีบันทึก" /> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {logs.media.slice(0, 4).map((l: any) => (
-                <div key={l.id} style={{ padding: '8px 10px', background: '#FFF7ED', borderRadius: 8 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{l.mediaName}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{l.subject} · {l.mediaType} · {l.date}</div>
                 </div>
               ))}
             </div>
