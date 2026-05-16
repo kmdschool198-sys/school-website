@@ -43,7 +43,8 @@
       "Bash(pip install *)",
       "Bash(grep -n \"\\\\\"p2\\\\\"\\\\\\\\|'p2_'\" \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/data/unitContent.ts\")",
       "Bash(awk '/^  \"m1-cs\":/,/^  \"m1-design\":/' \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/data/unitExtras.ts\")",
-      "Bash(grep -n \"search-overlay\\\\|search-modal\\\\|<\\\\\\\\/>\" \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/components/SearchBar.tsx\")"
+      "Bash(grep -n \"search-overlay\\\\|search-modal\\\\|<\\\\\\\\/>\" \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/components/SearchBar.tsx\")",
+      "Bash(node scripts/import_clubs.cjs)"
     ]
   }
 }
