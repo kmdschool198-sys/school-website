@@ -71,7 +71,8 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
       { path: '/teacher-log/remedial', label: '👨‍🏫 บันทึกสอนซ่อมเสริม' },
       { path: '/teacher-log/media', label: '📚 บันทึกการใช้สื่อ' },
       { path: '/teacher-log/project', label: '📊 รายงานโครงการ' },
-      { path: '/milk-brush-report', label: '🥛 รายงานนม-แปรงฟัน (auto)' },
+      { path: '/milk-report', label: '🥛 รายงานการดื่มนม (auto)' },
+      { path: '/brush-log', label: '🪥 บันทึกการแปรงฟัน' },
       { path: '/teacher-log/saving', label: '💰 ระบบออมเงิน' },
       { path: '/teacher-log/body-metrics', label: '⚖️ บันทึกน้ำหนัก-ส่วนสูง' },
     ]

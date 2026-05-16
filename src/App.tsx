@@ -11,7 +11,8 @@ import TeacherTraining from './pages/TeacherTraining';
 import ClubAttendance from './pages/ClubAttendance';
 import TeacherHub from './pages/TeacherHub';
 import TeacherLog from './pages/TeacherLog';
-import MilkBrushReport from './pages/MilkBrushReport';
+import MilkReport from './pages/MilkReport';
+import BrushLog from './pages/BrushLog';
 import ClassDashboard from './pages/ClassDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -30,7 +31,10 @@ function App() {
           <Route path="/club-attendance" element={<ClubAttendance />} />
           <Route path="/teacher-hub" element={<TeacherHub />} />
           <Route path="/teacher-log/:type" element={<TeacherLog />} />
-          <Route path="/milk-brush-report" element={<MilkBrushReport />} />
+          <Route path="/milk-report" element={<MilkReport />} />
+          <Route path="/brush-log" element={<BrushLog />} />
+          {/* Backward compat */}
+          <Route path="/milk-brush-report" element={<MilkReport />} />
           <Route path="/class-dashboard" element={<ClassDashboard />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />
