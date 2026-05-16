@@ -35,7 +35,15 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git commit *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(cat >> *)",
+      "Bash(npx --prefix \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website\" tsc --noEmit --project \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/tsconfig.json\")",
+      "Bash(ls \"C:/Users/KruJames/Downloads/ชือ\" 2>&1 | head -30)",
+      "Bash(python -c ' *)",
+      "Bash(pip install *)",
+      "Bash(grep -n \"\\\\\"p2\\\\\"\\\\\\\\|'p2_'\" \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/data/unitContent.ts\")",
+      "Bash(awk '/^  \"m1-cs\":/,/^  \"m1-design\":/' \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/data/unitExtras.ts\")",
+      "Bash(grep -n \"search-overlay\\\\|search-modal\\\\|<\\\\\\\\/>\" \"C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/src/components/SearchBar.tsx\")"
     ]
   }
 }
