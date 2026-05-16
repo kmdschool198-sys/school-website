@@ -63,7 +63,6 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
       { path: '/teacher-hub', label: '🏫 ศูนย์รวมระบบครู (Teacher Hub)' },
       { path: '/class-dashboard', label: '📊 แดชบอร์ดรายชั้นเรียน' },
       { path: '/attendance', label: '📋 ระบบเช็คชื่อนักเรียน' },
-      { path: '/teacher-leave', label: '📝 แบบฟอร์มลาออนไลน์ครู' },
     ]
   }
 };

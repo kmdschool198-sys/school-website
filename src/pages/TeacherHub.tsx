@@ -27,12 +27,9 @@ const STUDENT_APPS: AppCard[] = [
 
 // ─── หมวด 2: ระบบรายงานส่วนตัวของครู (สำหรับครูแต่ละคน) ───
 const TEACHER_APPS: AppCard[] = [
-  { to: '/teacher-leave', title: 'แบบฟอร์มลาออนไลน์', icon: '📝', search: 'ลาออนไลน์', bg: '#FEF3C7' },
   { to: '/teacher-training', title: 'เกียรติบัตร / อบรมครู', icon: '🎖️', search: 'เกียรติบัตรครู', bg: '#DCFCE7' },
-  { to: '/teacher-log/plc', title: 'บันทึก PLC', icon: '👥', search: 'ประชุม PLC', bg: '#A855F7' },
   { to: '/teacher-log/lesson-plan', title: 'ส่งแผนการสอน', icon: '📋', search: 'ส่งแผนการสอน', bg: '#E2E8F0' },
   { to: '/teacher-log/media', title: 'บันทึกการใช้สื่อ', icon: '📚', search: 'การใช้สื่อ', bg: '#FEF3C7' },
-  { to: '/teacher-log/project', title: 'รายงานโครงการ', icon: '📊', search: 'ติดตามโครงการ', bg: '#FCE7F3' },
 ];
 
 export default function TeacherHubPage() {
