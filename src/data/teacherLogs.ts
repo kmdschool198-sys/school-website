@@ -29,30 +29,6 @@ const STD_FIELDS = {
 };
 
 export const TEACHER_LOGS: Record<string, LogConfig> = {
-  milk: {
-    type: 'milk',
-    title: 'บันทึกการดื่มนม',
-    emoji: '🥛',
-    color: '#3B82F6',
-    description: 'บันทึกการแจกนม / ตรวจสอบนักเรียนดื่มนมในแต่ละวัน',
-    collection: 'log_milk',
-    fields: [
-      STD_FIELDS.teacherName,
-      STD_FIELDS.date,
-      { key: 'classLabel', label: 'ชั้นเรียน', type: 'text', required: true, placeholder: 'เช่น ป.1/1' },
-      { key: 'totalStudents', label: 'จำนวนนักเรียน (คน)', type: 'number', required: true },
-      { key: 'drank', label: 'จำนวนที่ดื่ม (คน)', type: 'number', required: true },
-      { key: 'absent', label: 'ขาดเรียน (คน)', type: 'number' },
-      { key: 'note', label: 'หมายเหตุ', type: 'textarea' },
-    ],
-    listColumns: [
-      { key: 'date', label: 'วันที่' },
-      { key: 'classLabel', label: 'ชั้น' },
-      { key: 'teacherName', label: 'ครู' },
-      { key: 'drank', label: 'ดื่ม' },
-      { key: 'totalStudents', label: 'ทั้งหมด' },
-    ],
-  },
   plc: {
     type: 'plc',
     title: 'บันทึก PLC',

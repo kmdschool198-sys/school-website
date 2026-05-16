@@ -14,7 +14,7 @@ interface AppCard {
 
 const APPS: AppCard[] = [
   // Row 1 — Logs
-  { to: '/teacher-log/milk', title: 'บันทึกการดื่มนม', icon: '🥛', search: 'ดื่มนม', bg: '#F3E8FF' },
+  { to: '/milk-brush-report', title: 'รายงานนม-แปรงฟัน (อัตโนมัติ)', icon: '🥛', search: 'นม-แปรงฟัน', bg: '#DBEAFE' },
   { to: '/teacher-log/plc', title: 'บันทึก PLC', icon: '👥', search: 'ประชุม PLC', bg: '#A855F7' },
   { to: '/teacher-log/media', title: 'ระบบบันทึกการใช้สื่อ', icon: '📚', search: 'การใช้สื่อ', bg: '#FEF3C7' },
   { to: '/teacher-log/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3' },
