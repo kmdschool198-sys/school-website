@@ -276,8 +276,8 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
         padding: '1.2rem 1.25rem', boxShadow: '0 4px 20px rgba(255,106,1,0.3)',
       }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <Link to="/" style={{ color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 }}>
-            <ChevronLeft size={16} />หน้าหลัก
+          <Link to="/teacher-hub" style={{ color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 }}>
+            <ChevronLeft size={16} />🏫 Hub
           </Link>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: '1.3rem', fontWeight: 900 }}>📋 ระบบเช็คชื่อนักเรียนออนไลน์</div>

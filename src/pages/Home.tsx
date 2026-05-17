@@ -168,6 +168,9 @@ function Home() {
               <Link to="/calendar" style={{ background: 'rgba(255,255,255,0.12)', color: 'white', padding: '1.1rem 2.5rem', border: '2px solid rgba(255,255,255,0.5)', borderRadius: '14px', fontSize: '1.05rem', fontWeight: 700, backdropFilter: 'blur(10px)', textDecoration: 'none' }}>
                 ปฏิทินกิจกรรม
               </Link>
+              <Link to="/teacher-hub" style={{ background: 'rgba(255,255,255,0.92)', color: '#7C2D12', padding: '1.1rem 2rem', borderRadius: '14px', fontSize: '1.05rem', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 8px 20px rgba(255,255,255,0.3)' }}>
+                🏫 ระบบครู
+              </Link>
             </div>
 
             {heroSlides.length > 1 && (
