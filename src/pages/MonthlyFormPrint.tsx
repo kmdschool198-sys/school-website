@@ -38,6 +38,7 @@ function App() {
   const [classId, setClassId] = useState('');
   const [month, setMonth] = useState(thisMonth());
   const [docs, setDocs] = useState<AttDoc[]>([]);
+  const [holidays, setHolidays] = useState<Record<string, string>>({}); // date → name
 
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
@@ -74,6 +75,18 @@ function App() {
     })();
   }, [classId]);
 
+  // Load holidays from activities collection (where isHoliday=true)
+  useEffect(() => {
+    return onSnapshot(collection(db, 'activities'), snap => {
+      const map: Record<string, string> = {};
+      snap.forEach(d => {
+        const a = d.data() as any;
+        if (a.isHoliday && a.date) map[a.date] = a.title || 'วันหยุด';
+      });
+      setHolidays(map);
+    });
+  }, []);
+
   const current = availableClasses.find(c => c.id === classId);
   const students = current?.students || [];
 
@@ -89,10 +102,11 @@ function App() {
     const dateStr = `${yearStr}-${monStr}-${String(day).padStart(2, '0')}`;
     const dt = new Date(`${dateStr}T00:00:00`);
     const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+    const isHoliday = !!holidays[dateStr];
     const doc = docs.find(d => d.date === dateStr);
-    if (!doc) return isWeekend ? '/' : '';  // no record
+    if (!doc) return (isWeekend || isHoliday) ? '/' : '';
     const rec = doc.records?.[studentId];
-    if (!rec) return isWeekend ? '/' : '';
+    if (!rec) return (isWeekend || isHoliday) ? '/' : '';
     if (rec.status === 'present') return info.mark;
     if (rec.status === 'absent') return type === 'attendance' ? info.missMark : '−';
     if (rec.status === 'leave') return type === 'attendance' ? 'ล' : '−';
@@ -129,7 +143,12 @@ function App() {
           <select value={classId} onChange={e => setClassId(e.target.value)} style={inp}>
             {availableClasses.map(c => <option key={c.id} value={c.id}>{c.label} ({c.students.length} คน)</option>)}
           </select>
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={inp} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+            <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={inp} />
+            <span style={{ fontSize: '0.72rem', opacity: 0.95, fontWeight: 700, color: '#FCD34D' }}>
+              📅 {THAI_MONTHS[monthNum - 1]} พ.ศ.{year + 543}
+            </span>
+          </div>
           <button onClick={() => window.print()} style={btnPrint}>
             <Printer size={16} /> พิมพ์
           </button>
@@ -155,11 +174,19 @@ function App() {
               <th style={{ ...th, width: '4%' }}>ที่</th>
               <th style={{ ...th, width: '20%', textAlign: 'left', paddingLeft: 6 }}>ชื่อ-สกุล</th>
               {days.map(d => {
+                const dateStr = `${yearStr}-${monStr}-${String(d).padStart(2, '0')}`;
                 const dt = new Date(year, monthNum - 1, d);
                 const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+                const holiday = holidays[dateStr];
+                const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][dt.getDay()];
                 return (
-                  <th key={d} style={{ ...th, width: `${66 / daysInMonth}%`, background: isWeekend ? '#FEE2E2' : '#F1F5F9', color: isWeekend ? '#991B1B' : '#0F172A' }}>
-                    {d}
+                  <th key={d} title={holiday || ''} style={{
+                    ...th, width: `${66 / daysInMonth}%`,
+                    background: holiday ? '#FED7AA' : (isWeekend ? '#FEE2E2' : '#F1F5F9'),
+                    color: holiday ? '#7C2D12' : (isWeekend ? '#991B1B' : '#0F172A'),
+                  }}>
+                    <div>{d}</div>
+                    <div style={{ fontSize: '8px', fontWeight: 600 }}>{dayName}</div>
                   </th>
                 );
               })}
@@ -175,17 +202,19 @@ function App() {
                   <td style={{ ...td, textAlign: 'left', paddingLeft: 6, fontSize: '11px' }}>{s.name}</td>
                   {days.map(d => {
                     const status = statusFor(s.id, d);
+                    const dateStr = `${yearStr}-${monStr}-${String(d).padStart(2, '0')}`;
                     const dt = new Date(year, monthNum - 1, d);
                     const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+                    const isHoliday = !!holidays[dateStr];
                     let color = '#0F172A';
                     if (status === info.missMark || status === '−') color = '#DC2626';
                     else if (status === 'ล') color = '#D97706';
                     else if (status === '/') color = '#94A3B8';
                     else if (status === info.mark) color = '#16A34A';
                     return (
-                      <td key={d} style={{
+                      <td key={d} title={holidays[dateStr] || ''} style={{
                         ...td,
-                        background: isWeekend ? '#FEF2F2' : (status ? 'white' : '#FAFAFA'),
+                        background: isHoliday ? '#FED7AA' : (isWeekend ? '#FEF2F2' : (status ? 'white' : '#FAFAFA')),
                         color, fontWeight: status ? 800 : 400, fontSize: '11px',
                       }}>{status}</td>
                     );
@@ -204,9 +233,27 @@ function App() {
           </tbody>
         </table>
 
+        {/* Holidays list */}
+        {(() => {
+          const monthHolidays = Object.entries(holidays).filter(([d]) => d.startsWith(month));
+          if (monthHolidays.length === 0) return null;
+          return (
+            <div style={{ marginTop: 6, fontSize: '10px', color: '#7C2D12', background: '#FED7AA', padding: '4px 8px', borderRadius: 4 }}>
+              <b>🗓️ วันหยุดในเดือนนี้:</b> {monthHolidays
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([d, name]) => `${Number(d.split('-')[2])} ${name}`)
+                .join(' · ')}
+            </div>
+          );
+        })()}
+
         {/* Legend */}
-        <div style={{ marginTop: 10, fontSize: '10px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ marginTop: 8, fontSize: '10px', color: '#475569', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div><Calendar size={11} style={{ verticalAlign: 'middle' }} /> {info.legendDesc}</div>
+          <div>
+            <span style={{ background: '#FEE2E2', padding: '0 6px', marginRight: 4 }}>⬛</span> เสาร์-อาทิตย์ ·
+            <span style={{ background: '#FED7AA', padding: '0 6px', marginLeft: 6, marginRight: 4 }}>⬛</span> วันหยุดราชการ
+          </div>
           <div>จำนวนนักเรียน: <b>{students.length}</b> คน</div>
         </div>
 
