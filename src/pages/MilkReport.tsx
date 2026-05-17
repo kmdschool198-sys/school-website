@@ -113,6 +113,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
             <div style={{ fontSize: '1.3rem', fontWeight: 900 }}>🥛 รายงานการดื่มนม</div>
             <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>ดึงจากการเช็คชื่ออัตโนมัติ · {userName}</div>
           </div>
+          <Link to="/print-form/milk" style={{ ...btnLogout, textDecoration: 'none' }}>🖨️ พิมพ์ฟอร์ม</Link>
           <Link to="/brush-log" style={{ ...btnLogout, textDecoration: 'none' }}>🪥 → แปรงฟัน</Link>
           <button onClick={onLogout} style={btnLogout}><LogOut size={12} />ออก</button>
         </div>

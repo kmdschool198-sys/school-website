@@ -1,0 +1,249 @@
+// Print-friendly monthly form (official school form layout)
+// Supports types: attendance / milk / brush — all derived from attendance collection
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { collection, doc, onSnapshot, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
+import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { ChevronLeft, Printer, Calendar } from 'lucide-react';
+import { useTeacherAuth } from '../utils/teacherAuth';
+import TeacherLoginGate from '../components/TeacherLoginGate';
+
+const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
+
+interface Student { id: string; code?: string; name: string; }
+interface ClassRoster { classId: string; label: string; students: Student[]; }
+interface AttDoc { classId: string; date: string; records: Record<string, { status: string }>; }
+
+type FormType = 'attendance' | 'milk' | 'brush';
+const FORM_INFO: Record<FormType, { title: string; mark: string; missMark: string; legendDesc: string }> = {
+  attendance: { title: 'แบบบันทึกการเข้าเรียน', mark: '✓', missMark: '✗', legendDesc: '✓ = มา · ✗ = ขาด · ล = ลา · / = วันหยุด' },
+  milk: { title: 'แบบบันทึกการดื่มนม', mark: '✓', missMark: '−', legendDesc: '✓ = ดื่มนม · − = ไม่ได้รับ (ขาดเรียน/ลา) · / = วันหยุด' },
+  brush: { title: 'แบบบันทึกการแปรงฟัน', mark: '✓', missMark: '−', legendDesc: '✓ = แปรงฟัน · − = ไม่ได้แปรง (ขาดเรียน/ลา) · / = วันหยุด' },
+};
+
+const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+export default function MonthlyFormPrintPage() {
+  const auth = useTeacherAuth();
+  if (!auth.authed) return <TeacherLoginGate title="🖨️ พิมพ์ฟอร์มรายเดือน" />;
+  return <App />;
+}
+
+function App() {
+  const { type = 'attendance' } = useParams<{ type: FormType }>();
+  const info = FORM_INFO[type as FormType] || FORM_INFO.attendance;
+
+  const [classes, setClasses] = useState<ClassRoster[]>([]);
+  const [classId, setClassId] = useState('');
+  const [month, setMonth] = useState(thisMonth());
+  const [docs, setDocs] = useState<AttDoc[]>([]);
+
+  useEffect(() => {
+    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
+      if (snap.exists()) {
+        const d = snap.data() as { classes: ClassRoster[] };
+        if (d.classes?.length) setClasses(d.classes);
+      }
+    });
+  }, []);
+
+  const availableClasses = useMemo(() => {
+    try {
+      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
+      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
+      const all = [...KG, ...rooms];
+      return all.map(r => {
+        const c = classes.find(x => x.classId === r.id);
+        return { id: r.id, label: r.label, students: c?.students || [] };
+      });
+    } catch { return classes.map(c => ({ id: c.classId, label: c.label, students: c.students })); }
+  }, [classes]);
+
+  useEffect(() => {
+    if (!classId && availableClasses.length) setClassId(availableClasses[0].id);
+  }, [availableClasses]);
+
+  useEffect(() => {
+    if (!classId) return;
+    (async () => {
+      const snap = await getDocs(query(collection(db, 'attendance'), where('classId', '==', classId)));
+      const arr: AttDoc[] = [];
+      snap.forEach(d => arr.push(d.data() as AttDoc));
+      setDocs(arr);
+    })();
+  }, [classId]);
+
+  const current = availableClasses.find(c => c.id === classId);
+  const students = current?.students || [];
+
+  // Build daily map for the month
+  const [yearStr, monStr] = month.split('-');
+  const year = Number(yearStr);
+  const monthNum = Number(monStr);
+  const daysInMonth = new Date(year, monthNum, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  // For each student × day → status
+  const statusFor = (studentId: string, day: number): string => {
+    const dateStr = `${yearStr}-${monStr}-${String(day).padStart(2, '0')}`;
+    const dt = new Date(`${dateStr}T00:00:00`);
+    const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+    const doc = docs.find(d => d.date === dateStr);
+    if (!doc) return isWeekend ? '/' : '';  // no record
+    const rec = doc.records?.[studentId];
+    if (!rec) return isWeekend ? '/' : '';
+    if (rec.status === 'present') return info.mark;
+    if (rec.status === 'absent') return type === 'attendance' ? info.missMark : '−';
+    if (rec.status === 'leave') return type === 'attendance' ? 'ล' : '−';
+    return '';
+  };
+
+  // Summary per student for the month
+  const summaryFor = (studentId: string) => {
+    let present = 0, absent = 0, leave = 0, totalDays = 0;
+    days.forEach(d => {
+      const dateStr = `${yearStr}-${monStr}-${String(d).padStart(2, '0')}`;
+      const doc = docs.find(x => x.date === dateStr);
+      if (!doc) return;
+      const rec = doc.records?.[studentId];
+      if (!rec) return;
+      totalDays++;
+      if (rec.status === 'present') present++;
+      else if (rec.status === 'absent') absent++;
+      else if (rec.status === 'leave') leave++;
+    });
+    return { present, absent, leave, totalDays };
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#FFF7ED' }}>
+      {/* No-print toolbar */}
+      <header className="no-print" style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', color: 'white', padding: '1.2rem 1.25rem' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <Link to="/teacher-hub" style={lnk}><ChevronLeft size={16} />Hub</Link>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>🖨️ {info.title} (รายเดือน)</div>
+            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>พิมพ์ตามแบบฟอร์มราชการ A4 แนวนอน</div>
+          </div>
+          <select value={classId} onChange={e => setClassId(e.target.value)} style={inp}>
+            {availableClasses.map(c => <option key={c.id} value={c.id}>{c.label} ({c.students.length} คน)</option>)}
+          </select>
+          <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={inp} />
+          <button onClick={() => window.print()} style={btnPrint}>
+            <Printer size={16} /> พิมพ์
+          </button>
+        </div>
+      </header>
+
+      {/* Print area */}
+      <div className="print-area" style={{ background: 'white', maxWidth: '297mm', margin: '14px auto', padding: '10mm 12mm', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+        {/* Form header */}
+        <div style={{ textAlign: 'center', marginBottom: 10 }}>
+          <div style={{ fontWeight: 900, fontSize: '1.1rem' }}>{info.title}</div>
+          <div style={{ fontSize: '0.95rem' }}>โรงเรียนบ้านคลองมดแดง</div>
+          <div style={{ fontSize: '0.9rem' }}>
+            ชั้น <b>{current?.label || '-'}</b> ·
+            ประจำเดือน <b>{THAI_MONTHS[monthNum - 1]} พ.ศ. {year + 543}</b>
+          </div>
+        </div>
+
+        {/* Table */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', tableLayout: 'fixed' }}>
+          <thead>
+            <tr style={{ background: '#F1F5F9' }}>
+              <th style={{ ...th, width: '4%' }}>ที่</th>
+              <th style={{ ...th, width: '20%', textAlign: 'left', paddingLeft: 6 }}>ชื่อ-สกุล</th>
+              {days.map(d => {
+                const dt = new Date(year, monthNum - 1, d);
+                const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+                return (
+                  <th key={d} style={{ ...th, width: `${66 / daysInMonth}%`, background: isWeekend ? '#FEE2E2' : '#F1F5F9', color: isWeekend ? '#991B1B' : '#0F172A' }}>
+                    {d}
+                  </th>
+                );
+              })}
+              <th style={{ ...th, width: '10%', background: '#FFEDD5' }}>สรุปผล</th>
+            </tr>
+          </thead>
+          <tbody>
+            {students.map((s, i) => {
+              const sum = summaryFor(s.id);
+              return (
+                <tr key={s.id}>
+                  <td style={td}>{i + 1}</td>
+                  <td style={{ ...td, textAlign: 'left', paddingLeft: 6, fontSize: '11px' }}>{s.name}</td>
+                  {days.map(d => {
+                    const status = statusFor(s.id, d);
+                    const dt = new Date(year, monthNum - 1, d);
+                    const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+                    let color = '#0F172A';
+                    if (status === info.missMark || status === '−') color = '#DC2626';
+                    else if (status === 'ล') color = '#D97706';
+                    else if (status === '/') color = '#94A3B8';
+                    else if (status === info.mark) color = '#16A34A';
+                    return (
+                      <td key={d} style={{
+                        ...td,
+                        background: isWeekend ? '#FEF2F2' : (status ? 'white' : '#FAFAFA'),
+                        color, fontWeight: status ? 800 : 400, fontSize: '11px',
+                      }}>{status}</td>
+                    );
+                  })}
+                  <td style={{ ...td, background: '#FFFBEB', fontSize: '10px' }}>
+                    {type === 'attendance'
+                      ? `${sum.present}/${sum.totalDays}`
+                      : `${sum.present} ครั้ง`}
+                  </td>
+                </tr>
+              );
+            })}
+            {students.length === 0 && (
+              <tr><td colSpan={daysInMonth + 3} style={{ ...td, padding: 30, color: '#94A3B8' }}>ยังไม่มีรายชื่อ</td></tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* Legend */}
+        <div style={{ marginTop: 10, fontSize: '10px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+          <div><Calendar size={11} style={{ verticalAlign: 'middle' }} /> {info.legendDesc}</div>
+          <div>จำนวนนักเรียน: <b>{students.length}</b> คน</div>
+        </div>
+
+        {/* Signature */}
+        <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, textAlign: 'center', fontSize: '11px' }}>
+          <div>
+            <div style={{ borderTop: '1px dashed #94A3B8', marginTop: 30, paddingTop: 4 }}>
+              ลงชื่อ ........................................ ครูประจำชั้น
+            </div>
+          </div>
+          <div>
+            <div style={{ borderTop: '1px dashed #94A3B8', marginTop: 30, paddingTop: 4 }}>
+              ลงชื่อ ........................................ ผู้อำนวยการสถานศึกษา
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          @page { size: A4 landscape; margin: 8mm; }
+          body { background: white !important; }
+          .no-print { display: none !important; }
+          .print-area { box-shadow: none !important; margin: 0 !important; padding: 4mm !important; max-width: 100% !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function thisMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+const lnk: React.CSSProperties = { color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 };
+const inp: React.CSSProperties = { padding: '6px 10px', borderRadius: 8, border: 'none', fontSize: '0.85rem', fontWeight: 700 };
+const btnPrint: React.CSSProperties = { background: 'white', color: '#7C2D12', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 };
+const th: React.CSSProperties = { border: '1px solid #94A3B8', padding: '4px 2px', fontSize: '11px', textAlign: 'center', fontWeight: 800 };
+const td: React.CSSProperties = { border: '1px solid #CBD5E1', padding: '3px 2px', textAlign: 'center' };

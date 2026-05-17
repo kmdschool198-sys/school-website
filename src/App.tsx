@@ -12,6 +12,7 @@ import ClubAttendance from './pages/ClubAttendance';
 import TeacherHub from './pages/TeacherHub';
 import TeacherLog from './pages/TeacherLog';
 import MilkReport from './pages/MilkReport';
+import MonthlyFormPrint from './pages/MonthlyFormPrint';
 import BrushLog from './pages/BrushLog';
 import ClassDashboard from './pages/ClassDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -32,6 +33,7 @@ function App() {
           <Route path="/teacher-hub" element={<TeacherHub />} />
           <Route path="/teacher-log/:type" element={<TeacherLog />} />
           <Route path="/milk-report" element={<MilkReport />} />
+          <Route path="/print-form/:type" element={<MonthlyFormPrint />} />
           <Route path="/brush-log" element={<BrushLog />} />
           {/* Backward compat */}
           <Route path="/milk-brush-report" element={<MilkReport />} />

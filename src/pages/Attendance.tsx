@@ -290,6 +290,11 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
               border: '1px solid rgba(255,255,255,0.4)',
             }}>👑 jameskmd</span>
           )}
+          <Link to="/print-form/attendance" style={{
+            background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)',
+            padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem',
+            display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none',
+          }}>🖨️ พิมพ์ฟอร์ม</Link>
           <button onClick={onLogout} style={{
             background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)',
             padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
