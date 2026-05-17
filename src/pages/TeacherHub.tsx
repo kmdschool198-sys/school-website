@@ -16,10 +16,13 @@ interface AppCard {
 const STUDENT_APPS: AppCard[] = [
   { to: '/class-dashboard', title: 'แดชบอร์ดรายชั้นเรียน ⭐', icon: '📊', search: 'ภาพรวมทั้งชั้น', bg: '#FFEDD5' },
   { to: '/attendance', title: 'ระบบเช็คชื่อนักเรียน', icon: '✅', search: 'เช็คนักเรียน', bg: '#FCE7F3' },
+  { to: '/manage-roster', title: 'จัดการรายชื่อนักเรียน', icon: '👥', search: 'รายชื่อ-CSV', bg: '#E9D5FF' },
   { to: '/club-attendance', title: 'เช็คชื่อชุมนุม-ลูกเสือ', icon: '🎯', search: 'ชุมนุม-ลูกเสือ', bg: '#DCFCE7' },
+  { to: '/manage-clubs', title: 'จัดการชุมนุม-สมาชิก', icon: '⚙️', search: 'สร้างชุมนุม', bg: '#D1FAE5' },
   { to: '/milk-report', title: 'รายงานการดื่มนม (อัตโนมัติ)', icon: '🥛', search: 'ดื่มนม', bg: '#DBEAFE' },
   { to: '/brush-log', title: 'บันทึกการแปรงฟัน', icon: '🪥', search: 'แปรงฟัน', bg: '#CFFAFE' },
   { to: '/results', title: 'ประกาศผลสอบนักเรียน', icon: '🏆', search: 'ผลสอบ', bg: '#FEF3C7' },
+  { to: '/manage-results', title: 'จัดการ/กรอกผลสอบ', icon: '✏️', search: 'กรอกคะแนน', bg: '#FED7AA' },
   { to: '/teacher-log/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3' },
   { to: '/teacher-log/body-metrics', title: 'น้ำหนัก-ส่วนสูง-BMI', icon: '⚖️', search: 'น้ำหนักส่วนสูง', bg: '#FCE7F3' },
   { to: '/print-body-metrics', title: 'พิมพ์ฟอร์มน้ำหนัก-ส่วนสูง', icon: '🖨️', search: 'พิมพ์น้ำหนัก', bg: '#FCE7F3' },

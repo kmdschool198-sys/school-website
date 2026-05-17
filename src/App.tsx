@@ -15,6 +15,9 @@ import MilkReport from './pages/MilkReport';
 import MonthlyFormPrint from './pages/MonthlyFormPrint';
 import BodyMetricsPrint from './pages/BodyMetricsPrint';
 import ClubPrint from './pages/ClubPrint';
+import ManageClubs from './pages/ManageClubs';
+import ManageResults from './pages/ManageResults';
+import ManageRoster from './pages/ManageRoster';
 import BrushLog from './pages/BrushLog';
 import ClassDashboard from './pages/ClassDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -38,6 +41,9 @@ function App() {
           <Route path="/print-form/:type" element={<MonthlyFormPrint />} />
           <Route path="/print-body-metrics" element={<BodyMetricsPrint />} />
           <Route path="/print-club" element={<ClubPrint />} />
+          <Route path="/manage-clubs" element={<ManageClubs />} />
+          <Route path="/manage-results" element={<ManageResults />} />
+          <Route path="/manage-roster" element={<ManageRoster />} />
           <Route path="/brush-log" element={<BrushLog />} />
           {/* Backward compat */}
           <Route path="/milk-brush-report" element={<MilkReport />} />
