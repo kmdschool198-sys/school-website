@@ -5,7 +5,8 @@ import { db } from '../firebase';
 import { ChevronLeft, Printer } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
-import type { Club, ClubAttendanceDoc } from '../data/clubs';
+import { doc as fbDoc } from 'firebase/firestore';
+import type { Club, ClubAttendanceDoc, ClubEvaluation, EvalLevel } from '../data/clubs';
 
 export default function ClubPrintPage() {
   const auth = useTeacherAuth();
@@ -19,6 +20,7 @@ function App() {
   const [year, setYear] = useState(new Date().getFullYear() + 543);
   const [term, setTerm] = useState<1 | 2>(1);
   const [attendance, setAttendance] = useState<ClubAttendanceDoc[]>([]);
+  const [evals, setEvals] = useState<ClubEvaluation['records']>({});
 
   useEffect(() => {
     return onSnapshot(collection(db, 'clubs'), snap => {
@@ -40,6 +42,14 @@ function App() {
   useEffect(() => {
     if (!clubId && clubs.length) setClubId(clubs[0].id);
   }, [clubs]);
+
+  useEffect(() => {
+    if (!clubId) return;
+    return onSnapshot(fbDoc(db, 'club_evaluations', clubId), snap => {
+      if (snap.exists()) setEvals((snap.data() as ClubEvaluation).records || {});
+      else setEvals({});
+    });
+  }, [clubId]);
 
   const current = clubs.find(c => c.id === clubId);
 
@@ -243,14 +253,24 @@ function App() {
               {current.members.map((m, i) => {
                 const n = presentCount(m.studentId);
                 const passRate = dates.length ? n / dates.length : 0;
-                const pass = passRate >= 0.8 ? 'ผ' : 'มผ';
+                const ev = evals[m.studentId] || {};
+                const pass = ev.result || (passRate >= 0.8 ? 'ผ' : 'มผ');
+                const levels: EvalLevel[] = ['excellent', 'good', 'pass', 'fail'];
                 return (
                   <tr key={m.studentId}>
                     <td style={td}>{i + 1}</td>
                     <td style={{ ...td, textAlign: 'left', paddingLeft: 6 }}>{m.name}</td>
                     <td style={td}>{m.classLabel.split('/')[0]}</td>
-                    <td style={td}></td><td style={td}></td><td style={td}></td><td style={td}></td>
-                    <td style={td}></td><td style={td}></td><td style={td}></td><td style={td}></td>
+                    {levels.map(l => (
+                      <td key={`p${l}`} style={{ ...td, fontSize: '14px', fontWeight: 900 }}>
+                        {ev.participation === l ? '✓' : ''}
+                      </td>
+                    ))}
+                    {levels.map(l => (
+                      <td key={`o${l}`} style={{ ...td, fontSize: '14px', fontWeight: 900 }}>
+                        {ev.objectives === l ? '✓' : ''}
+                      </td>
+                    ))}
                     <td style={{ ...td, fontWeight: 900, color: pass === 'ผ' ? '#10B981' : '#EF4444', background: '#FFFBEB' }}>{pass}</td>
                   </tr>
                 );

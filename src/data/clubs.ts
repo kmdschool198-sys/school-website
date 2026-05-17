@@ -26,3 +26,19 @@ export interface ClubAttendanceDoc {
   records: Record<string, { status: AttStatus; note?: string }>;
   updatedAt?: number;
 }
+
+export type EvalLevel = 'excellent' | 'good' | 'pass' | 'fail';
+export const EVAL_LABELS: Record<EvalLevel, string> = {
+  excellent: 'ดีเยี่ยม', good: 'ดี', pass: 'ผ่าน', fail: 'ไม่ผ่านเกณฑ์',
+};
+
+export interface ClubEvaluation {
+  clubId: string;
+  records: Record<string, {
+    participation?: EvalLevel;   // การมีส่วนร่วม
+    objectives?: EvalLevel;      // ทำกิจกรรมได้ตามวัตถุประสงค์
+    result?: 'ผ' | 'มผ';         // ผลรวม (manual override; auto = ผ if attendance >= 80%)
+    note?: string;
+  }>;
+  updatedAt?: number;
+}
