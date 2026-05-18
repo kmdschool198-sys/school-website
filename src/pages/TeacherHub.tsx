@@ -23,7 +23,7 @@ const STUDENT_APPS: AppCard[] = [
   { to: '/brush-log', title: 'บันทึกการแปรงฟัน', icon: '🪥', search: 'แปรงฟัน', bg: '#CFFAFE' },
   { to: '/results', title: 'ประกาศผลสอบนักเรียน', icon: '🏆', search: 'ผลสอบ', bg: '#FEF3C7' },
   { to: '/manage-results', title: 'จัดการ/กรอกผลสอบ', icon: '✏️', search: 'กรอกคะแนน', bg: '#FED7AA' },
-  { to: '/teacher-log/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3' },
+  { to: '/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3' },
   { to: '/body-metrics', title: 'น้ำหนัก-ส่วนสูง-BMI', icon: '⚖️', search: 'น้ำหนักส่วนสูง', bg: '#FCE7F3' },
   { to: '/print-body-metrics', title: 'พิมพ์ฟอร์มน้ำหนัก-ส่วนสูง', icon: '🖨️', search: 'พิมพ์น้ำหนัก', bg: '#FCE7F3' },
   { to: '/print-club', title: 'พิมพ์ฟอร์มชุมนุม', icon: '🖨️', search: 'พิมพ์ชุมนุม', bg: '#DCFCE7' },

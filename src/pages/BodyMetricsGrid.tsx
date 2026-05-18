@@ -64,18 +64,18 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const current = availableClasses.find(c => c.id === classId);
   const students = current?.students || [];
 
-  // Find existing log entry for a student in this month
-  const findEntry = (studentId: string): LogEntry | undefined => {
+  // Find existing log entry for a student in this month (match by id OR name as fallback)
+  const findEntry = (s: Student): LogEntry | undefined => {
     return logs.find(l =>
-      l.studentId === studentId &&
       l.date?.startsWith(month) &&
-      l.classLabel === current?.label
+      (l.classLabel === current?.label || !l.classLabel) &&
+      (l.studentId === s.id || (l.studentName && l.studentName.trim() === s.name.trim()))
     );
   };
 
   const updateMetric = async (s: Student, patch: { weight?: number; height?: number }) => {
     if (!current) return;
-    const existing = findEntry(s.id);
+    const existing = findEntry(s);
     const id = existing?.id || `bm_${classId}_${month}_${s.id}`;
     const weight = patch.weight !== undefined ? patch.weight : existing?.weight;
     const height = patch.height !== undefined ? patch.height : existing?.height;
@@ -100,7 +100,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
     } catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };
 
-  const filledCount = students.filter(s => findEntry(s.id)).length;
+  const filledCount = students.filter(s => findEntry(s)).length;
   const [yr, mn] = month.split('-').map(Number);
 
   return (
@@ -164,7 +164,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
                 </thead>
                 <tbody>
                   {students.map((s, i) => {
-                    const e = findEntry(s.id);
+                    const e = findEntry(s);
                     const bmi = e?.bmi;
                     return (
                       <tr key={s.id} style={{ borderBottom: '1px solid #FFF7ED', background: i % 2 ? 'white' : '#FFFBF5' }}>

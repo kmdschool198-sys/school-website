@@ -16,6 +16,7 @@ import MonthlyFormPrint from './pages/MonthlyFormPrint';
 import BodyMetricsPrint from './pages/BodyMetricsPrint';
 import ClubPrint from './pages/ClubPrint';
 import BodyMetricsGrid from './pages/BodyMetricsGrid';
+import SavingGrid from './pages/SavingGrid';
 import ManageClubs from './pages/ManageClubs';
 import ManageResults from './pages/ManageResults';
 import ManageRoster from './pages/ManageRoster';
@@ -41,6 +42,7 @@ function App() {
           <Route path="/milk-report" element={<MilkReport />} />
           <Route path="/print-form/:type" element={<MonthlyFormPrint />} />
           <Route path="/body-metrics" element={<BodyMetricsGrid />} />
+          <Route path="/saving" element={<SavingGrid />} />
           <Route path="/print-body-metrics" element={<BodyMetricsPrint />} />
           <Route path="/print-club" element={<ClubPrint />} />
           <Route path="/manage-clubs" element={<ManageClubs />} />
