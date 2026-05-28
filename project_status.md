@@ -3,7 +3,7 @@
 ## Current State
 - **Project Type:** React + Vite (TypeScript)
 - **Theme:** Orange & White Professional (Modern Learning Portal)
-- **Status:** Development Server running on Port 5174
+- **Status:** Development Server running on Port 5173
 - **Key Features:** Admin Dashboard, Firebase Integration, Real-time Content.
 
 ## Recent Changes

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, setDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDocs, collection, writeBatch, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import { Trash2, UserPlus, Upload, Download, FileSpreadsheet } from 'lucide-react';
@@ -49,10 +49,161 @@ export default function RosterManager() {
   const current = classes.find(c => c.classId === classId);
 
   const save = async (next: ClassRoster[]) => {
+    // 1. Identify added and removed students
+    const currentStudentsMap = new Map<string, string>(); // studentId -> classId
+    classes.forEach(c => c.students.forEach(s => currentStudentsMap.set(s.id, c.classId)));
+
+    const nextStudentsMap = new Map<string, string>(); // studentId -> classId
+    next.forEach(c => c.students.forEach(s => nextStudentsMap.set(s.id, c.classId)));
+
+    const added: { id: string; classId: string }[] = [];
+    next.forEach(c => {
+      c.students.forEach(s => {
+        if (!currentStudentsMap.has(s.id)) {
+          added.push({ id: s.id, classId: c.classId });
+        }
+      });
+    });
+
+    const removed: { id: string; classId: string }[] = [];
+    classes.forEach(c => {
+      c.students.forEach(s => {
+        if (!nextStudentsMap.has(s.id)) {
+          removed.push({ id: s.id, classId: c.classId });
+        }
+      });
+    });
+
     setClasses(next);
     setSaving(true);
     try {
+      // First save the main config document
       await setDoc(doc(db, 'config', 'attendance_classes'), { classes: next });
+
+      // If roster changes exist, sync Firestore collections
+      if (added.length > 0 || removed.length > 0) {
+        // Group by classId to minimize daily attendance queries
+        const affectedClasses = new Set<string>();
+        added.forEach(x => affectedClasses.add(x.classId));
+        removed.forEach(x => affectedClasses.add(x.classId));
+
+        for (const cid of affectedClasses) {
+          const q = query(collection(db, 'attendance'), where('classId', '==', cid));
+          const snap = await getDocs(q);
+
+          if (!snap.empty) {
+            const batch = writeBatch(db);
+            let updatedCount = 0;
+
+            snap.docs.forEach(docSnap => {
+              const docData = docSnap.data();
+              const records = { ...(docData.records || {}) };
+              let changed = false;
+
+              // Backfill added students for this class with 'present'
+              added.forEach(x => {
+                if (x.classId === cid) {
+                  if (!records[x.id]) {
+                    records[x.id] = { status: 'present' };
+                    changed = true;
+                  }
+                }
+              });
+
+              // Clean up removed students for this class
+              removed.forEach(x => {
+                if (x.classId === cid) {
+                  if (records[x.id]) {
+                    delete records[x.id];
+                    changed = true;
+                  }
+                }
+              });
+
+              if (changed) {
+                batch.update(docSnap.ref, { records });
+                updatedCount++;
+              }
+            });
+
+            if (updatedCount > 0) {
+              await batch.commit();
+            }
+          }
+        }
+
+        // Clean up removed students from other collections
+        for (const x of removed) {
+          // 1. Delete body metrics records
+          const bmQuery = query(collection(db, 'log_body_metrics'), where('studentId', '==', x.id));
+          const bmSnap = await getDocs(bmQuery);
+          if (!bmSnap.empty) {
+            const bmBatch = writeBatch(db);
+            bmSnap.docs.forEach(d => bmBatch.delete(d.ref));
+            await bmBatch.commit();
+          }
+
+          // 2. Delete savings records
+          const svQuery = query(collection(db, 'log_saving'), where('studentId', '==', x.id));
+          const svSnap = await getDocs(svQuery);
+          if (!svSnap.empty) {
+            const svBatch = writeBatch(db);
+            svSnap.docs.forEach(d => svBatch.delete(d.ref));
+            await svBatch.commit();
+          }
+
+          // 3. Remove from clubs list, attendance, and evaluations
+          const clubsSnap = await getDocs(collection(db, 'clubs'));
+          if (!clubsSnap.empty) {
+            for (const clubDoc of clubsSnap.docs) {
+              const clubData = clubDoc.data();
+              const membersList = clubData.members || [];
+              const hasMember = membersList.some((m: any) => m.studentId === x.id);
+              if (hasMember) {
+                const updatedMembers = membersList.filter((m: any) => m.studentId !== x.id);
+                await setDoc(clubDoc.ref, { ...clubData, members: updatedMembers });
+
+                // Delete club attendance records
+                const clubAttQuery = query(collection(db, 'club_attendance'), where('clubId', '==', clubDoc.id));
+                const clubAttSnap = await getDocs(clubAttQuery);
+                if (!clubAttSnap.empty) {
+                  const clubAttBatch = writeBatch(db);
+                  let changedAtt = false;
+                  clubAttSnap.docs.forEach(caDoc => {
+                    const caData = caDoc.data();
+                    if (caData.records?.[x.id]) {
+                      const recs = { ...caData.records };
+                      delete recs[x.id];
+                      clubAttBatch.update(caDoc.ref, { records: recs });
+                      changedAtt = true;
+                    }
+                  });
+                  if (changedAtt) {
+                    await clubAttBatch.commit();
+                  }
+                }
+
+                // Delete club evaluations
+                try {
+                  const evalSnap = await getDocs(query(collection(db, 'club_evaluations'), where('clubId', '==', clubDoc.id)));
+                  if (!evalSnap.empty) {
+                    const evalDoc = evalSnap.docs[0];
+                    const evalData = evalDoc.data();
+                    if (evalData.records?.[x.id]) {
+                      const recs = { ...evalData.records };
+                      delete recs[x.id];
+                      await setDoc(evalDoc.ref, { ...evalData, records: recs });
+                    }
+                  }
+                } catch (err) {
+                  console.error('Error cleaning evaluations:', err);
+                }
+              }
+            }
+          }
+        }
+      }
+
       setSavedAt(new Date());
     } catch (e: any) {
       alert('❌ บันทึกไม่สำเร็จ: ' + (e?.message || e));

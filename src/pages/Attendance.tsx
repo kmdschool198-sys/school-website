@@ -15,7 +15,7 @@ interface Student { id: string; code?: string; name: string; emoji?: string; }
 interface AttDoc {
   classId: string;
   date: string; // YYYY-MM-DD
-  records: Record<string, { status: Status; note?: string }>;
+  records: Record<string, { status: Status; note?: string; noMilk?: boolean; noBrush?: boolean }>;
   updatedAt?: number;
 }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
@@ -70,8 +70,11 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
   const [tab, setTab] = useState<Tab>('check');
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+
+
   const [history, setHistory] = useState<AttDoc[]>([]); // for stats
-  const [todayDocs, setTodayDocs] = useState<Set<string>>(new Set()); // classIds checked today
+  const [holidays, setHolidays] = useState<Record<string, string>>({}); // date -> holiday name
+  const [recentDocs, setRecentDocs] = useState<AttDoc[]>([]);
 
   // Load class roster from Firestore (subscribe)
   useEffect(() => {
@@ -96,22 +99,83 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
     });
   }, [classId, date]);
 
-  // Track which classes have been checked today (refresh on save)
+  // Load holidays from activities collection (where isHoliday=true)
   useEffect(() => {
-    (async () => {
-      try {
-        const q = query(collection(db, 'attendance'), where('date', '==', today));
-        const snap = await getDocs(q);
-        const ids = new Set<string>();
-        snap.forEach(d => {
-          const data = d.data() as AttDoc;
-          // Only count as "checked" if at least one student has a status
-          if (data.records && Object.keys(data.records).length > 0) ids.add(data.classId);
+    return onSnapshot(collection(db, 'activities'), snap => {
+      const map: Record<string, string> = {};
+      snap.forEach(d => {
+        const a = d.data() as any;
+        if (a.isHoliday && a.date) map[a.date] = a.title || 'วันหยุด';
+      });
+      setHolidays(map);
+    });
+  }, []);
+
+  // Calculate recent dates (last 5 weekdays)
+  const recentDates = useMemo(() => {
+    const dates = [];
+    const d = new Date();
+    // Look back up to 10 calendar days to find 5 weekdays
+    for (let i = 0; i < 10; i++) {
+      const temp = new Date(d);
+      temp.setDate(d.getDate() - i);
+      const day = temp.getDay();
+      if (day !== 0 && day !== 6) {
+        const dateStr = `${temp.getFullYear()}-${String(temp.getMonth() + 1).padStart(2, '0')}-${String(temp.getDate()).padStart(2, '0')}`;
+        dates.push(dateStr);
+      }
+      if (dates.length >= 5) break;
+    }
+    return dates;
+  }, []);
+
+  // Subscribe to attendance records of recent dates
+  useEffect(() => {
+    if (recentDates.length === 0) return;
+    const q = query(collection(db, 'attendance'), where('date', 'in', recentDates));
+    return onSnapshot(q, snap => {
+      const arr: AttDoc[] = [];
+      snap.forEach(d => arr.push(d.data() as AttDoc));
+      setRecentDocs(arr);
+    });
+  }, [recentDates]);
+
+  const todayDocs = useMemo(() => {
+    const ids = new Set<string>();
+    recentDocs
+      .filter(d => d.date === today)
+      .forEach(d => {
+        if (d.records && Object.keys(d.records).length > 0) ids.add(d.classId);
+      });
+    return ids;
+  }, [recentDocs, today]);
+
+  const pastPending = useMemo(() => {
+    const result: Array<{ date: string; pendingClasses: ClassRoster[] }> = [];
+    
+    // Filter out today and holidays from recent dates
+    const pastDates = recentDates.filter(d => d !== today && !holidays[d]);
+
+    pastDates.forEach(d => {
+      // Find docs for this date
+      const dateDocs = recentDocs.filter(doc => doc.date === d);
+      const checkedClassIds = new Set(
+        dateDocs
+          .filter(doc => doc.records && Object.keys(doc.records).length > 0)
+          .map(doc => doc.classId)
+      );
+
+      const pending = classes.filter(c => !checkedClassIds.has(c.classId));
+      if (pending.length > 0) {
+        result.push({
+          date: d,
+          pendingClasses: pending
         });
-        setTodayDocs(ids);
-      } catch (e) { console.error(e); }
-    })();
-  }, [savedAt, today]);
+      }
+    });
+
+    return result;
+  }, [recentDates, recentDocs, holidays, classes, today]);
 
   // Load all history for this class (for stats)
   useEffect(() => {
@@ -136,6 +200,12 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
   const setNote = (sid: string, note: string) => {
     setRecords(r => ({ ...r, [sid]: { ...(r[sid] || { status: 'present' }), note } }));
   };
+  const setMilk = (sid: string, drank: boolean) => {
+    setRecords(r => ({ ...r, [sid]: { ...(r[sid] || { status: 'present' }), noMilk: !drank } }));
+  };
+  const setBrush = (sid: string, brushed: boolean) => {
+    setRecords(r => ({ ...r, [sid]: { ...(r[sid] || { status: 'present' }), noBrush: !brushed } }));
+  };
   const markAll = (status: Status) => {
     const r: AttDoc['records'] = {};
     students.forEach(s => {
@@ -145,14 +215,17 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
     setRecords(r);
   };
 
-  // Strip undefined values before sending to Firestore
+  // Strip undefined values and default to present before sending to Firestore
   const cleanRecords = (recs: AttDoc['records']): AttDoc['records'] => {
     const out: AttDoc['records'] = {};
-    for (const [k, v] of Object.entries(recs)) {
-      const item: any = { status: v.status };
+    students.forEach(s => {
+      const v = recs[s.id] || { status: 'present' };
+      const item: any = { status: v.status || 'present' };
       if (v.note !== undefined && v.note !== '') item.note = v.note;
-      out[k] = item;
-    }
+      if (v.noMilk !== undefined) item.noMilk = v.noMilk;
+      if (v.noBrush !== undefined) item.noBrush = v.noBrush;
+      out[s.id] = item;
+    });
     return out;
   };
   const clearAll = () => setRecords({});
@@ -176,8 +249,8 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
   const counts = useMemo(() => {
     const c = { present: 0, absent: 0, leave: 0, untracked: 0 };
     students.forEach(s => {
-      const st = records[s.id]?.status;
-      if (st) c[st]++; else c.untracked++;
+      const st = records[s.id]?.status || 'present';
+      c[st]++;
     });
     return c;
   }, [records, students]);
@@ -306,24 +379,43 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
       </header>
 
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '1.25rem' }}>
-        {/* Today's check-in status banner */}
+        {/* Check-in status banner (with past backlog warnings) */}
         {(() => {
           const pending = classes.filter(c => !todayDocs.has(c.classId));
           const done = classes.length - pending.length;
           if (classes.length === 0) return null;
           const allDone = pending.length === 0;
+          const hasBacklogs = pastPending.length > 0;
+          const isSuccessful = allDone && !hasBacklogs;
+
+          const badgeBtnStyle: React.CSSProperties = {
+            background: 'white',
+            border: '1px solid #FDE68A',
+            color: '#92400E',
+            padding: '4px 10px',
+            borderRadius: 999,
+            fontSize: '0.78rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            transition: 'transform 0.1s, background-color 0.15s'
+          };
+
           return (
             <div style={{
-              background: allDone ? '#DCFCE7' : '#FEF3C7',
-              border: `1px solid ${allDone ? '#86EFAC' : '#FDE68A'}`,
+              background: isSuccessful ? '#DCFCE7' : '#FEF3C7',
+              border: `1px solid ${isSuccessful ? '#86EFAC' : '#FDE68A'}`,
               borderRadius: 12, padding: '12px 14px', marginBottom: 14,
             }}>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: pending.length ? 8 : 0,
+                display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+                marginBottom: (pending.length > 0 || hasBacklogs) ? 8 : 0,
               }}>
-                <span style={{ fontSize: '1.4rem' }}>{allDone ? '✅' : '⚠️'}</span>
+                <span style={{ fontSize: '1.4rem' }}>{isSuccessful ? '✅' : '⚠️'}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 900, color: allDone ? '#166534' : '#92400E', fontSize: '0.95rem' }}>
+                  <div style={{ fontWeight: 900, color: isSuccessful ? '#166534' : '#92400E', fontSize: '0.95rem' }}>
                     {allDone
                       ? `เช็คชื่อครบทุกชั้นแล้ววันนี้ (${done}/${classes.length})`
                       : `ยังไม่ได้เช็คชื่อ ${pending.length} ชั้นวันนี้ — เช็คแล้ว ${done}/${classes.length}`}
@@ -331,18 +423,49 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
                   <div style={{ fontSize: '0.72rem', color: '#64748B' }}>{fmtThai(today)}</div>
                 </div>
               </div>
+              
+              {/* Today's pending badges */}
               {pending.length > 0 && (
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: hasBacklogs ? 12 : 0 }}>
                   {pending.map(c => (
                     <button key={c.classId} onClick={() => { setClassId(c.classId); setDate(today); setTab('check'); }}
-                      style={{
-                        background: 'white', border: '1px solid #FDE68A', color: '#92400E',
-                        padding: '4px 10px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 800,
-                        cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
-                      }}>
+                      style={badgeBtnStyle}
+                      onMouseOver={e => e.currentTarget.style.backgroundColor = '#FFFBEB'}
+                      onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}>
                       📋 {c.label}
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* Past backlog pending section */}
+              {hasBacklogs && (
+                <div style={{
+                  borderTop: '1px dashed #FDBA74', paddingTop: 10, marginTop: 4,
+                  display: 'flex', flexDirection: 'column', gap: 8
+                }}>
+                  <div style={{ fontWeight: 900, color: '#C2410C', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    ⏳ มีรายการเช็คชื่อค้างย้อนหลัง:
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {pastPending.map(p => (
+                      <div key={p.date} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#7C2D12', minWidth: 110 }}>
+                          📅 {fmtThai(p.date)}:
+                        </span>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {p.pendingClasses.map(c => (
+                            <button key={c.classId} onClick={() => { setClassId(c.classId); setDate(p.date); setTab('check'); }}
+                              style={{ ...badgeBtnStyle, background: '#FFF7ED', border: '1px solid #FFD8A8' }}
+                              onMouseOver={e => e.currentTarget.style.backgroundColor = '#FFEDD5'}
+                              onMouseOut={e => e.currentTarget.style.backgroundColor = '#FFF7ED'}>
+                              📋 {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -433,12 +556,12 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {students.map((s, i) => {
                 const r = records[s.id];
-                const st = r?.status;
+                const st = r?.status || 'present';
                 return (
                   <div key={s.id} style={{
                     background: 'white', borderRadius: 12, padding: '12px 14px',
                     display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-                    borderLeft: st ? `4px solid ${STATUS_COLORS[st]}` : '4px solid #E2E8F0',
+                    borderLeft: `4px solid ${STATUS_COLORS[st]}`,
                   }}>
                     <span style={{ fontWeight: 800, color: '#94A3B8', minWidth: 24 }}>{i + 1}</span>
                     <span style={{ fontSize: '1.6rem' }}>{s.emoji || '🧒'}</span>
@@ -464,6 +587,39 @@ function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout
                         </button>
                       ))}
                     </div>
+
+                    {st === 'present' && (
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button
+                          onClick={() => setMilk(s.id, !!r?.noMilk)}
+                          disabled={!isSuper && date !== today}
+                          style={{
+                            background: r?.noMilk ? '#F1F5F9' : '#DBEAFE',
+                            color: r?.noMilk ? '#64748B' : '#1E40AF',
+                            border: `1px solid ${r?.noMilk ? '#CBD5E1' : '#93C5FD'}`,
+                            borderRadius: 10, padding: '8px 12px', fontSize: '0.78rem', fontWeight: 800,
+                            cursor: (!isSuper && date !== today) ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                          }}
+                        >
+                          🥛 {r?.noMilk ? 'ไม่กินนม' : 'กินนม'}
+                        </button>
+                        <button
+                          onClick={() => setBrush(s.id, !!r?.noBrush)}
+                          disabled={!isSuper && date !== today}
+                          style={{
+                            background: r?.noBrush ? '#F1F5F9' : '#CFFAFE',
+                            color: r?.noBrush ? '#64748B' : '#0891B2',
+                            border: `1px solid ${r?.noBrush ? '#CBD5E1' : '#67E8F9'}`,
+                            borderRadius: 10, padding: '8px 12px', fontSize: '0.78rem', fontWeight: 800,
+                            cursor: (!isSuper && date !== today) ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                          }}
+                        >
+                          🪥 {r?.noBrush ? 'ไม่แปรงฟัน' : 'แปรงฟัน'}
+                        </button>
+                      </div>
+                    )}
                     <input
                       placeholder="หมายเหตุ..."
                       value={r?.note || ''}

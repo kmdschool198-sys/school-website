@@ -28,6 +28,7 @@ const STUDENT_APPS: AppCard[] = [
   { to: '/print-body-metrics', title: 'พิมพ์ฟอร์มน้ำหนัก-ส่วนสูง', icon: '🖨️', search: 'พิมพ์น้ำหนัก', bg: '#FCE7F3' },
   { to: '/print-club', title: 'พิมพ์ฟอร์มชุมนุม', icon: '🖨️', search: 'พิมพ์ชุมนุม', bg: '#DCFCE7' },
   { to: '/teacher-log/remedial', title: 'บันทึกการสอนซ่อมเสริม', icon: '👨‍🏫', search: 'สอนซ่อมเสริม', bg: '#FCE7F3' },
+  { to: '/school-stats-report', title: 'รายงานสรุปสถิติประจำเดือน 📊', icon: '📈', search: 'สถิติประจำเดือน', bg: '#FFF7ED' },
 ];
 
 // ─── หมวด 2: ระบบรายงานส่วนตัวของครู (สำหรับครูแต่ละคน) ───
@@ -35,6 +36,8 @@ const TEACHER_APPS: AppCard[] = [
   { to: '/teacher-training', title: 'เกียรติบัตร / อบรมครู', icon: '🎖️', search: 'เกียรติบัตรครู', bg: '#DCFCE7' },
   { to: '/teacher-log/lesson-plan', title: 'ส่งแผนการสอน', icon: '📋', search: 'ส่งแผนการสอน', bg: '#E2E8F0' },
   { to: '/teacher-log/media', title: 'บันทึกการใช้สื่อ', icon: '📚', search: 'การใช้สื่อ', bg: '#FEF3C7' },
+  { to: '/teacher-log/plc', title: 'บันทึก PLC 👥', icon: '👥', search: 'บันทึก PLC', bg: '#E9D5FF' },
+  { to: '/teacher-log/project', title: 'รายงานโครงการ 📊', icon: '📊', search: 'รายงานโครงการ', bg: '#FEE2E2' },
 ];
 
 export default function TeacherHubPage() {

@@ -66,7 +66,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const dayPerClass = useMemo(() => availableClasses.map(c => {
     const doc = dayDocs.find(d => d.classId === c.id);
     let p = 0;
-    if (doc) Object.values(doc.records || {}).forEach(r => { if (r.status === 'present') p++; });
+    if (doc) Object.values(doc.records || {}).forEach((r: any) => { if (r.status === 'present' && !r.noBrush) p++; });
     return { c, brush: p, checked: !!doc };
   }), [availableClasses, dayDocs]);
 
@@ -78,7 +78,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
     const days = new Set<string>();
     docs.forEach(d => {
       days.add(d.date);
-      Object.values(d.records || {}).forEach(r => { if (r.status === 'present') totalBrush++; });
+      Object.values(d.records || {}).forEach((r: any) => { if (r.status === 'present' && !r.noBrush) totalBrush++; });
     });
     return { c, totalBrush, days: days.size };
   }), [availableClasses, allDocs, month]);
@@ -202,7 +202,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
               {historyDates.map(d => {
                 let total = 0;
                 allDocs.filter(x => x.date === d).forEach(x => {
-                  Object.values(x.records || {}).forEach(r => { if (r.status === 'present') total++; });
+                  Object.values(x.records || {}).forEach((r: any) => { if (r.status === 'present' && !r.noBrush) total++; });
                 });
                 return (
                   <button key={d} onClick={() => setDate(d)} style={{

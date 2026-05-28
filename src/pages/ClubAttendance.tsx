@@ -83,11 +83,24 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const counts = useMemo(() => {
     const c = { present: 0, absent: 0, leave: 0, untracked: 0 };
     members.forEach(m => {
-      const st = records[m.studentId]?.status;
-      if (st) c[st]++; else c.untracked++;
+      const st = records[m.studentId]?.status || 'present';
+      c[st]++;
     });
     return c;
   }, [records, members]);
+
+  const validation = useMemo(() => {
+    if (!currentClub || !date) return { isValid: true, reason: '' };
+    const d = new Date(date);
+    const dayOfWeek = d.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, ...
+    if (currentClub.type === 'ลูกเสือ-เนตรนารี' && dayOfWeek !== 3) {
+      return { isValid: false, reason: 'กิจกรรมลูกเสือ-เนตรนารี จะต้องเช็คชื่อเฉพาะวันพุธเท่านั้น' };
+    }
+    if (currentClub.type === 'ชุมนุม' && dayOfWeek !== 4) {
+      return { isValid: false, reason: 'กิจกรรมชุมนุม จะต้องเช็คชื่อเฉพาะวันพฤหัสบดีเท่านั้น' };
+    }
+    return { isValid: true, reason: '' };
+  }, [currentClub, date]);
 
   const setStatus = (sid: string, status: AttStatus) => {
     setRecords(r => ({ ...r, [sid]: { ...(r[sid] || {}), status } }));
@@ -107,11 +120,12 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
   const cleanRecords = (recs: ClubAttendanceDoc['records']) => {
     const out: ClubAttendanceDoc['records'] = {};
-    for (const [k, v] of Object.entries(recs)) {
-      const item: any = { status: v.status };
+    members.forEach(m => {
+      const v = recs[m.studentId] || { status: 'present' };
+      const item: any = { status: v.status || 'present' };
       if (v.note) item.note = v.note;
-      out[k] = item;
-    }
+      out[m.studentId] = item;
+    });
     return out;
   };
 
@@ -214,11 +228,22 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
             {tab === 'check' && <>
 
+            {/* Validation Warning */}
+            {!validation.isValid && (
+              <div style={{
+                background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B',
+                padding: '12px 14px', borderRadius: 12, marginBottom: 14, fontWeight: 700,
+                fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 8
+              }}>
+                <span>⚠️ {validation.reason} (วันอื่นไม่เช็คชื่อ)</span>
+              </div>
+            )}
+
             {/* Quick actions */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button onClick={() => markAll('present')} style={{ ...quickBtn, background: BRAND }}>✓ มาทั้งหมด</button>
-              <button onClick={clearAll} style={{ ...quickBtn, background: '#EF4444' }}>↺ ล้างทั้งหมด</button>
-              <button onClick={save} disabled={saving} style={{ ...quickBtn, background: '#0F172A', marginLeft: 'auto' }}>
+              <button onClick={() => markAll('present')} disabled={!validation.isValid} style={{ ...quickBtn, background: BRAND, opacity: !validation.isValid ? 0.5 : 1, cursor: !validation.isValid ? 'not-allowed' : 'pointer' }}>✓ มาทั้งหมด</button>
+              <button onClick={clearAll} disabled={!validation.isValid} style={{ ...quickBtn, background: '#EF4444', opacity: !validation.isValid ? 0.5 : 1, cursor: !validation.isValid ? 'not-allowed' : 'pointer' }}>↺ ล้างทั้งหมด</button>
+              <button onClick={save} disabled={saving || !validation.isValid} style={{ ...quickBtn, background: '#0F172A', marginLeft: 'auto', opacity: (saving || !validation.isValid) ? 0.5 : 1, cursor: (saving || !validation.isValid) ? 'not-allowed' : 'pointer' }}>
                 <Save size={14} style={{ marginRight: 4 }} />{saving ? 'กำลังบันทึก…' : 'บันทึกข้อมูล'}
               </button>
               <button onClick={exportCsv} style={{ ...quickBtn, background: '#10B981' }}>
@@ -244,12 +269,12 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {members.map((m, i) => {
                   const r = records[m.studentId];
-                  const st = r?.status;
+                  const st = r?.status || 'present';
                   return (
                     <div key={m.studentId} style={{
                       background: 'white', borderRadius: 12, padding: '12px 14px',
                       display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-                      borderLeft: st ? `4px solid ${STATUS_COLORS[st]}` : '4px solid #E2E8F0',
+                      borderLeft: `4px solid ${STATUS_COLORS[st]}`,
                     }}>
                       <span style={{ fontWeight: 800, color: '#94A3B8', minWidth: 24 }}>{i + 1}</span>
                       <div style={{ flex: 1, minWidth: 180 }}>
@@ -258,19 +283,24 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
                       </div>
                       <div style={{ display: 'flex', gap: 4 }}>
                         {(['present', 'absent', 'leave'] as AttStatus[]).map(status => (
-                          <button key={status} onClick={() => setStatus(m.studentId, status)} style={{
-                            padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                            fontWeight: 800, fontSize: '0.78rem',
-                            background: st === status ? STATUS_COLORS[status] : '#F1F5F9',
-                            color: st === status ? 'white' : '#64748B',
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                          }}>
+                          <button key={status} onClick={() => setStatus(m.studentId, status)}
+                            disabled={!validation.isValid}
+                            style={{
+                              padding: '8px 12px', borderRadius: 10, border: 'none',
+                              cursor: !validation.isValid ? 'not-allowed' : 'pointer',
+                              fontWeight: 800, fontSize: '0.78rem',
+                              background: st === status ? STATUS_COLORS[status] : '#F1F5F9',
+                              color: st === status ? 'white' : '#64748B',
+                              opacity: !validation.isValid ? 0.5 : 1,
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                            }}>
                             {status === 'present' ? <Check size={12} /> : status === 'absent' ? <XIcon size={12} /> : <Clock size={12} />}
                             {STATUS_LABELS[status]}
                           </button>
                         ))}
                       </div>
                       <input placeholder="หมายเหตุ..." value={r?.note || ''}
+                        disabled={!validation.isValid}
                         onChange={e => setNote(m.studentId, e.target.value)}
                         style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: '0.78rem', maxWidth: 180 }} />
                     </div>
