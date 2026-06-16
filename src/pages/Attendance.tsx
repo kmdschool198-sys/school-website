@@ -7,7 +7,7 @@ import {
   Check, X as XIcon, Clock, Save, Download,
   Users, BarChart3, Calendar, ChevronLeft, AlertCircle, LogOut, Plus, Trash2, Edit2,
 } from 'lucide-react';
-import { useTeacherAuth } from '../utils/teacherAuth';
+import { useTeacherAuth, type Role } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 
 type Status = 'present' | 'absent' | 'leave';
@@ -60,8 +60,8 @@ export default function Attendance() {
   return <AttendanceApp role={auth.role} onLogout={auth.logout} />;
 }
 
-function AttendanceApp({ role, onLogout }: { role: 'teacher' | 'super'; onLogout: () => void }) {
-  const isSuper = role === 'super';
+function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void }) {
+  const isSuper = role === 'super' || role === 'admin';
   const today = todayStr();
   const [classes, setClasses] = useState<ClassRoster[]>(seedClasses);
   const [classId, setClassId] = useState<string>('');

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ChevronLeft, LogOut, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
-import { useTeacherAuth } from '../utils/teacherAuth';
+import { useTeacherAuth, type Role } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 
 const BRAND = '#FF6A01';
@@ -33,10 +33,10 @@ export default function TeacherLeavePage() {
   return <App role={auth.role} userName={auth.name} onLogout={auth.logout} />;
 }
 
-function App({ role, userName, onLogout }: { role: 'teacher' | 'super'; userName: string; onLogout: () => void }) {
+function App({ role, userName, onLogout }: { role: Role; userName: string; onLogout: () => void }) {
   const [items, setItems] = useState<LeaveRequest[]>([]);
   const [editing, setEditing] = useState<LeaveRequest | null>(null);
-  const isSuper = role === 'super';
+  const isSuper = role === 'super' || role === 'admin';
 
   useEffect(() => {
     return onSnapshot(query(collection(db, 'teacher_leaves'), orderBy('createdAt', 'desc')), snap => {

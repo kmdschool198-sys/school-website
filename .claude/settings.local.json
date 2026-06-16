@@ -47,7 +47,8 @@
       "Bash(node scripts/import_clubs.cjs)",
       "Bash(ls \"D:\\\\เอกสารโรงเรียน\\\\KMD\\\\2567\\\\ฟรอมเอกสารที่ใช้ในการนิเทศ\\\\ทำแล้ว\\\\\" 2>&1 | head)",
       "Bash(grep -n \"currentClub.description\\\\|{/\\\\\\\\* Quick actions \\\\\\\\*/}\\\\\\\\|members.length === 0\" src/pages/ClubAttendance.tsx)",
-      "Bash(grep -n \"^          </>\\\\\\\\|^        \\)}\\\\\\\\|members.length === 0\\\\\\\\|^            \\)}\\\\\\\\|^          \\\\\\\\]\\\\\\\\$\" src/pages/ClubAttendance.tsx)"
+      "Bash(grep -n \"^          </>\\\\\\\\|^        \\)}\\\\\\\\|members.length === 0\\\\\\\\|^            \\)}\\\\\\\\|^          \\\\\\\\]\\\\\\\\$\" src/pages/ClubAttendance.tsx)",
+      "Bash(powershell -Command \"Stop-Process -Id 10060 -Force -ErrorAction SilentlyContinue; 'killed'\")"
     ]
   }
 }

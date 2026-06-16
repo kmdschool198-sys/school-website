@@ -1,0 +1,121 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isStaff() {
+      return request.auth != null
+        && (
+          request.auth.token.admin == true
+          || request.auth.token.role in ['admin', 'teacher', 'super']
+          || isListedStaff()
+          || request.auth.token.email in [
+            'adminkmd@web-site-kmd.firebaseapp.com',
+            'jameskmd@web-site-kmd.firebaseapp.com'
+          ]
+        );
+    }
+
+    function hasAuthEmail() {
+      return request.auth != null && request.auth.token.email is string;
+    }
+
+    function isListedStaff() {
+      return hasAuthEmail()
+        && exists(/databases/$(database)/documents/staff_users/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/staff_users/$(request.auth.token.email)).data.active != false
+        && get(/databases/$(database)/documents/staff_users/$(request.auth.token.email)).data.role in ['admin', 'teacher', 'super'];
+    }
+
+    function isStaffAdmin() {
+      return request.auth != null
+        && (
+          request.auth.token.admin == true
+          || request.auth.token.role in ['admin', 'super']
+          || request.auth.token.email in [
+            'adminkmd@web-site-kmd.firebaseapp.com',
+            'jameskmd@web-site-kmd.firebaseapp.com'
+          ]
+          || (
+            isListedStaff()
+            && get(/databases/$(database)/documents/staff_users/$(request.auth.token.email)).data.role in ['admin', 'super']
+          )
+        );
+    }
+
+    // Staff allowlist used by Google Sign-In. Document ID must match auth email.
+    match /staff_users/{email} {
+      allow get: if hasAuthEmail() && (email == request.auth.token.email || isStaffAdmin());
+      allow list, create, update, delete: if isStaffAdmin();
+    }
+
+    // Public website content. Writes still require a real Firebase Auth staff user.
+    match /posts/{documentId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /personnel/{documentId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /highlights/{documentId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /activities/{documentId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /pages/{documentId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /config/{documentId} {
+      allow read: if documentId in ['school_info', 'home_assets', 'students_count', 'timetable'];
+      allow write: if isStaff();
+    }
+
+    // Public result metadata contains no per-student records.
+    match /result_announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Public lookup is single-document only; collection listing is staff-only.
+    match /result_lookup/{lookupId} {
+      allow get: if isStaff() || resource.data.visible == true;
+      allow list: if isStaff();
+      allow write: if isStaff();
+    }
+
+    // Sensitive school operations data.
+    match /attendance/{documentId} {
+      allow read, write: if isStaff();
+    }
+
+    match /log_body_metrics/{documentId} {
+      allow read, write: if isStaff();
+    }
+
+    match /log_saving/{documentId} {
+      allow read, write: if isStaff();
+    }
+
+    match /teacher_leaves/{documentId} {
+      allow read, write: if isStaff();
+    }
+
+    match /results/{documentId} {
+      allow read, write: if isStaff();
+    }
+
+    // Default: anything not explicitly public is staff-only.
+    match /{document=**} {
+      allow read, write: if isStaff();
+    }
+  }
+}

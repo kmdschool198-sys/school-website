@@ -26,6 +26,49 @@ export interface ResultAnnouncement {
   visible: boolean;
 }
 
+export interface PublicResultAnnouncement {
+  id: string;
+  title: string;
+  classId: string;
+  className: string;
+  subjects: SubjectInfo[];
+  publishedAt: number;
+  visible: boolean;
+  recordCount: number;
+}
+
+export interface ResultLookupDoc extends ResultRow {
+  announcementId: string;
+  className: string;
+  publishedAt: number;
+  visible: boolean;
+  recordCount: number;
+}
+
+export function normalizeResultCode(code: string): string {
+  return code.trim();
+}
+
+export function resultLookupDocId(announcementId: string, code: string): string {
+  return `${announcementId}__${encodeURIComponent(normalizeResultCode(code))}`;
+}
+
+export function publicAnnouncementFromResult(
+  result: ResultAnnouncement,
+  recordCount = result.records.length,
+): PublicResultAnnouncement {
+  return {
+    id: result.id,
+    title: result.title,
+    classId: result.classId,
+    className: result.className,
+    subjects: result.subjects,
+    publishedAt: result.publishedAt,
+    visible: result.visible,
+    recordCount,
+  };
+}
+
 const ACTIVITY_KEYWORDS = [
   'กิจกรรม', 'ลูกเสือ', 'เนตรนารี', 'ชุมนุม', 'สวดมนต์',
   'ตลาดนัดอาชีพ', 'แนะแนว', 'พักกลางวัน', 'อ่านหนังสือ',

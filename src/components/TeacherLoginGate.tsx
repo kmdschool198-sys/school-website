@@ -1,24 +1,47 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock } from 'lucide-react';
-import { setAuth, ACCOUNTS } from '../utils/teacherAuth';
+import { Lock, ShieldCheck } from 'lucide-react';
+import { signInTeacher, signInTeacherWithGoogle } from '../utils/teacherAuth';
 
 export default function TeacherLoginGate({ title, subtitle, onSuccess }: {
   title: string; subtitle?: string; onSuccess?: () => void;
 }) {
   const [u, setU] = useState('');
   const [p, setP] = useState('');
-  const [err, setErr] = useState(false);
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const acc = ACCOUNTS[u.trim()];
-    if (acc && acc.pass === p && setAuth(u.trim())) {
+    setErr('');
+    setLoading(true);
+    try {
+      await signInTeacher(u, p);
       onSuccess?.();
-    } else {
-      setErr(true);
+    } catch (error: any) {
+      console.error('Teacher login failed', error);
+      setErr(error?.message || 'บัญชี Firebase Auth ยังไม่พร้อม หรือชื่อผู้ใช้/รหัสผ่านไม่ถูกต้อง');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const loginWithGoogle = async () => {
+    setErr('');
+    setGoogleLoading(true);
+    try {
+      await signInTeacherWithGoogle();
+      onSuccess?.();
+    } catch (error: any) {
+      console.error('Teacher Google login failed', error);
+      setErr(error?.message || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const busy = loading || googleLoading;
 
   return (
     <div style={{
@@ -42,23 +65,51 @@ export default function TeacherLoginGate({ title, subtitle, onSuccess }: {
         </p>
         {err && (
           <div style={{ background: '#FEE2E2', color: '#DC2626', padding: '8px 12px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12, textAlign: 'center' }}>
-            ❌ ชื่อผู้ใช้/รหัสผ่านไม่ถูกต้อง
+            {err}
           </div>
         )}
-        <input value={u} onChange={e => setU(e.target.value)} placeholder="ชื่อผู้ใช้" required autoFocus
+
+        <button
+          type="button"
+          onClick={loginWithGoogle}
+          disabled={busy}
+          style={{
+            width: '100%', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0',
+            cursor: busy ? 'wait' : 'pointer', background: 'white', color: '#0F172A',
+            fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 8, boxShadow: '0 3px 10px rgba(15,23,42,0.06)',
+            opacity: busy ? 0.75 : 1,
+          }}
+        >
+          <ShieldCheck size={18} />
+          {googleLoading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบด้วย Google'}
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: '#94A3B8', fontSize: '0.75rem' }}>
+          <span style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+          <span>หรือใช้รหัสผ่าน</span>
+          <span style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+        </div>
+
+        <input value={u} onChange={e => setU(e.target.value)} placeholder="ชื่อผู้ใช้หรืออีเมล" required autoFocus
+          autoComplete="username"
+          disabled={busy}
           style={{ width: '100%', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0', marginBottom: 10, fontSize: '0.95rem' }} />
         <input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="รหัสผ่าน" required
+          autoComplete="current-password"
+          disabled={busy}
           style={{ width: '100%', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0', marginBottom: 16, fontSize: '0.95rem' }} />
-        <button type="submit" style={{
-          width: '100%', padding: 12, borderRadius: 10, border: 'none', cursor: 'pointer',
+        <button type="submit" disabled={busy} style={{
+          width: '100%', padding: 12, borderRadius: 10, border: 'none',
+          cursor: busy ? 'wait' : 'pointer',
           background: 'linear-gradient(135deg,#FF6A01,#FB923C)', color: 'white',
-          fontWeight: 800, fontSize: '0.95rem',
-        }}>เข้าสู่ระบบ</button>
+          fontWeight: 800, fontSize: '0.95rem', opacity: busy ? 0.8 : 1,
+        }}>{loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</button>
         <Link to="/" style={{ display: 'block', textAlign: 'center', marginTop: 12, color: '#94A3B8', fontSize: '0.8rem', textDecoration: 'none' }}>
           ← กลับหน้าหลัก
         </Link>
         <div style={{ marginTop: 12, padding: 10, background: '#F1F5F9', borderRadius: 8, fontSize: '0.7rem', color: '#64748B', textAlign: 'center' }}>
-          🔐 เข้าระบบครั้งเดียว ใช้ได้กับทุกระบบ (เช็คชื่อ, ลา, อบรม, ฯลฯ)
+          ใช้บัญชี Google/Firebase Auth ของโรงเรียน และตรวจสิทธิ์ซ้ำจากรายชื่อครูใน Firestore Rules
         </div>
       </form>
     </div>

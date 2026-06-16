@@ -6,6 +6,7 @@ import { TIMETABLE_BACKUP } from '../data/timetableData';
 import { ChevronLeft, LogOut, Printer } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import PdpaNotice from '../components/PdpaNotice';
 
 const COLOR = '#EC4899';
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
@@ -27,6 +28,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [month, setMonth] = useState(thisMonth());
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [healthConsentOk, setHealthConsentOk] = useState(false);
 
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
@@ -74,6 +76,10 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   };
 
   const updateMetric = async (s: Student, patch: { weight?: number; height?: number }) => {
+    if (!healthConsentOk) {
+      alert('กรุณารับทราบ notice ข้อมูลสุขภาพก่อนบันทึกน้ำหนัก-ส่วนสูง');
+      return;
+    }
     if (!current) return;
     const existing = findEntry(s);
     const id = existing?.id || `bm_${classId}_${month}_${s.id}`;
@@ -120,6 +126,17 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       </header>
 
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '1.25rem' }}>
+        <div style={{ marginBottom: 14 }}>
+          <PdpaNotice
+            title="ข้อมูลสุขภาพของนักเรียน"
+            consentKey="kmd_health_metrics_consent_v1"
+            checkboxLabel="ยืนยันว่าได้รับทราบ notice และมีฐานกฎหมาย/ความยินยอมที่เหมาะสมก่อนบันทึกข้อมูลสุขภาพ"
+            onAcceptedChange={setHealthConsentOk}
+          >
+            น้ำหนัก ส่วนสูง และ BMI ใช้เพื่อดูแลสุขภาพนักเรียนและรายงานภายในโรงเรียนเท่านั้น ระบบจำกัดสิทธิด้วย Firebase Auth และ Firestore Rules และควรบันทึกเฉพาะเท่าที่จำเป็น
+          </PdpaNotice>
+        </div>
+
         {/* Filters */}
         <div style={{ background: 'white', borderRadius: 12, padding: '1rem', marginBottom: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10 }}>
           <div>
@@ -174,20 +191,22 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
                         <td style={td}>
                           <input type="number" min={0} max={200} step="0.1"
                             defaultValue={e?.weight ?? ''}
+                            disabled={!healthConsentOk}
                             onBlur={ev => {
                               const v = ev.target.value;
                               updateMetric(s, { weight: v === '' ? undefined : Number(v) });
                             }}
-                            style={inpNum} />
+                            style={{ ...inpNum, opacity: healthConsentOk ? 1 : 0.55 }} />
                         </td>
                         <td style={td}>
                           <input type="number" min={0} max={250} step="0.1"
                             defaultValue={e?.height ?? ''}
+                            disabled={!healthConsentOk}
                             onBlur={ev => {
                               const v = ev.target.value;
                               updateMetric(s, { height: v === '' ? undefined : Number(v) });
                             }}
-                            style={inpNum} />
+                            style={{ ...inpNum, opacity: healthConsentOk ? 1 : 0.55 }} />
                         </td>
                         <td style={{ ...td, fontWeight: 800, color: bmi ? bmiColor(bmi) : '#94A3B8' }}>
                           {bmi || '-'}

@@ -1,53 +1,90 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, LogOut, Search } from 'lucide-react';
+import { ChevronLeft, FileSpreadsheet, Loader2, LogOut, Pin, PinOff, Search } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import { exportHubCardExcel, type HubExcelKind } from '../utils/hubExcel';
 
 interface AppCard {
+  id: string;
   to: string;
   title: string;
   icon: string;
   search: string;
   bg: string;
+  excelKind: HubExcelKind;
 }
 
-// ─── หมวด 1: ระบบเกี่ยวกับนักเรียน (สำหรับครูประจำชั้น/ผู้สอน) ───
-const STUDENT_APPS: AppCard[] = [
-  { to: '/class-dashboard', title: 'แดชบอร์ดรายชั้นเรียน ⭐', icon: '📊', search: 'ภาพรวมทั้งชั้น', bg: '#FFEDD5' },
-  { to: '/attendance', title: 'ระบบเช็คชื่อนักเรียน', icon: '✅', search: 'เช็คนักเรียน', bg: '#FCE7F3' },
-  { to: '/manage-roster', title: 'จัดการรายชื่อนักเรียน', icon: '👥', search: 'รายชื่อ-CSV', bg: '#E9D5FF' },
-  { to: '/club-attendance', title: 'เช็คชื่อชุมนุม-ลูกเสือ', icon: '🎯', search: 'ชุมนุม-ลูกเสือ', bg: '#DCFCE7' },
-  { to: '/manage-clubs', title: 'จัดการชุมนุม-สมาชิก', icon: '⚙️', search: 'สร้างชุมนุม', bg: '#D1FAE5' },
-  { to: '/milk-report', title: 'รายงานการดื่มนม (อัตโนมัติ)', icon: '🥛', search: 'ดื่มนม', bg: '#DBEAFE' },
-  { to: '/brush-log', title: 'บันทึกการแปรงฟัน', icon: '🪥', search: 'แปรงฟัน', bg: '#CFFAFE' },
-  { to: '/results', title: 'ประกาศผลสอบนักเรียน', icon: '🏆', search: 'ผลสอบ', bg: '#FEF3C7' },
-  { to: '/manage-results', title: 'จัดการ/กรอกผลสอบ', icon: '✏️', search: 'กรอกคะแนน', bg: '#FED7AA' },
-  { to: '/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3' },
-  { to: '/body-metrics', title: 'น้ำหนัก-ส่วนสูง-BMI', icon: '⚖️', search: 'น้ำหนักส่วนสูง', bg: '#FCE7F3' },
-  { to: '/print-body-metrics', title: 'พิมพ์ฟอร์มน้ำหนัก-ส่วนสูง', icon: '🖨️', search: 'พิมพ์น้ำหนัก', bg: '#FCE7F3' },
-  { to: '/print-club', title: 'พิมพ์ฟอร์มชุมนุม', icon: '🖨️', search: 'พิมพ์ชุมนุม', bg: '#DCFCE7' },
-  { to: '/teacher-log/remedial', title: 'บันทึกการสอนซ่อมเสริม', icon: '👨‍🏫', search: 'สอนซ่อมเสริม', bg: '#FCE7F3' },
-  { to: '/school-stats-report', title: 'รายงานสรุปสถิติประจำเดือน 📊', icon: '📈', search: 'สถิติประจำเดือน', bg: '#FFF7ED' },
-];
+const PIN_STORAGE_KEY = 'kmd_teacher_hub_pinned_apps_v1';
 
-// ─── หมวด 2: ระบบรายงานส่วนตัวของครู (สำหรับครูแต่ละคน) ───
-const TEACHER_APPS: AppCard[] = [
-  { to: '/teacher-training', title: 'เกียรติบัตร / อบรมครู', icon: '🎖️', search: 'เกียรติบัตรครู', bg: '#DCFCE7' },
-  { to: '/teacher-log/lesson-plan', title: 'ส่งแผนการสอน', icon: '📋', search: 'ส่งแผนการสอน', bg: '#E2E8F0' },
-  { to: '/teacher-log/media', title: 'บันทึกการใช้สื่อ', icon: '📚', search: 'การใช้สื่อ', bg: '#FEF3C7' },
-  { to: '/teacher-log/plc', title: 'บันทึก PLC 👥', icon: '👥', search: 'บันทึก PLC', bg: '#E9D5FF' },
-  { to: '/teacher-log/project', title: 'รายงานโครงการ 📊', icon: '📊', search: 'รายงานโครงการ', bg: '#FEE2E2' },
+const STUDENT_APPS: AppCard[] = [
+  { id: 'class-dashboard', to: '/class-dashboard', title: 'แดชบอร์ดรายชั้นเรียน', icon: '📊', search: 'ภาพรวมทั้งชั้น', bg: '#FFEDD5', excelKind: 'dashboard' },
+  { id: 'attendance', to: '/attendance', title: 'ระบบเช็คชื่อนักเรียน', icon: '✅', search: 'เช็คนักเรียน', bg: '#FCE7F3', excelKind: 'attendance' },
+  { id: 'manage-roster', to: '/manage-roster', title: 'จัดการรายชื่อนักเรียน', icon: '👥', search: 'รายชื่อ-CSV', bg: '#E9D5FF', excelKind: 'roster' },
+  { id: 'club-attendance', to: '/club-attendance', title: 'เช็คชื่อชุมนุม-ลูกเสือ', icon: '🎯', search: 'ชุมนุม-ลูกเสือ', bg: '#DCFCE7', excelKind: 'clubAttendance' },
+  { id: 'manage-clubs', to: '/manage-clubs', title: 'จัดการชุมนุม-สมาชิก', icon: '⚙️', search: 'สร้างชุมนุม', bg: '#D1FAE5', excelKind: 'clubs' },
+  { id: 'milk-report', to: '/milk-report', title: 'รายงานการดื่มนม', icon: '🥛', search: 'ดื่มนม', bg: '#DBEAFE', excelKind: 'milk' },
+  { id: 'brush-log', to: '/brush-log', title: 'บันทึกการแปรงฟัน', icon: '🪥', search: 'แปรงฟัน', bg: '#CFFAFE', excelKind: 'brush' },
+  { id: 'saving', to: '/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3', excelKind: 'saving' },
+  { id: 'body-metrics', to: '/body-metrics', title: 'น้ำหนัก-ส่วนสูง-BMI', icon: '⚖️', search: 'น้ำหนักส่วนสูง', bg: '#FCE7F3', excelKind: 'bodyMetrics' },
+  { id: 'print-body-metrics', to: '/print-body-metrics', title: 'พิมพ์ฟอร์มน้ำหนัก-ส่วนสูง', icon: '🖨️', search: 'พิมพ์น้ำหนัก', bg: '#FCE7F3', excelKind: 'bodyMetrics' },
+  { id: 'print-club', to: '/print-club', title: 'พิมพ์ฟอร์มชุมนุม', icon: '🖨️', search: 'พิมพ์ชุมนุม', bg: '#DCFCE7', excelKind: 'clubs' },
+  { id: 'school-stats-report', to: '/school-stats-report', title: 'รายงานสรุปสถิติประจำเดือน', icon: '📈', search: 'สถิติประจำเดือน', bg: '#FFF7ED', excelKind: 'schoolStats' },
 ];
 
 export default function TeacherHubPage() {
   const auth = useTeacherAuth();
-  if (!auth.authed) return <TeacherLoginGate title="🏫 ศูนย์รวมระบบครู" subtitle="เข้าระบบครั้งเดียว ใช้ได้ทุกระบบ" />;
+  if (!auth.authed) {
+    return <TeacherLoginGate title="🏫 ศูนย์รวมระบบครู" subtitle="เข้าสู่ระบบครั้งเดียว ใช้ได้ทุกระบบ" />;
+  }
   return <Hub userName={auth.name} onLogout={auth.logout} />;
 }
 
 function Hub({ userName, onLogout }: { userName: string; onLogout: () => void }) {
-  useEffect(() => { document.title = '🏫 Teacher Hub — โรงเรียนบ้านคลองมดแดง'; }, []);
+  const [pinnedIds, setPinnedIds] = useState<string[]>(readPinnedIds);
+  const [exportingId, setExportingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.title = 'Teacher Hub - โรงเรียนบ้านคลองมดแดง';
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedIds));
+  }, [pinnedIds]);
+
+  const apps = useMemo(() => {
+    return STUDENT_APPS
+      .map((app, index) => ({ app, index }))
+      .sort((a, b) => {
+        const pinA = pinnedIds.indexOf(a.app.id);
+        const pinB = pinnedIds.indexOf(b.app.id);
+        const aPinned = pinA !== -1;
+        const bPinned = pinB !== -1;
+        if (aPinned && bPinned) return pinA - pinB;
+        if (aPinned) return -1;
+        if (bPinned) return 1;
+        return a.index - b.index;
+      })
+      .map(item => item.app);
+  }, [pinnedIds]);
+
+  const togglePin = (id: string) => {
+    setPinnedIds(current => current.includes(id)
+      ? current.filter(item => item !== id)
+      : [id, ...current]);
+  };
+
+  const downloadExcel = async (app: AppCard) => {
+    setExportingId(app.id);
+    try {
+      await exportHubCardExcel(app.excelKind, app.title);
+    } catch (error: any) {
+      console.error(error);
+      alert(`โหลด Excel ไม่สำเร็จ: ${error?.message || error}`);
+    } finally {
+      setExportingId(null);
+    }
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg,#FFF7ED 0%,#FFFFFF 100%)' }}>
@@ -66,30 +103,27 @@ function Hub({ userName, onLogout }: { userName: string; onLogout: () => void })
       </header>
 
       <main style={{ maxWidth: 1200, margin: '-1.5rem auto 3rem', padding: '0 1.25rem' }}>
-        {/* Section 1: Student-facing */}
         <SectionHeader
           icon="👨‍🎓"
           title="ระบบที่ทำงานกับนักเรียน"
-          subtitle="เช็คชื่อ / ชุมนุม / ผลสอบ / น้ำหนัก / ออมเงิน / สอนซ่อม"
+          subtitle="เช็คชื่อ / ชุมนุม / นม-แปรงฟัน / น้ำหนัก / ออมเงิน / รายงานสถิติ"
           color="#0EA5E9"
         />
         <div style={grid}>
-          {STUDENT_APPS.map(a => <AppCardView key={a.to} app={a} />)}
-        </div>
-
-        {/* Section 2: Personal teacher */}
-        <SectionHeader
-          icon="👨‍🏫"
-          title="ระบบรายงานส่วนตัวของครู"
-          subtitle="ลา / อบรม / PLC / แผนการสอน / โครงการ / สื่อ"
-          color="#A855F7"
-        />
-        <div style={grid}>
-          {TEACHER_APPS.map(a => <AppCardView key={a.to} app={a} />)}
+          {apps.map(app => (
+            <AppCardView
+              key={app.id}
+              app={app}
+              pinned={pinnedIds.includes(app.id)}
+              exporting={exportingId === app.id}
+              onTogglePin={togglePin}
+              onDownloadExcel={downloadExcel}
+            />
+          ))}
         </div>
 
         <div style={{ marginTop: 30, padding: '14px 18px', background: '#FFF7ED', borderLeft: '4px solid #FF6A01', borderRadius: 10, color: '#7C2D12', fontSize: '0.85rem' }}>
-          💡 <b>เคล็ดลับ:</b> ใช้บัญชีเดียวเข้าได้ทุกระบบ — login ครั้งเดียวที่นี่แล้วใช้งานต่อได้เลยทุกหน้า
+          💡 <b>เคล็ดลับ:</b> กดหมุดเพื่อพินงานที่ใช้บ่อยขึ้นด้านหน้า และกดไอคอน Excel เพื่อโหลดข้อมูลของงานนั้น
         </div>
       </main>
     </div>
@@ -112,31 +146,74 @@ function SectionHeader({ icon, title, subtitle, color }: { icon: string; title: 
   );
 }
 
-function AppCardView({ app }: { app: AppCard }) {
+function AppCardView({
+  app,
+  pinned,
+  exporting,
+  onTogglePin,
+  onDownloadExcel,
+}: {
+  app: AppCard;
+  pinned: boolean;
+  exporting: boolean;
+  onTogglePin: (id: string) => void;
+  onDownloadExcel: (app: AppCard) => void;
+}) {
   return (
-    <Link to={app.to} style={{ textDecoration: 'none' }}>
-      <div style={{
-        background: 'white', borderRadius: 18, overflow: 'hidden',
-        boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+    <div
+      style={{
+        background: 'white',
+        borderRadius: 18,
+        overflow: 'hidden',
+        boxShadow: pinned ? '0 12px 30px rgba(255,106,1,0.18)' : '0 4px 14px rgba(0,0,0,0.06)',
+        border: pinned ? '2px solid #FF6A01' : '1px solid rgba(0,0,0,0.02)',
         transition: 'transform 0.2s, box-shadow 0.2s',
-        cursor: 'pointer', height: '100%',
-        display: 'flex', flexDirection: 'column',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
-        onMouseOver={e => {
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 14px 28px rgba(0,0,0,0.12)';
-        }}
-        onMouseOut={e => {
-          e.currentTarget.style.transform = '';
-          e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.06)';
-        }}>
-        <div style={{
-          background: app.bg, padding: '1.25rem 1rem 1rem',
-          minHeight: 150, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', position: 'relative',
-        }}>
-          <span style={{ position: 'absolute', top: 8, left: 8, fontSize: '0.85rem' }}>✨</span>
-          <span style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.85rem' }}>🌸</span>
+      onMouseOver={e => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = '0 14px 28px rgba(0,0,0,0.12)';
+      }}
+      onMouseOut={e => {
+        e.currentTarget.style.transform = '';
+        e.currentTarget.style.boxShadow = pinned ? '0 12px 30px rgba(255,106,1,0.18)' : '0 4px 14px rgba(0,0,0,0.06)';
+      }}
+    >
+      <div style={{
+        background: app.bg,
+        padding: '1.25rem 1rem 1rem',
+        minHeight: 150,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+      }}>
+        <span style={{ position: 'absolute', top: 8, left: 8, fontSize: '0.85rem' }}>✨</span>
+        <div style={cardActions}>
+          <button
+            type="button"
+            onClick={() => onTogglePin(app.id)}
+            title={pinned ? 'เลิกพินงานนี้' : 'พินงานนี้'}
+            aria-label={pinned ? 'เลิกพินงานนี้' : 'พินงานนี้'}
+            style={{ ...iconButton, background: pinned ? '#FF6A01' : 'rgba(255,255,255,0.92)', color: pinned ? 'white' : '#0F172A' }}
+          >
+            {pinned ? <PinOff size={14} /> : <Pin size={14} />}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDownloadExcel(app)}
+            title="โหลดไฟล์ Excel"
+            aria-label="โหลดไฟล์ Excel"
+            disabled={exporting}
+            style={{ ...iconButton, opacity: exporting ? 0.65 : 1 }}
+          >
+            {exporting ? <Loader2 size={14} /> : <FileSpreadsheet size={14} />}
+          </button>
+        </div>
+        <Link to={app.to} style={cardLink}>
           <div style={{ fontSize: '3.5rem', lineHeight: 1, marginBottom: 10 }}>{app.icon}</div>
           <div style={{
             background: 'rgba(255,255,255,0.92)', borderRadius: 999,
@@ -147,24 +224,48 @@ function AppCardView({ app }: { app: AppCard }) {
             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{app.search}</span>
             <Search size={11} />
           </div>
-        </div>
-        <div style={{
-          background: 'white', padding: '12px 14px', flex: 1,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <div style={{ fontWeight: 900, color: '#0F172A', textAlign: 'center', fontSize: '0.92rem', lineHeight: 1.3 }}>
-            {app.title}
-          </div>
-        </div>
+        </Link>
       </div>
-    </Link>
+      <Link to={app.to} style={titleLink}>
+        <div style={{ fontWeight: 900, color: '#0F172A', textAlign: 'center', fontSize: '0.92rem', lineHeight: 1.3 }}>
+          {app.title}
+        </div>
+      </Link>
+    </div>
   );
 }
 
-const grid: React.CSSProperties = {
+function readPinnedIds() {
+  try {
+    const raw = localStorage.getItem(PIN_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+const grid: CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
   gap: 14,
 };
-const lnk: React.CSSProperties = { color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 };
-const btnLogout: React.CSSProperties = { background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 };
+
+const lnk: CSSProperties = { color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 };
+const btnLogout: CSSProperties = { background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 };
+const cardLink: CSSProperties = { color: 'inherit', textDecoration: 'none', width: '100%', minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' };
+const titleLink: CSSProperties = { background: 'white', padding: '12px 14px', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' };
+const cardActions: CSSProperties = { position: 'absolute', top: 8, right: 8, zIndex: 2, display: 'flex', gap: 6 };
+const iconButton: CSSProperties = {
+  width: 30,
+  height: 30,
+  borderRadius: 999,
+  border: '1px solid rgba(0,0,0,0.08)',
+  background: 'rgba(255,255,255,0.92)',
+  color: '#0F172A',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  boxShadow: '0 3px 10px rgba(15,23,42,0.08)',
+};

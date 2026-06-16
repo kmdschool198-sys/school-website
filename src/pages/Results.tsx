@@ -1,41 +1,59 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ChevronLeft, Search, Calendar, X as XIcon, FileText, Award, Printer } from 'lucide-react';
-import type { ResultAnnouncement, ResultRow } from '../data/results';
-import { totalScore, pctColor } from '../data/results';
+import type { PublicResultAnnouncement, ResultLookupDoc, ResultRow } from '../data/results';
+import { normalizeResultCode, resultLookupDocId, totalScore, pctColor } from '../data/results';
 
 const BRAND = '#FF6A01';
 
 export default function ResultsPage() {
-  const [announcements, setAnnouncements] = useState<ResultAnnouncement[]>([]);
-  const [selected, setSelected] = useState<ResultAnnouncement | null>(null);
+  const [announcements, setAnnouncements] = useState<PublicResultAnnouncement[]>([]);
+  const [selected, setSelected] = useState<PublicResultAnnouncement | null>(null);
   const [code, setCode] = useState('');
   const [foundRow, setFoundRow] = useState<ResultRow | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
 
   useEffect(() => {
-    // Fetch all + filter/sort client-side (avoids needing a Firestore composite index)
     try {
-      return onSnapshot(collection(db, 'results'), snap => {
-        const arr: ResultAnnouncement[] = [];
+      return onSnapshot(collection(db, 'result_announcements'), snap => {
+        const arr: PublicResultAnnouncement[] = [];
         snap.forEach(d => arr.push({ id: d.id, ...(d.data() as any) }));
         const visible = arr.filter(a => a.visible).sort((a, b) => b.publishedAt - a.publishedAt);
         setAnnouncements(visible);
-      }, err => console.error('[results]', err));
+      }, err => console.error('[result_announcements]', err));
     } catch (e) { console.error(e); }
   }, []);
 
-  const lookup = () => {
-    if (!selected || !code.trim()) return;
-    const rec = selected.records.find(r => r.code.trim() === code.trim());
-    if (rec) { setFoundRow(rec); setNotFound(false); }
-    else { setFoundRow(null); setNotFound(true); }
+  const lookup = async () => {
+    const normalizedCode = normalizeResultCode(code);
+    if (!selected || !normalizedCode) return;
+    setLookupLoading(true);
+    try {
+      const snap = await getDoc(doc(db, 'result_lookup', resultLookupDocId(selected.id, normalizedCode)));
+      if (snap.exists()) {
+        const rec = snap.data() as ResultLookupDoc;
+        if (rec.announcementId === selected.id && normalizeResultCode(rec.code) === normalizedCode) {
+          setFoundRow(rec);
+          setNotFound(false);
+          return;
+        }
+      }
+      setFoundRow(null);
+      setNotFound(true);
+    } catch (e) {
+      console.error('[result_lookup]', e);
+      setFoundRow(null);
+      setNotFound(true);
+    } finally {
+      setLookupLoading(false);
+    }
   };
 
   const closeModal = () => {
-    setSelected(null); setCode(''); setFoundRow(null); setNotFound(false);
+    setSelected(null); setCode(''); setFoundRow(null); setNotFound(false); setLookupLoading(false);
   };
 
   return (
@@ -101,7 +119,7 @@ export default function ResultsPage() {
                   {a.title}
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: 8 }}>
-                  ชั้น <b>{a.className}</b> · {a.records.length} คน · {a.subjects.length} วิชา
+                  ชั้น <b>{a.className}</b> · {a.recordCount} คน · {a.subjects.length} วิชา
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <Calendar size={12} /> ประกาศเมื่อ {new Date(a.publishedAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -147,7 +165,7 @@ export default function ResultsPage() {
                 }}>
                   <div style={{ fontSize: '0.78rem', opacity: 0.9, fontWeight: 800, letterSpacing: 2 }}>📢 ประกาศผลสอบ</div>
                   <h3 style={{ margin: '4px 0 4px', fontWeight: 900 }}>{selected.title}</h3>
-                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>ชั้น {selected.className} · {selected.records.length} คน</div>
+                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>ชั้น {selected.className} · {selected.recordCount} คน</div>
                 </div>
 
                 <div style={{ padding: '1.5rem' }}>
@@ -162,12 +180,13 @@ export default function ResultsPage() {
                         flex: 1, padding: '12px 14px', borderRadius: 12, border: '2px solid #E2E8F0',
                         fontSize: '1.1rem', fontWeight: 700, letterSpacing: 1,
                       }} />
-                    <button onClick={lookup} style={{
+                    <button onClick={lookup} disabled={lookupLoading} style={{
                       background: BRAND, color: 'white', border: 'none', borderRadius: 12,
-                      padding: '0 20px', fontWeight: 900, cursor: 'pointer', fontSize: '0.95rem',
+                      padding: '0 20px', fontWeight: 900, cursor: lookupLoading ? 'wait' : 'pointer', fontSize: '0.95rem',
                       display: 'inline-flex', alignItems: 'center', gap: 6,
+                      opacity: lookupLoading ? 0.65 : 1,
                     }}>
-                      <Search size={16} /> ค้นหา
+                      <Search size={16} /> {lookupLoading ? 'กำลังค้นหา' : 'ค้นหา'}
                     </button>
                   </div>
                   {notFound && (
@@ -210,7 +229,7 @@ export default function ResultsPage() {
 // ════════════════════════════════════════════════════════════════
 // ปพ.6-style Report Card
 function ReportCard({ announcement, row, onBack }: {
-  announcement: ResultAnnouncement; row: ResultRow; onBack: () => void;
+  announcement: PublicResultAnnouncement; row: ResultRow; onBack: () => void;
 }) {
   const t = totalScore(row.scores, announcement.subjects);
   const print = () => window.print();
@@ -312,7 +331,7 @@ function ReportCard({ announcement, row, onBack }: {
 
         {/* Stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
-          <Stat label="🏆 อันดับในชั้น" value={row.rank ? `${row.rank} / ${announcement.records.length}` : '-'} />
+          <Stat label="🏆 อันดับในชั้น" value={row.rank ? `${row.rank} / ${announcement.recordCount}` : '-'} />
           <Stat label="📊 คะแนนรวม" value={`${t.sum.toFixed(1)} / ${t.max}`} />
           <Stat label="💯 ร้อยละ" value={`${t.pct.toFixed(1)}%`} />
         </div>

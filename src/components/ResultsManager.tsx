@@ -1,15 +1,73 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import {
+  collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch,
+  query, where, getDocs,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import { Plus, Trash2, Eye, EyeOff, Edit2, X, Save, RefreshCw } from 'lucide-react';
 import type { ResultAnnouncement, ResultRow } from '../data/results';
-import { subjectsFromTimetable, totalScore, pctColor } from '../data/results';
+import {
+  subjectsFromTimetable, totalScore, pctColor,
+  normalizeResultCode, publicAnnouncementFromResult, resultLookupDocId,
+} from '../data/results';
 
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
 interface Student { id: string; code?: string; name: string; emoji?: string; }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
+
+async function commitBatched(actions: Array<(batch: ReturnType<typeof writeBatch>) => void>) {
+  let batch = writeBatch(db);
+  let count = 0;
+  for (const action of actions) {
+    action(batch);
+    count += 1;
+    if (count >= 450) {
+      await batch.commit();
+      batch = writeBatch(db);
+      count = 0;
+    }
+  }
+  if (count > 0) await batch.commit();
+}
+
+async function deletePublicResult(announcementId: string) {
+  const lookupSnap = await getDocs(
+    query(collection(db, 'result_lookup'), where('announcementId', '==', announcementId)),
+  );
+  await commitBatched([
+    batch => batch.delete(doc(db, 'result_announcements', announcementId)),
+    ...lookupSnap.docs.map(d => (batch: ReturnType<typeof writeBatch>) => batch.delete(d.ref)),
+  ]);
+}
+
+async function syncPublicResult(result: ResultAnnouncement) {
+  await deletePublicResult(result.id);
+  if (!result.visible) return;
+
+  const records = result.records
+    .map(row => ({ ...row, code: normalizeResultCode(row.code) }))
+    .filter(row => row.code);
+
+  await commitBatched([
+    batch => batch.set(
+      doc(db, 'result_announcements', result.id),
+      publicAnnouncementFromResult(result, records.length),
+    ),
+    ...records.map(row => (batch: ReturnType<typeof writeBatch>) => batch.set(
+      doc(db, 'result_lookup', resultLookupDocId(result.id, row.code)),
+      {
+        ...row,
+        announcementId: result.id,
+        className: result.className,
+        publishedAt: result.publishedAt,
+        visible: true,
+        recordCount: records.length,
+      },
+    )),
+  ]);
+}
 
 export default function ResultsManager() {
   const [items, setItems] = useState<ResultAnnouncement[]>([]);
@@ -72,19 +130,28 @@ export default function ResultsManager() {
       const rankMap = new Map<string, number>();
       ranked.forEach((r, i) => rankMap.set(r.code, i + 1));
       const records = a.records.map(r => ({ ...r, rank: rankMap.get(r.code) }));
-      await setDoc(doc(db, 'results', a.id), { ...a, records });
+      const next = { ...a, records };
+      await setDoc(doc(db, 'results', a.id), next);
+      await syncPublicResult(next);
       setEditing(null);
     } catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };
 
   const toggle = async (a: ResultAnnouncement) => {
-    try { await setDoc(doc(db, 'results', a.id), { ...a, visible: !a.visible }); }
+    try {
+      const next = { ...a, visible: !a.visible };
+      await setDoc(doc(db, 'results', a.id), next);
+      await syncPublicResult(next);
+    }
     catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };
 
   const del = async (a: ResultAnnouncement) => {
     if (!confirm(`ลบประกาศ "${a.title}"?`)) return;
-    try { await deleteDoc(doc(db, 'results', a.id)); }
+    try {
+      await deleteDoc(doc(db, 'results', a.id));
+      await deletePublicResult(a.id);
+    }
     catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };
 

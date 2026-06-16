@@ -1,61 +1,183 @@
-// ─── Shared authentication for ALL teacher systems ───
-// Login once → access attendance, leave, training, body-metrics, etc.
-import { useState, useEffect } from 'react';
+// Shared Firebase Authentication helpers for all teacher/staff systems.
+import { useEffect, useState } from 'react';
+import {
+  GoogleAuthProvider,
+  getIdTokenResult,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
-export const AUTH_KEY = 'teacher_auth_v1';
-export const ROLE_KEY = 'teacher_role_v1';
-export const NAME_KEY = 'teacher_name_v1';
-
-export type Role = 'teacher' | 'super';
-
-export const ACCOUNTS: Record<string, { pass: string; role: Role; name: string }> = {
-  adminkmd: { pass: '12345678kmd', role: 'teacher', name: 'ครู (Admin)' },
-  jameskmd: { pass: '12345678kmd', role: 'super',   name: 'ผู้ดูแลระบบ' },
-};
+export type Role = 'teacher' | 'admin' | 'super';
 
 export interface AuthState {
   authed: boolean;
+  loading: boolean;
   role: Role;
   name: string;
+  email: string;
 }
 
-export function readAuth(): AuthState {
+export type StaffProfile = {
+  email: string;
+  role: Role;
+  name: string;
+  active?: boolean;
+};
+
+export const STAFF_USERS_COLLECTION = 'staff_users';
+
+const STAFF_PROFILES: Record<string, StaffProfile> = {
+  adminkmd: {
+    email: import.meta.env.VITE_KMD_ADMIN_EMAIL || import.meta.env.VITE_KMD_TEACHER_EMAIL || 'adminkmd@web-site-kmd.firebaseapp.com',
+    role: 'admin',
+    name: 'ครู (Admin)',
+  },
+  jameskmd: {
+    email: import.meta.env.VITE_KMD_SUPER_EMAIL || 'jameskmd@web-site-kmd.firebaseapp.com',
+    role: 'super',
+    name: 'ผู้ดูแลระบบ',
+  },
+};
+
+const DEFAULT_AUTH_STATE: AuthState = {
+  authed: false,
+  loading: true,
+  role: 'teacher',
+  name: 'ครู',
+  email: '',
+};
+
+export function resolveStaffEmail(usernameOrEmail: string): string {
+  const value = usernameOrEmail.trim();
+  if (value.includes('@')) return value;
+  return STAFF_PROFILES[value]?.email || value;
+}
+
+function roleFromClaim(value: unknown): Role | null {
+  if (value === 'super' || value === 'admin' || value === 'teacher') return value;
+  return null;
+}
+
+function fallbackProfile(user: User): StaffProfile | null {
+  const email = user.email || '';
+  return Object.values(STAFF_PROFILES).find(profile => profile.email === email) || null;
+}
+
+async function listedStaffProfile(user: User): Promise<StaffProfile | null> {
+  const email = user.email?.trim();
+  if (!email) return null;
+
+  try {
+    const snap = await getDoc(doc(db, STAFF_USERS_COLLECTION, email));
+    if (!snap.exists()) return null;
+
+    const data = snap.data() as Partial<StaffProfile> & { displayName?: string };
+    if (data.active === false) return null;
+
+    return {
+      email,
+      role: roleFromClaim(data.role) || 'teacher',
+      name: data.name || data.displayName || user.displayName || email,
+      active: data.active,
+    };
+  } catch (error) {
+    console.error('Unable to read staff allowlist profile', error);
+    return null;
+  }
+}
+
+export async function getAuthorizedStaffProfile(user: User): Promise<StaffProfile | null> {
+  const token = await getIdTokenResult(user, true);
+  const fallback = fallbackProfile(user);
+  const listed = await listedStaffProfile(user);
+  const role =
+    roleFromClaim(token.claims.role) ||
+    (token.claims.admin === true ? 'admin' : null) ||
+    listed?.role ||
+    fallback?.role ||
+    null;
+
+  if (!role) return null;
+
   return {
-    authed: sessionStorage.getItem(AUTH_KEY) === '1',
-    role: (sessionStorage.getItem(ROLE_KEY) as Role) || 'teacher',
-    name: sessionStorage.getItem(NAME_KEY) || 'ครู',
+    email: user.email || listed?.email || fallback?.email || '',
+    role,
+    name: listed?.name || user.displayName || fallback?.name || user.email || 'ครู',
+    active: listed?.active,
   };
 }
 
-export function setAuth(user: string): boolean {
-  const acc = ACCOUNTS[user.trim()];
-  if (!acc) return false;
-  sessionStorage.setItem(AUTH_KEY, '1');
-  sessionStorage.setItem(ROLE_KEY, acc.role);
-  sessionStorage.setItem(NAME_KEY, acc.name);
-  // Notify other tabs/components
-  window.dispatchEvent(new Event('teacher-auth-changed'));
-  return true;
+async function stateFromUser(user: User | null): Promise<AuthState> {
+  if (!user) return { ...DEFAULT_AUTH_STATE, loading: false };
+
+  const profile = await getAuthorizedStaffProfile(user);
+  if (!profile) return { ...DEFAULT_AUTH_STATE, loading: false };
+
+  return {
+    authed: true,
+    loading: false,
+    role: profile.role,
+    name: profile.name,
+    email: profile.email,
+  };
 }
 
-export function clearAuth() {
-  sessionStorage.removeItem(AUTH_KEY);
-  sessionStorage.removeItem(ROLE_KEY);
-  sessionStorage.removeItem(NAME_KEY);
-  window.dispatchEvent(new Event('teacher-auth-changed'));
+export async function signInTeacher(usernameOrEmail: string, password: string) {
+  const credential = await signInWithEmailAndPassword(auth, resolveStaffEmail(usernameOrEmail), password);
+  const profile = await getAuthorizedStaffProfile(credential.user);
+  if (!profile) {
+    await signOut(auth);
+    throw new Error('อีเมลนี้ยังไม่อยู่ในรายชื่อครูที่อนุญาต');
+  }
 }
 
-// React hook to subscribe to auth changes
+export async function signInTeacherWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const credential = await signInWithPopup(auth, provider);
+  const profile = await getAuthorizedStaffProfile(credential.user);
+  if (!profile) {
+    await signOut(auth);
+    throw new Error('อีเมล Google นี้ยังไม่อยู่ในรายชื่อครูที่อนุญาต');
+  }
+}
+
+export async function clearAuth() {
+  await signOut(auth);
+}
+
 export function useTeacherAuth(): AuthState & { logout: () => void } {
-  const [state, setState] = useState(readAuth);
+  const [state, setState] = useState<AuthState>(DEFAULT_AUTH_STATE);
+
   useEffect(() => {
-    const update = () => setState(readAuth());
-    window.addEventListener('teacher-auth-changed', update);
-    window.addEventListener('storage', update);
+    let alive = true;
+    const unsubscribe = onAuthStateChanged(auth, async user => {
+      try {
+        const next = await stateFromUser(user);
+        if (user && !next.authed) {
+          await signOut(auth);
+        }
+        if (alive) setState(next);
+      } catch (err) {
+        console.error('Unable to read Firebase auth state', err);
+        if (alive) setState({ ...DEFAULT_AUTH_STATE, loading: false });
+      }
+    });
     return () => {
-      window.removeEventListener('teacher-auth-changed', update);
-      window.removeEventListener('storage', update);
+      alive = false;
+      unsubscribe();
     };
   }, []);
-  return { ...state, logout: clearAuth };
+
+  return {
+    ...state,
+    logout: () => {
+      void clearAuth();
+    },
+  };
 }

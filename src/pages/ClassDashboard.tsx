@@ -4,8 +4,8 @@ import { collection, doc, onSnapshot, getDocs, query, where } from 'firebase/fir
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import {
-  ChevronLeft, LogOut, Users, Calendar, Award, Target,
-  BookOpen, DollarSign, Activity, Sparkles,
+  ChevronLeft, LogOut, Users, Calendar, Target,
+  DollarSign, Activity, Sparkles,
 } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -94,7 +94,6 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 function Dashboard({ cls }: { cls: { id: string; label: string; students: Student[] } }) {
   const [attDocs, setAttDocs] = useState<any[]>([]);
   const [clubs, setClubs] = useState<any[]>([]);
-  const [results, setResults] = useState<any[]>([]);
   const [logs, setLogs] = useState<Record<string, any[]>>({});
 
   const today = todayStr();
@@ -126,23 +125,9 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
       setClubs(arr);
     });
   }, [classLabel]);
-
-  // Results
-  useEffect(() => {
-    return onSnapshot(collection(db, 'results'), snap => {
-      const arr: any[] = [];
-      snap.forEach(d => {
-        const data = { id: d.id, ...(d.data() as any) };
-        if (data.classId === cls.id) arr.push(data);
-      });
-      arr.sort((a, b) => b.publishedAt - a.publishedAt);
-      setResults(arr);
-    });
-  }, [cls.id]);
-
   // Generic logs (filter by classLabel field if present) — student-facing only
   useEffect(() => {
-    const types = ['saving', 'remedial', 'body_metrics'];
+    const types = ['saving', 'body_metrics'];
     const unsubs = types.map(t => onSnapshot(collection(db, `log_${t}`), snap => {
       const arr: any[] = [];
       snap.forEach(d => arr.push(d.data()));
@@ -280,43 +265,8 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
             </div>
           )}
         </Card>
-
-        {/* Results */}
-        <Card title={`🏆 ประกาศผลสอบ (${results.length})`} icon={<Award size={18} />} link="/results">
-          {results.length === 0 ? <Empty msg="ยังไม่มีประกาศผลสอบของชั้นนี้" /> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {results.slice(0, 3).map(r => (
-                <div key={r.id} style={{ padding: '8px 10px', background: '#FFF7ED', borderRadius: 8 }}>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
-                    <span style={{ background: r.visible ? '#DCFCE7' : '#FEE2E2', color: r.visible ? '#166534' : '#991B1B', padding: '1px 8px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 800 }}>
-                      {r.visible ? '🟢 เผยแพร่' : '🔴 ซ่อน'}
-                    </span>
-                    <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>{new Date(r.publishedAt).toLocaleDateString('th-TH')}</span>
-                  </div>
-                  <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.88rem' }}>{r.title}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{r.records?.length || 0} คน · {r.subjects?.length || 0} วิชา</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        {/* Remedial */}
-        <Card title={`👨‍🏫 สอนซ่อมเสริม (${logs.remedial?.length || 0})`} icon={<BookOpen size={18} />} link="/teacher-log/remedial">
-          {(logs.remedial?.length || 0) === 0 ? <Empty msg="ยังไม่มีบันทึก" /> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {logs.remedial.slice(0, 4).map((l: any) => (
-                <div key={l.id} style={{ padding: '8px 10px', background: '#FFF7ED', borderRadius: 8 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{l.topic}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{l.subject} · {l.date} · {l.hours} ชม.</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
         {/* Saving */}
-        <Card title={`💰 ออมเงิน (${logs.saving?.length || 0} รายการ)`} icon={<DollarSign size={18} />} link="/teacher-log/saving">
+        <Card title={`💰 ออมเงิน (${logs.saving?.length || 0} รายการ)`} icon={<DollarSign size={18} />} link="/saving">
           {(logs.saving?.length || 0) === 0 ? <Empty msg="ยังไม่มีบันทึก" /> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {(() => {
@@ -339,7 +289,7 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
         </Card>
 
         {/* Body metrics */}
-        <Card title={`⚖️ น้ำหนัก-ส่วนสูง (${logs.body_metrics?.length || 0})`} icon={<Activity size={18} />} link="/teacher-log/body-metrics">
+        <Card title={`⚖️ น้ำหนัก-ส่วนสูง (${logs.body_metrics?.length || 0})`} icon={<Activity size={18} />} link="/body-metrics">
           {(logs.body_metrics?.length || 0) === 0 ? <Empty msg="ยังไม่มีบันทึก" /> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {logs.body_metrics.slice(0, 5).map((l: any) => (

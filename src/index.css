@@ -11,8 +11,8 @@
   --light-gray: #F1F5F9;
   --border-color: #E2E8F0;
   
-  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Inter', sans-serif;
+  --font-main: 'Sarabun', 'Noto Sans Thai', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Sarabun', 'Noto Sans Thai', 'Inter', sans-serif;
   
   --radius-sm: 8px;
   --radius-md: 16px;

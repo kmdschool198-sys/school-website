@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   GraduationCap, MapPin, Phone, Mail, ExternalLink,
-  Calendar as CalendarIcon, ClipboardList, BookOpen, ChevronRight,
+  Calendar as CalendarIcon, ClipboardList, BookOpen, ChevronRight, ShieldCheck,
 } from 'lucide-react';
 
 // Brand icons (lucide doesn't ship these in older versions)
@@ -111,6 +111,7 @@ export default function Footer() {
               <FooterRouterLink to="/attendance" icon={<ClipboardList size={13} />}>ระบบเช็คชื่อนักเรียน</FooterRouterLink>
               <FooterRouterLink to="/page/personnel" icon={<BookOpen size={13} />}>บุคลากร</FooterRouterLink>
               <FooterRouterLink to="/page/about" icon={<BookOpen size={13} />}>เกี่ยวกับโรงเรียน</FooterRouterLink>
+              <FooterRouterLink to="/privacy" icon={<ShieldCheck size={13} />}>นโยบายความเป็นส่วนตัว</FooterRouterLink>
             </FooterCol>
           </div>
 
@@ -160,6 +161,8 @@ export default function Footer() {
             © {beYear} {info.name}. สงวนลิขสิทธิ์ทุกประการ
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <Link to="/privacy" style={{ color: '#94A3B8', textDecoration: 'none' }}>Privacy / PDPA</Link>
+            <span style={{ color: '#475569' }}>•</span>
             <Link to="/admin" style={{ color: '#94A3B8', textDecoration: 'none' }}>เข้าสู่ระบบผู้ดูแล</Link>
             <span style={{ color: '#475569' }}>•</span>
             <span>Powered by Firebase + React</span>

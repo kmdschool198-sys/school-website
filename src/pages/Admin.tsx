@@ -27,21 +27,27 @@ import {
 } from 'lucide-react';
 import TimetableSmart from '../components/TimetableSmart';
 import RosterManager from '../components/RosterManager';
-import ResultsManager from '../components/ResultsManager';
 import ClubsManager from '../components/ClubsManager';
-import LeavesManager from '../components/LeavesManager';
-import TrainingsManager from '../components/TrainingsManager';
 import {
   collection, addDoc, getDocs, deleteDoc, doc, orderBy, query,
   updateDoc, setDoc, getDoc
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import {
+  getIdTokenResult,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  type User,
+} from 'firebase/auth';
+import { auth, db } from '../firebase';
 import { pageContent as staticPageContent } from '../data/pageContent';
 import DriveImage from '../components/DriveImage';
 import DriveImageInput from '../components/DriveImageInput';
 import GooglePhotosInput from '../components/GooglePhotosInput';
+import PdpaNotice from '../components/PdpaNotice';
 import Toast from '../components/Toast';
 import { DEFAULT_STUDENTS } from '../data/defaultStudents';
+import { getAuthorizedStaffProfile, resolveStaffEmail } from '../utils/teacherAuth';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../App.css';
 
@@ -91,7 +97,7 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'results' | 'clubs' | 'leaves' | 'trainings' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'clubs' | 'settings';
 
 interface StudentRow { class: string; male: number; female: number; teacher: string; note: string; }
 
@@ -116,16 +122,36 @@ const GLASS_CARD: React.CSSProperties = {
   boxShadow: '0 10px 40px rgba(255,106,1,0.08)'
 };
 
+const ADMIN_EMAILS = [
+  import.meta.env.VITE_KMD_ADMIN_EMAIL,
+  import.meta.env.VITE_KMD_SUPER_EMAIL,
+  import.meta.env.VITE_KMD_TEACHER_EMAIL,
+  'adminkmd@web-site-kmd.firebaseapp.com',
+  'jameskmd@web-site-kmd.firebaseapp.com',
+].filter(Boolean) as string[];
+
+function resolveAdminEmail(usernameOrEmail: string) {
+  const value = usernameOrEmail.trim();
+  if (value.includes('@')) return value;
+  if (value === 'adminkmd' && import.meta.env.VITE_KMD_ADMIN_EMAIL) {
+    return import.meta.env.VITE_KMD_ADMIN_EMAIL;
+  }
+  return resolveStaffEmail(value);
+}
+
+async function canUseAdminConsole(user: User) {
+  const token = await getIdTokenResult(user, true);
+  const staffProfile = await getAuthorizedStaffProfile(user);
+  const role = String(token.claims.role || '');
+  const isAdminClaim = token.claims.admin === true || role === 'admin' || role === 'super';
+  const isAdminProfile = staffProfile?.role === 'admin' || staffProfile?.role === 'super';
+  const isAdminEmailFallback = ADMIN_EMAILS.includes(user.email || '');
+  return isAdminClaim || isAdminProfile || isAdminEmailFallback;
+}
+
 function Admin() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    const saved = localStorage.getItem('kmd_admin_session');
-    if (saved) {
-      const expiresAt = parseInt(saved, 10);
-      if (Date.now() < expiresAt) return true;
-      localStorage.removeItem('kmd_admin_session');
-    }
-    return false;
-  });
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [username, setUsername] = useState('');
@@ -163,6 +189,7 @@ function Admin() {
   const [newTiktokUrl, setNewTiktokUrl] = useState('');
   const [newWebsiteUrl, setNewWebsiteUrl] = useState('');
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
+  const [childMediaConsentOk, setChildMediaConsentOk] = useState(false);
 
   // Students count — seed from DEFAULT_STUDENTS so admin form has same data as public page
   const [studentsTitle, setStudentsTitle] = useState(DEFAULT_STUDENTS.title);
@@ -229,6 +256,28 @@ function Admin() {
   const [pageContentText, setPageContentText] = useState('');
   const [pageBannerUrl, setPageBannerUrl] = useState('');
   const [pageBlocks, setPageBlocks] = useState<ContentBlock[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    const unsubscribe = onAuthStateChanged(auth, async user => {
+      setAuthChecking(true);
+      try {
+        const allowed = user ? await canUseAdminConsole(user) : false;
+        if (!allowed && user) await signOut(auth);
+        if (alive) setIsLoggedIn(allowed);
+      } catch (error) {
+        console.error('Unable to verify admin auth state', error);
+        if (alive) setIsLoggedIn(false);
+      } finally {
+        if (alive) setAuthChecking(false);
+      }
+    });
+
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -385,18 +434,29 @@ function Admin() {
     });
   };
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    if (username === 'adminkmd' && password === '12345678kmd') {
-      localStorage.setItem('kmd_admin_session', (Date.now() + 20 * 60 * 1000).toString());
+    setLoginError(false);
+    setLoading(true);
+    try {
+      const credential = await signInWithEmailAndPassword(auth, resolveAdminEmail(username), password);
+      const allowed = await canUseAdminConsole(credential.user);
+      if (!allowed) {
+        await signOut(auth);
+        setLoginError(true);
+        return;
+      }
       setIsLoggedIn(true);
-    } else {
+    } catch (error) {
+      console.error('Admin login failed', error);
       setLoginError(true);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('kmd_admin_session');
+  const handleLogout = async () => {
+    await signOut(auth);
     setIsLoggedIn(false);
   };
 
@@ -410,6 +470,11 @@ function Admin() {
 
   const handleSubmitPost = async (e: FormEvent) => {
     e.preventDefault();
+    const hasPublicMedia = [newImageUrl, newAlbumUrl, newTiktokUrl].some(value => value.trim() !== '');
+    if (hasPublicMedia && !childMediaConsentOk) {
+      showToast('กรุณายืนยัน notice/consent รูปภาพเด็กก่อนบันทึกสื่อสาธารณะ', 'error');
+      return;
+    }
     setLoading(true);
     try {
       const data: any = {
@@ -528,6 +593,10 @@ function Admin() {
 
   const handleSubmitHighlight = async (e: FormEvent) => {
     e.preventDefault();
+    if (hImg.trim() !== '' && !childMediaConsentOk) {
+      showToast('กรุณายืนยัน notice/consent รูปภาพเด็กก่อนบันทึกสื่อสาธารณะ', 'error');
+      return;
+    }
     setLoading(true);
     try {
       const data = {
@@ -652,6 +721,18 @@ function Admin() {
   };
 
   // ---------- Login Screen ----------
+  if (authChecking) {
+    return (
+      <div className="admin-login-layout" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #FF6A00 0%, #FFD400 100%)' }}>
+        <div className="card shadow-lg p-5 text-center" style={{ maxWidth: '420px', width: '90%', borderRadius: '32px', border: 'none', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)' }}>
+          <ShieldCheck size={48} className="text-warning mb-3 mx-auto" style={{ color: '#FF6A01' }} />
+          <h3 className="fw-bold">KMD Admin Console</h3>
+          <p className="text-muted mb-0">กำลังตรวจสอบสิทธิผู้ใช้งาน...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isLoggedIn) {
     return (
       <div className="admin-login-layout" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #FF6A00 0%, #FFD400 100%)' }}>
@@ -663,9 +744,11 @@ function Admin() {
           </div>
           {loginError && <div className="alert alert-danger p-2 text-center small mb-3">รหัสผ่านไม่ถูกต้อง</div>}
           <form onSubmit={handleLogin}>
-            <input type="text" className="form-control mb-3" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} required />
-            <input type="password" className="form-control mb-4" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-            <button type="submit" className="btn w-100 py-3 rounded-4 fw-bold text-white" style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)' }}>Login</button>
+            <input type="text" className="form-control mb-3" placeholder="Username or email" value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" required />
+            <input type="password" className="form-control mb-4" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
+            <button type="submit" disabled={loading} className="btn w-100 py-3 rounded-4 fw-bold text-white" style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', opacity: loading ? 0.8 : 1 }}>
+              {loading ? 'Signing in...' : 'Login'}
+            </button>
           </form>
         </div>
       </div>
@@ -682,10 +765,7 @@ function Admin() {
     students: 'จำนวนนักเรียน',
     timetable: 'ตารางสอน-ตารางเรียน',
     roster: 'รายชื่อนักเรียน (เช็คชื่อ)',
-    results: 'ประกาศผลสอบนักเรียน',
     clubs: 'ชุมนุม / กิจกรรม / ลูกเสือ',
-    leaves: 'ใบลาครู (อนุมัติ)',
-    trainings: 'ข้อมูลการอบรมครู',
     settings: 'ตั้งค่าระบบ'
   };
 
@@ -713,10 +793,7 @@ function Admin() {
             ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
             ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
             ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
-            ['results', <Sparkles size={18} key="rs" />, 'ประกาศผลสอบ'],
             ['clubs', <Users size={18} key="cb" />, 'ชุมนุม-กิจกรรม'],
-            ['leaves', <Edit2 size={18} key="lv" />, 'ใบลาครู'],
-            ['trainings', <Sparkles size={18} key="tr" />, 'ข้อมูลอบรม'],
             ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
           ] as [AdminTab, ReactNode, string][]).map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
@@ -848,6 +925,16 @@ function Admin() {
                   <DriveImageInput label="URL รูปภาพ / PDF (Google Drive)" value={newImageUrl} onChange={setNewImageUrl} fileType={newImageType} onFileTypeChange={setNewImageType} />
                    <GooglePhotosInput label="ลิงก์อัลบั้ม Google Photos (แชร์เป็นสาธารณะ)" value={newAlbumUrl} onChange={setNewAlbumUrl} placeholder="https://photos.app.goo.gl/..." />
                   <div className="mb-3">
+                    <PdpaNotice
+                      title="รูปภาพ/วิดีโอเด็กและบริการภายนอก"
+                      consentKey="kmd_child_media_consent_v1"
+                      checkboxLabel="ยืนยันว่ามีความยินยอมหรือฐานกฎหมายที่เหมาะสมก่อนเผยแพร่รูป/วิดีโอเด็ก และรับทราบการใช้ Google/TikTok/Facebook"
+                      onAcceptedChange={setChildMediaConsentOk}
+                    >
+                      รูปหรืออัลบั้มที่แชร์เป็นสาธารณะอาจถูกเปิดผ่าน Google Drive, Google Photos, TikTok หรือบริการภายนอกอื่น ควรหลีกเลี่ยงข้อมูลที่ระบุตัวเด็กเกินจำเป็นหรือทำให้เด็กมีความเสี่ยง
+                    </PdpaNotice>
+                  </div>
+                  <div className="mb-3">
                     <label className="form-label small fw-bold">ลิงก์ TikTok</label>
                     <input type="text" className="form-control" value={newTiktokUrl} onChange={e => setNewTiktokUrl(e.target.value)} placeholder="https://www.tiktok.com/@..." />
                   </div>
@@ -935,6 +1022,16 @@ function Admin() {
                     <input type="text" className="form-control" value={hBtn} onChange={e => setHBtn(e.target.value)} />
                   </div>
                   <DriveImageInput label="รูปภาพประกอบ / PDF (Google Drive)" value={hImg} onChange={setHImg} fileType={hImgType} onFileTypeChange={setHImgType} />
+                  <div className="mb-3">
+                    <PdpaNotice
+                      title="รูปภาพเด็กบนหน้าแรก"
+                      consentKey="kmd_child_media_consent_v1"
+                      checkboxLabel="ยืนยันว่ามีความยินยอมหรือฐานกฎหมายที่เหมาะสมก่อนเผยแพร่รูปเด็กในพื้นที่สาธารณะ"
+                      onAcceptedChange={setChildMediaConsentOk}
+                    >
+                      รูปใน Highlight มักแสดงบนหน้าแรกของเว็บไซต์ โปรดตรวจว่าเป็นภาพที่เหมาะสมต่อการเผยแพร่สาธารณะและไม่เปิดเผยข้อมูลเด็กเกินจำเป็น
+                    </PdpaNotice>
+                  </div>
                   <div className="d-flex gap-2">
                     <button type="submit" className="btn text-white flex-grow-1 py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2"
                       style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)' }} disabled={loading}>
@@ -1342,18 +1439,6 @@ function Admin() {
             <RosterManager />
           </div>
         )}
-
-        {/* Results — exam result announcements */}
-        {activeTab === 'results' && (
-          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
-            <div className="mb-3">
-              <h5 className="fw-bold mb-1">🏆 ประกาศผลสอบนักเรียน</h5>
-              <p className="text-muted small mb-0">สร้างประกาศผลสอบ → นำเข้า CSV → นักเรียนค้นด้วยรหัสประจำตัวที่หน้า /results</p>
-            </div>
-            <ResultsManager />
-          </div>
-        )}
-
         {/* Clubs / Activities / Scouts */}
         {activeTab === 'clubs' && (
           <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
@@ -1364,29 +1449,6 @@ function Admin() {
             <ClubsManager />
           </div>
         )}
-
-        {/* Teacher leave management */}
-        {activeTab === 'leaves' && (
-          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
-            <div className="mb-3">
-              <h5 className="fw-bold mb-1">📝 จัดการใบลาครู</h5>
-              <p className="text-muted small mb-0">อนุมัติ/ไม่อนุมัติ/ลบ ใบลาที่ครูส่งจากหน้า /teacher-leave</p>
-            </div>
-            <LeavesManager />
-          </div>
-        )}
-
-        {/* Teacher training management */}
-        {activeTab === 'trainings' && (
-          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
-            <div className="mb-3">
-              <h5 className="fw-bold mb-1">🎓 จัดการข้อมูลการอบรมครู</h5>
-              <p className="text-muted small mb-0">ดูสรุปทั้งหมด · ฟิลเตอร์รายครู/รายปี · Export CSV</p>
-            </div>
-            <TrainingsManager />
-          </div>
-        )}
-
         {/* Settings */}
         {activeTab === 'settings' && (
           <div style={{ ...GLASS_CARD, padding: '1.75rem' }}>
