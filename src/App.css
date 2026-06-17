@@ -388,6 +388,30 @@
     border-right: none !important;
     border-bottom: 1px solid #FFEDD5;
   }
+
+  /* ===== Global mobile touch + scroll (applies to inline-styled teacher pages too) ===== */
+  /* Bigger tap targets — easier to press with a finger */
+  button, select, a[role="button"] {
+    min-height: 40px;
+  }
+  /* 16px inputs prevent iOS auto-zoom on focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  /* Smooth momentum scrolling for any horizontally-scrolling container */
+  div[style*="overflow-x"], div[style*="overflowX"], div[style*="overflow: auto"], div[style*="overflowX: auto"] {
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Tables in cards keep their own min-width but scroll inside the card wrapper */
+  table { font-size: 0.8rem; }
+  th, td { white-space: nowrap; }
+  /* Main content area: comfortable side padding on phones */
+  main { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
+  /* Modals/dialogs fit the screen */
+  div[style*="position: fixed"] > div[style*="maxWidth"],
+  div[style*="position: fixed"] > div[style*="max-width"] {
+    max-width: 100% !important;
+  }
 }
 
 /* Show hamburger only on mobile (default = hidden via inline display:none) */
