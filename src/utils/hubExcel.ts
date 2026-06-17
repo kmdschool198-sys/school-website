@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import { db } from '../firebase';
+import { recordDataExport } from './pdpaAudit';
 
 export type HubExcelKind =
   | 'dashboard'
@@ -37,6 +38,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export async function exportHubCardExcel(kind: HubExcelKind, title: string) {
   const wb = XLSX.utils.book_new();
+  const fileName = `${safeFileName(title)}_${dateStamp()}.xlsx`;
 
   switch (kind) {
     case 'dashboard':
@@ -71,7 +73,35 @@ export async function exportHubCardExcel(kind: HubExcelKind, title: string) {
       break;
   }
 
-  XLSX.writeFile(wb, `${safeFileName(title)}_${dateStamp()}.xlsx`);
+  await recordDataExport({
+    kind,
+    title,
+    fileName,
+    collections: collectionsForKind(kind),
+  });
+  XLSX.writeFile(wb, fileName);
+}
+
+function collectionsForKind(kind: HubExcelKind) {
+  switch (kind) {
+    case 'dashboard':
+      return ['config/attendance_classes', 'attendance', 'clubs', 'log_saving', 'log_body_metrics'];
+    case 'attendance':
+    case 'milk':
+    case 'brush':
+    case 'schoolStats':
+      return ['config/attendance_classes', 'attendance'];
+    case 'roster':
+      return ['config/attendance_classes'];
+    case 'clubAttendance':
+      return ['clubs', 'club_attendance'];
+    case 'clubs':
+      return ['clubs'];
+    case 'saving':
+      return ['log_saving'];
+    case 'bodyMetrics':
+      return ['log_body_metrics'];
+  }
 }
 
 async function addDashboardSheets(wb: Workbook) {

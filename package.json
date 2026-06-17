@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "setup:staff-auth": "node scripts/setup_staff_auth.mjs"
+    "setup:staff-auth": "node scripts/setup_staff_auth.mjs",
+    "pdpa:retention-review": "node scripts/pdpa_retention_review.mjs"
   },
   "dependencies": {
     "bootstrap": "^5.0.2",

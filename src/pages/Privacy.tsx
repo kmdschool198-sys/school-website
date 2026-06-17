@@ -6,14 +6,18 @@ import {
   Database,
   ExternalLink,
   Mail,
+  Phone,
   Scale,
   ShieldCheck,
   Users,
 } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import PdpaRequestForm from '../components/PdpaRequestForm';
 
-const updatedAt = '15 มิถุนายน 2569';
+const updatedAt = '17 มิถุนายน 2569';
+const privacyPhone = '0880998990';
+const privacyEmail = 'websitekmd@gmail.com';
 
 const sections = [
   {
@@ -83,7 +87,8 @@ export default function Privacy() {
                 </p>
               </div>
               <div style={{ display: 'grid', gap: 10 }}>
-                <ContactLine icon={<Mail size={16} />} label="อีเมล" value="ติดต่อผ่านอีเมลโรงเรียนเมื่อกำหนดไว้ในหน้าเว็บ" />
+                <ContactLine icon={<Phone size={16} />} label="โทรศัพท์" value={privacyPhone} />
+                <ContactLine icon={<Mail size={16} />} label="อีเมล" value={privacyEmail} />
                 <ContactLine icon={<ExternalLink size={16} />} label="Facebook" value="โรงเรียนบ้านคลองมดแดง" />
               </div>
             </div>
@@ -137,6 +142,16 @@ export default function Privacy() {
                 หากเกิดเหตุละเมิดข้อมูลส่วนบุคคล โรงเรียนจะตรวจสอบ ลดผลกระทบ และแจ้งหน่วยงาน/เจ้าของข้อมูลตามเงื่อนไขที่กฎหมายกำหนด รวมถึงกรอบเวลา 72 ชั่วโมงเมื่อเข้าเกณฑ์ต้องแจ้งเหตุ
               </p>
             </div>
+          </div>
+        </section>
+
+        <section style={band}>
+          <div style={container}>
+            <h2 style={heading}>ช่องทางใช้สิทธิและแจ้งเหตุ</h2>
+            <p style={{ ...paragraph, marginBottom: 16 }}>
+              ส่งคำขอผ่านฟอร์มด้านล่าง หรือโทร {privacyPhone} / อีเมล {privacyEmail} โดยโรงเรียนจะบันทึกคำขอไว้เพื่อติดตามสถานะและตรวจสอบย้อนหลัง
+            </p>
+            <PdpaRequestForm />
           </div>
         </section>
 

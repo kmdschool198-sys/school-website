@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ShieldCheck } from 'lucide-react';
+import { recordConsentDecision } from '../utils/pdpaAudit';
 
 type PdpaNoticeProps = {
   title: string;
@@ -29,6 +30,11 @@ export default function PdpaNotice({
     if (consentKey) {
       if (next) localStorage.setItem(consentKey, 'accepted');
       else localStorage.removeItem(consentKey);
+      void recordConsentDecision({
+        consentKey,
+        title,
+        accepted: next,
+      });
     }
     onAcceptedChange?.(next);
   };

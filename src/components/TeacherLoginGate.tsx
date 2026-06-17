@@ -21,7 +21,7 @@ export default function TeacherLoginGate({ title, subtitle, onSuccess }: {
       onSuccess?.();
     } catch (error: any) {
       console.error('Teacher login failed', error);
-      setErr(error?.message || 'บัญชี Firebase Auth ยังไม่พร้อม หรือชื่อผู้ใช้/รหัสผ่านไม่ถูกต้อง');
+      setErr(friendlyAuthError(error, 'บัญชี Firebase Auth ยังไม่พร้อม หรือชื่อผู้ใช้/รหัสผ่านไม่ถูกต้อง'));
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ export default function TeacherLoginGate({ title, subtitle, onSuccess }: {
       onSuccess?.();
     } catch (error: any) {
       console.error('Teacher Google login failed', error);
-      setErr(error?.message || 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ');
+      setErr(friendlyAuthError(error, 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ'));
     } finally {
       setGoogleLoading(false);
     }
@@ -114,4 +114,13 @@ export default function TeacherLoginGate({ title, subtitle, onSuccess }: {
       </form>
     </div>
   );
+}
+
+function friendlyAuthError(error: any, fallback: string) {
+  const code = String(error?.code || '');
+  const message = String(error?.message || '');
+  if (code === 'auth/unauthorized-domain' || message.includes('auth/unauthorized-domain')) {
+    return 'Firebase ยังไม่อนุญาต domain นี้สำหรับ Google Login: ให้เปิดผ่าน http://localhost:5173 หรือเพิ่ม 127.0.0.1 ใน Firebase Auth > Settings > Authorized domains';
+  }
+  return message || fallback;
 }

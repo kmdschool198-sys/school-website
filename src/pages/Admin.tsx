@@ -239,7 +239,8 @@ function Admin() {
     name: 'โรงเรียนบ้านคลองมดแดง',
     motto: 'พัฒนา สามัคคี มีวินัย',
     address: '198 ม.3 ต.โป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร 62180',
-    phone: '',
+    phone: '0880998990',
+    email: 'websitekmd@gmail.com',
     facebook: 'โรงเรียนบ้านคลองมดแดง',
     logoUrl: ''
   });
@@ -297,7 +298,15 @@ function Admin() {
 
   const loadSettings = async () => {
     const snap = await getDoc(doc(db, 'config', 'school_info'));
-    if (snap.exists()) setSchoolSettings(snap.data() as any);
+    if (snap.exists()) {
+      const data = snap.data() as any;
+      setSchoolSettings(prev => ({
+        ...prev,
+        ...data,
+        phone: data.phone && data.phone !== '055-xxx-xxx' ? data.phone : prev.phone,
+        email: data.email || prev.email,
+      }));
+    }
     const snapHome = await getDoc(doc(db, 'config', 'home_assets'));
     if (snapHome.exists()) setHomeAssets(snapHome.data() as any);
     const snapStu = await getDoc(doc(db, 'config', 'students_count'));
@@ -1469,6 +1478,10 @@ function Admin() {
               <div className="col-md-6">
                 <label className="small fw-bold mb-2">โทรศัพท์</label>
                 <input type="text" className="form-control" value={schoolSettings.phone} onChange={e => setSchoolSettings({ ...schoolSettings, phone: e.target.value })} />
+              </div>
+              <div className="col-md-6">
+                <label className="small fw-bold mb-2">อีเมลโรงเรียน / PDPA</label>
+                <input type="email" className="form-control" value={schoolSettings.email} onChange={e => setSchoolSettings({ ...schoolSettings, email: e.target.value })} />
               </div>
               <div className="col-md-6">
                 <label className="small fw-bold mb-2">Facebook Page</label>

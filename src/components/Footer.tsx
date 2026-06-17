@@ -19,6 +19,7 @@ const YoutubeIcon = ({ size = 18 }: { size?: number }) => (
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import DriveImage from './DriveImage';
+import { GOOGLE_SITE_URL, VERCEL_APP_URL } from '../config/siteLinks';
 
 // TikTok icon (lucide doesn't have one)
 const TikTokIcon = ({ size = 18 }: { size?: number }) => (
@@ -32,15 +33,23 @@ export default function Footer() {
     name: 'โรงเรียนบ้านคลองมดแดง',
     motto: 'การศึกษาปฐมวัย และ ขั้นพื้นฐานที่มุ่งเน้นการพัฒนาทักษะชีวิตคู่ความรู้',
     address: '198 ม.3 ต.โป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร 62180',
-    phone: '055-xxx-xxx',
-    email: '',
+    phone: '0880998990',
+    email: 'websitekmd@gmail.com',
     facebook: 'โรงเรียนบ้านคลองมดแดง',
     logoUrl: '',
   });
 
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'school_info'), snap => {
-      if (snap.exists()) setInfo(prev => ({ ...prev, ...(snap.data() as any) }));
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        setInfo(prev => ({
+          ...prev,
+          ...data,
+          phone: data.phone && data.phone !== '055-xxx-xxx' ? data.phone : prev.phone,
+          email: data.email || prev.email,
+        }));
+      }
     });
   }, []);
 
@@ -112,6 +121,8 @@ export default function Footer() {
               <FooterRouterLink to="/page/personnel" icon={<BookOpen size={13} />}>บุคลากร</FooterRouterLink>
               <FooterRouterLink to="/page/about" icon={<BookOpen size={13} />}>เกี่ยวกับโรงเรียน</FooterRouterLink>
               <FooterRouterLink to="/privacy" icon={<ShieldCheck size={13} />}>นโยบายความเป็นส่วนตัว</FooterRouterLink>
+              <FooterExt href={GOOGLE_SITE_URL}>เว็บไซต์หลัก Google Sites</FooterExt>
+              <FooterExt href={VERCEL_APP_URL}>ระบบโรงเรียน Vercel</FooterExt>
             </FooterCol>
           </div>
 

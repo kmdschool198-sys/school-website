@@ -361,6 +361,17 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
+  /* Force section content to fit narrow viewport */
+  section { overflow-x: hidden; }
+  section .container > div[style*="grid-template-columns"],
+  section .container > div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  /* Reduce hero side padding */
+  section > .container { padding: 1rem; }
+  /* Prevent horizontal overflow body-wide */
+  html, body { overflow-x: hidden; }
   .nav-container {
     padding: 0.6rem 1rem !important;
   }

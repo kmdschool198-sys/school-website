@@ -42,6 +42,42 @@ service cloud.firestore {
         );
     }
 
+    function isStringBetween(value, min, max) {
+      return value is string && value.size() >= min && value.size() <= max;
+    }
+
+    function validPdpaRequestCreate() {
+      return request.resource.data.keys().hasOnly([
+          'type',
+          'requesterName',
+          'contact',
+          'relation',
+          'detail',
+          'status',
+          'source',
+          'path',
+          'userAgent',
+          'createdAt'
+        ])
+        && request.resource.data.keys().hasAll([
+          'type',
+          'requesterName',
+          'contact',
+          'relation',
+          'detail',
+          'status',
+          'source',
+          'createdAt'
+        ])
+        && request.resource.data.type in ['access', 'correct', 'delete', 'withdraw', 'breach', 'complaint', 'other']
+        && isStringBetween(request.resource.data.requesterName, 1, 120)
+        && isStringBetween(request.resource.data.contact, 3, 160)
+        && isStringBetween(request.resource.data.relation, 1, 120)
+        && isStringBetween(request.resource.data.detail, 1, 1200)
+        && request.resource.data.status == 'new'
+        && request.resource.data.source == 'privacy-page';
+    }
+
     // Staff allowlist used by Google Sign-In. Document ID must match auth email.
     match /staff_users/{email} {
       allow get: if hasAuthEmail() && (email == request.auth.token.email || isStaffAdmin());
@@ -111,6 +147,31 @@ service cloud.firestore {
 
     match /results/{documentId} {
       allow read, write: if isStaff();
+    }
+
+    // PDPA workflow and evidence records.
+    match /pdpa_requests/{documentId} {
+      allow create: if validPdpaRequestCreate();
+      allow read, update, delete: if isStaffAdmin();
+    }
+
+    match /pdpa_consents/{documentId} {
+      allow create, update: if isStaff()
+        && request.resource.data.actorUid == request.auth.uid;
+      allow get: if isStaffAdmin()
+        || (isStaff() && resource.data.actorUid == request.auth.uid);
+      allow list, delete: if isStaffAdmin();
+    }
+
+    match /pdpa_audit_logs/{documentId} {
+      allow create: if isStaff()
+        && request.resource.data.actorUid == request.auth.uid;
+      allow read: if isStaffAdmin();
+      allow update, delete: if false;
+    }
+
+    match /pdpa_retention_reviews/{documentId} {
+      allow read, write: if isStaffAdmin();
     }
 
     // Default: anything not explicitly public is staff-only.

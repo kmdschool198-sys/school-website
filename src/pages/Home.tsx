@@ -16,6 +16,7 @@ import { getDirectImageUrl } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
 import { DEFAULT_ACTIVITIES, COLOR_ACTIVITY } from '../data/defaultActivities';
+import { GOOGLE_SITE_URL } from '../config/siteLinks';
 
 interface HomePost {
   id: string;
@@ -171,6 +172,9 @@ function Home() {
               <Link to="/teacher-hub" style={{ background: 'rgba(255,255,255,0.92)', color: '#7C2D12', padding: '1.1rem 2rem', borderRadius: '14px', fontSize: '1.05rem', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 8px 20px rgba(255,255,255,0.3)' }}>
                 🏫 ระบบครู
               </Link>
+              <a href={GOOGLE_SITE_URL} target="_blank" rel="noreferrer" style={{ background: 'rgba(15,23,42,0.72)', color: 'white', padding: '1.1rem 2rem', borderRadius: '14px', fontSize: '1.05rem', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(10px)' }}>
+                <Globe size={18} /> เว็บไซต์หลัก
+              </a>
             </div>
 
             {heroSlides.length > 1 && (
@@ -334,16 +338,16 @@ function Home() {
         <div style={{ position: 'absolute', bottom: -100, left: -100, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.06), transparent 70%)' }} />
 
         <div className="container" style={{ position: 'relative' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '4rem', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'clamp(2rem, 4vw, 4rem)', alignItems: 'start' }}>
             {/* About - Visual Story */}
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h5 style={{ color: '#FF6A01', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '4px', fontSize: '0.8rem', marginBottom: '1rem' }}>Our Story · 44 ปีแห่งการเรียนรู้</h5>
-              <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 950, marginBottom: '2.5rem', lineHeight: 1.15, color: '#0F172A' }}>
+              <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', fontWeight: 950, marginBottom: '2.5rem', lineHeight: 1.15, color: '#0F172A' }}>
                 จากผืนดินเล็ก ๆ สู่<br /><span style={{ color: '#FF6A01' }}>บ้านหลังที่สอง</span> ของเด็ก ๆ
               </h2>
 
               {/* Image collage */}
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginBottom: '2rem', height: 320 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginBottom: '2rem', height: 'clamp(220px, 40vw, 320px)' }}>
                 <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.12)' }}>
                   <DriveImage src={aboutImgRaw || aboutImg} fallback="/school_history.png" alt="About"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
