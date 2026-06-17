@@ -1798,7 +1798,7 @@ function Admin() {
                             <td>
                               <div className="fw-bold">{user.name}</div>
                               <div className="small text-muted">{user.email}</div>
-                              {user.updatedAt && <div className="small text-muted">อัปเดตล่าสุด {user.updatedAt.slice(0, 10)}</div>}
+                              {user.updatedAt && <div className="small text-muted">อัปเดตล่าสุด {String(user.updatedAt).slice(0, 10)}</div>}
                             </td>
                             <td>
                               <span className="badge" style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>
