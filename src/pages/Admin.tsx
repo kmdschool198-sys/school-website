@@ -156,6 +156,8 @@ const ADMIN_EMAILS = [
   'jameskmd@web-site-kmd.firebaseapp.com',
 ].filter(Boolean) as string[];
 
+const PASSWORD_LOGIN_HELP = 'บัญชีที่เพิ่มจาก Gmail ให้กด “เข้าสู่ระบบด้วย Google” ช่องรหัสผ่านใช้ได้เฉพาะบัญชี Firebase Email/Password ที่สร้างไว้แล้ว';
+
 function resolveAdminEmail(usernameOrEmail: string) {
   const value = usernameOrEmail.trim();
   if (value.includes('@')) return value;
@@ -173,6 +175,20 @@ function toManageRole(role: Role | null | undefined): StaffManageRole {
   if (role === 'owner' || role === 'admin' || role === 'editor' || role === 'teacher') return role;
   if (role === 'super') return 'owner';
   return 'teacher';
+}
+
+function adminLoginErrorMessage(error: unknown, fallback: string) {
+  const code = typeof error === 'object' && error && 'code' in error ? String((error as { code?: unknown }).code) : '';
+  if (code === 'auth/unauthorized-domain') {
+    return 'Google login ยังไม่พร้อม: ต้องเพิ่มโดเมนนี้ใน Firebase Auth > Settings > Authorized domains';
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return 'ยกเลิกการเข้าสู่ระบบด้วย Google';
+  }
+  if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+    return PASSWORD_LOGIN_HELP;
+  }
+  return fallback;
 }
 
 async function getAdminAccess(user: User): Promise<{ allowed: boolean; profile: StaffProfile | null }> {
@@ -205,7 +221,7 @@ function Admin() {
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Toast
@@ -622,28 +638,28 @@ function Admin() {
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    setLoginError(false);
+    setLoginError('');
     setLoading(true);
     try {
       const credential = await signInWithEmailAndPassword(auth, resolveAdminEmail(username), password);
       const access = await getAdminAccess(credential.user);
       if (!access.allowed) {
         await signOut(auth);
-        setLoginError(true);
+        setLoginError('บัญชีนี้ยังไม่มีสิทธิ์เข้า Admin หรือยังไม่ได้ตั้ง role เป็น Owner/Admin/Editor');
         return;
       }
       setIsLoggedIn(true);
       setCurrentStaff(access.profile);
     } catch (error) {
       console.error('Admin login failed', error);
-      setLoginError(true);
+      setLoginError(adminLoginErrorMessage(error, PASSWORD_LOGIN_HELP));
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setLoginError(false);
+    setLoginError('');
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
@@ -652,14 +668,14 @@ function Admin() {
       const access = await getAdminAccess(credential.user);
       if (!access.allowed) {
         await signOut(auth);
-        setLoginError(true);
+        setLoginError('อีเมล Google นี้ยังไม่ได้อยู่ในรายชื่อผู้ใช้ หรือ role ยังไม่ใช่ Owner/Admin/Editor');
         return;
       }
       setIsLoggedIn(true);
       setCurrentStaff(access.profile);
     } catch (error) {
       console.error('Admin Google login failed', error);
-      setLoginError(true);
+      setLoginError(adminLoginErrorMessage(error, 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาเช็ก Google provider และ authorized domains ใน Firebase'));
     } finally {
       setLoading(false);
     }
@@ -954,7 +970,7 @@ function Admin() {
             <h3 className="fw-bold">KMD Admin Console</h3>
             <p className="text-muted">เข้าสู่ระบบเพื่อจัดการเว็บไซต์</p>
           </div>
-          {loginError && <div className="alert alert-danger p-2 text-center small mb-3">บัญชีหรือสิทธิ์เข้าใช้งานไม่ถูกต้อง</div>}
+          {loginError && <div className="alert alert-danger p-2 text-center small mb-3">{loginError}</div>}
           <button
             type="button"
             onClick={handleGoogleLogin}
@@ -963,6 +979,9 @@ function Admin() {
           >
             <ShieldCheck size={18} /> เข้าสู่ระบบด้วย Google
           </button>
+          <div className="alert alert-info p-2 text-center small mb-3">
+            บัญชีที่เพิ่มจากเมนู “ผู้ใช้และสิทธิ์” ให้เข้าสู่ระบบด้วย Google
+          </div>
           <div className="d-flex align-items-center gap-3 mb-3">
             <div style={{ height: 1, background: '#E2E8F0', flex: 1 }} />
             <span className="small text-muted">หรือใช้รหัสผ่าน</span>
