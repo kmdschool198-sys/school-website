@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import { Trash2, UserPlus, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { PageLoading } from './PageState';
 
 interface Student { id: string; code?: string; name: string; emoji?: string; }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
@@ -420,7 +421,7 @@ export default function RosterManager() {
     URL.revokeObjectURL(url);
   };
 
-  if (!current) return <div>กำลังโหลด…</div>;
+  if (!current) return <PageLoading compact title="กำลังโหลดรายชื่อ" message="กำลังเตรียมข้อมูลชั้นเรียน" />;
 
   return (
     <div>

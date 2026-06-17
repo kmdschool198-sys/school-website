@@ -20,14 +20,17 @@ import ManageRoster from './pages/ManageRoster';
 import BrushLog from './pages/BrushLog';
 import ClassDashboard from './pages/ClassDashboard';
 import SchoolStatsReport from './pages/SchoolStatsReport';
+import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyConsentBanner from './components/PrivacyConsentBanner';
 import GlobalToast from './components/GlobalToast';
+import RouteTitle from './components/RouteTitle';
 
 function App() {
   return (
     <ErrorBoundary>
       <Router>
+        <RouteTitle />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
@@ -52,6 +55,7 @@ function App() {
           <Route path="/school-stats-report" element={<SchoolStatsReport />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <PrivacyConsentBanner />
         <GlobalToast />

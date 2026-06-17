@@ -45,10 +45,6 @@ function Hub({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [exportingId, setExportingId] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'Teacher Hub - โรงเรียนบ้านคลองมดแดง';
-  }, []);
-
-  useEffect(() => {
     localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedIds));
   }, [pinnedIds]);
 

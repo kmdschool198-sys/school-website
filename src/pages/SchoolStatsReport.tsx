@@ -6,6 +6,7 @@ import { TIMETABLE_BACKUP } from '../data/timetableData';
 import { ChevronLeft, LogOut, Printer, Download, Sparkles, Calendar, Users, CheckCircle } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import { PageLoading } from '../components/PageState';
 
 const COLOR = '#FF6A01';
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
@@ -27,10 +28,6 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [month, setMonth] = useState(thisMonthStr());
   const [attendanceDocs, setAttendanceDocs] = useState<AttDoc[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    document.title = '📊 รายงานสถิติประจำเดือน — โรงเรียนบ้านคลองมดแดง';
-  }, []);
 
   // Fetch class rosters
   useEffect(() => {
@@ -245,7 +242,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           </h6>
           
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>กำลังโหลดสถิติ...</div>
+            <PageLoading compact title="กำลังโหลดสถิติ" message="กำลังอ่านข้อมูลเช็คชื่อของเดือนนี้" />
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>

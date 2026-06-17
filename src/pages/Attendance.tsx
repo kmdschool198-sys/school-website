@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useTeacherAuth, type Role } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import { PageLoading } from '../components/PageState';
 
 type Status = 'present' | 'absent' | 'leave';
 interface Student { id: string; code?: string; name: string; emoji?: string; }
@@ -975,9 +976,7 @@ function SchoolStats({ classes, onJump }: { classes: ClassRoster[]; onJump: (cid
   const todayPct = todayTot ? Math.round((todayP / todayTot) * 100) : 0;
 
   if (loading) return (
-    <div style={{ background: 'white', padding: '3rem', textAlign: 'center', color: '#94A3B8', borderRadius: 14 }}>
-      ⏳ กำลังโหลดข้อมูลทั้งโรงเรียน...
-    </div>
+    <PageLoading title="กำลังโหลดข้อมูลทั้งโรงเรียน" message="กำลังสรุปประวัติการมาเรียนและภาพรวมทุกชั้น" />
   );
 
   return (
