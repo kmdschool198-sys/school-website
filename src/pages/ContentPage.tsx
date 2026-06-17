@@ -965,11 +965,11 @@ function ContentPage() {
       </section>
 
       {/* Main Content Area */}
-      <main className="container" style={{ marginTop: '-4rem', paddingBottom: '8rem', position: 'relative', zIndex: 20 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: '3rem', alignItems: 'start' }}>
+      <main className="container content-page-main" style={{ marginTop: '-4rem', paddingBottom: '8rem', position: 'relative', zIndex: 20 }}>
+        <div className="content-page-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: '3rem', alignItems: 'start' }}>
 
           {/* MWIT Style Sidebar */}
-          <aside style={{ position: 'sticky', top: '100px' }}>
+          <aside className="content-page-sidebar" style={{ position: 'sticky', top: '100px' }}>
             <div style={{ background: 'white', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 10px 20px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
               <div style={{ padding: '2rem', background: '#FF6A01', color: 'white' }}>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>{catKey}</h3>
@@ -1006,7 +1006,7 @@ function ContentPage() {
           </aside>
 
           {/* Premium Content Card */}
-          <section style={{ background: 'white', padding: '4rem', borderRadius: '32px', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', minHeight: '600px' }}>
+          <section className="content-page-card" style={{ background: 'white', padding: '4rem', borderRadius: '32px', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', minHeight: '600px' }}>
             {/* Dynamic Content */}
             {renderContent()}
           </section>

@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
   getIdTokenResult,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User,
 } from 'firebase/auth';
@@ -160,11 +162,35 @@ export async function signInTeacher(usernameOrEmail: string, password: string) {
 export async function signInTeacherWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  const credential = await signInWithPopup(auth, provider);
-  const profile = await getAuthorizedStaffProfile(credential.user);
-  if (!profile) {
-    await signOut(auth);
-    throw new Error('อีเมล Google นี้ยังไม่อยู่ในรายชื่อครูที่อนุญาต');
+  try {
+    const credential = await signInWithPopup(auth, provider);
+    const profile = await getAuthorizedStaffProfile(credential.user);
+    if (!profile) {
+      await signOut(auth);
+      throw new Error('อีเมล Google นี้ยังไม่อยู่ในรายชื่อครูที่อนุญาต');
+    }
+  } catch (error: any) {
+    const code = String(error?.code || '');
+    // Mobile browsers often block popups — fall back to full-page redirect.
+    if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request' || code === 'auth/operation-not-supported-in-this-environment') {
+      await signInWithRedirect(auth, provider);
+      return; // page will navigate away; result handled on return by completeRedirectSignIn()
+    }
+    throw error;
+  }
+}
+
+// Call once on app load to finish a redirect-based Google sign-in and enforce allowlist.
+export async function completeRedirectSignIn(): Promise<void> {
+  try {
+    const result = await getRedirectResult(auth);
+    if (!result?.user) return;
+    const profile = await getAuthorizedStaffProfile(result.user);
+    if (!profile) {
+      await signOut(auth);
+    }
+  } catch (error) {
+    console.error('Redirect sign-in completion failed', error);
   }
 }
 
@@ -177,6 +203,10 @@ export function useTeacherAuth(): AuthState & { logout: () => void } {
 
   useEffect(() => {
     let alive = true;
+    
+    // Process redirect sign-in result on mount
+    void completeRedirectSignIn();
+
     const unsubscribe = onAuthStateChanged(auth, async user => {
       try {
         const next = await stateFromUser(user);

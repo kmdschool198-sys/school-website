@@ -407,6 +407,24 @@
   th, td { white-space: nowrap; }
   /* Main content area: comfortable side padding on phones */
   main { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
+
+  /* ContentPage (เกี่ยวกับโรงเรียน ฯลฯ): stack sidebar above content */
+  .content-page-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+  .content-page-sidebar {
+    position: static !important;
+    top: auto !important;
+  }
+  .content-page-card {
+    padding: 1.5rem !important;
+    border-radius: 20px !important;
+  }
+  .content-page-main {
+    margin-top: -2rem !important;
+    padding-bottom: 3rem !important;
+  }
   /* Modals/dialogs fit the screen */
   div[style*="position: fixed"] > div[style*="maxWidth"],
   div[style*="position: fixed"] > div[style*="max-width"] {
