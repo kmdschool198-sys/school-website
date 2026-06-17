@@ -16,7 +16,7 @@ import { getDirectImageUrl } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
 import { DEFAULT_ACTIVITIES, COLOR_ACTIVITY } from '../data/defaultActivities';
-import { GOOGLE_SITE_URL } from '../config/siteLinks';
+
 
 interface HomePost {
   id: string;
@@ -172,9 +172,6 @@ function Home() {
               <Link to="/teacher-hub" style={{ background: 'rgba(255,255,255,0.92)', color: '#7C2D12', padding: '1.1rem 2rem', borderRadius: '14px', fontSize: '1.05rem', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 8px 20px rgba(255,255,255,0.3)' }}>
                 🏫 ระบบครู
               </Link>
-              <a href={GOOGLE_SITE_URL} target="_blank" rel="noreferrer" style={{ background: 'rgba(15,23,42,0.72)', color: 'white', padding: '1.1rem 2rem', borderRadius: '14px', fontSize: '1.05rem', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(10px)' }}>
-                <Globe size={18} /> เว็บไซต์หลัก
-              </a>
             </div>
 
             {heroSlides.length > 1 && (
