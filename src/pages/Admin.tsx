@@ -33,9 +33,11 @@ import {
   updateDoc, setDoc, getDoc
 } from 'firebase/firestore';
 import {
+  GoogleAuthProvider,
   getIdTokenResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   type User,
 } from 'firebase/auth';
@@ -47,7 +49,20 @@ import GooglePhotosInput from '../components/GooglePhotosInput';
 import PdpaNotice from '../components/PdpaNotice';
 import Toast from '../components/Toast';
 import { DEFAULT_STUDENTS } from '../data/defaultStudents';
-import { getAuthorizedStaffProfile, resolveStaffEmail } from '../utils/teacherAuth';
+import {
+  STAFF_ROLE_LABELS,
+  STAFF_ROLE_OPTIONS,
+  STAFF_USERS_COLLECTION,
+  canManageStaffUsers,
+  canUseWebsiteAdmin,
+  getAuthorizedStaffProfile,
+  resolveStaffEmail,
+  roleFromClaim,
+  roleLabel,
+  type Role,
+  type StaffManageRole,
+  type StaffProfile,
+} from '../utils/teacherAuth';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../App.css';
 
@@ -97,7 +112,7 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'clubs' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'clubs' | 'staff' | 'settings';
 
 interface StudentRow { class: string; male: number; female: number; teacher: string; note: string; }
 
@@ -111,6 +126,17 @@ interface Activity {
   time?: string;
   isHoliday?: boolean;
   color?: string;
+}
+
+interface StaffUser {
+  id: string;
+  email: string;
+  name: string;
+  role: StaffManageRole;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 const GLASS_CARD: React.CSSProperties = {
@@ -139,19 +165,42 @@ function resolveAdminEmail(usernameOrEmail: string) {
   return resolveStaffEmail(value);
 }
 
-async function canUseAdminConsole(user: User) {
+function normalizeStaffEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function toManageRole(role: Role | null | undefined): StaffManageRole {
+  if (role === 'owner' || role === 'admin' || role === 'editor' || role === 'teacher') return role;
+  if (role === 'super') return 'owner';
+  return 'teacher';
+}
+
+async function getAdminAccess(user: User): Promise<{ allowed: boolean; profile: StaffProfile | null }> {
   const token = await getIdTokenResult(user, true);
   const staffProfile = await getAuthorizedStaffProfile(user);
-  const role = String(token.claims.role || '');
-  const isAdminClaim = token.claims.admin === true || role === 'admin' || role === 'super';
-  const isAdminProfile = staffProfile?.role === 'admin' || staffProfile?.role === 'super';
+  const claimRole = roleFromClaim(token.claims.role);
+  const isAdminClaim = token.claims.admin === true || canUseWebsiteAdmin(claimRole);
+  const isAdminProfile = canUseWebsiteAdmin(staffProfile?.role);
   const isAdminEmailFallback = ADMIN_EMAILS.includes(user.email || '');
-  return isAdminClaim || isAdminProfile || isAdminEmailFallback;
+  const fallbackProfile: StaffProfile | null = isAdminEmailFallback
+    ? {
+        email: user.email || '',
+        role: 'owner',
+        name: user.displayName || user.email || 'ผู้ดูแลระบบ',
+        active: true,
+      }
+    : null;
+
+  return {
+    allowed: isAdminClaim || isAdminProfile || isAdminEmailFallback,
+    profile: staffProfile || fallbackProfile,
+  };
 }
 
 function Admin() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentStaff, setCurrentStaff] = useState<StaffProfile | null>(null);
 
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [username, setUsername] = useState('');
@@ -258,17 +307,32 @@ function Admin() {
   const [pageBannerUrl, setPageBannerUrl] = useState('');
   const [pageBlocks, setPageBlocks] = useState<ContentBlock[]>([]);
 
+  // Staff access management
+  const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
+  const [staffEmail, setStaffEmail] = useState('');
+  const [staffName, setStaffName] = useState('');
+  const [staffRole, setStaffRole] = useState<StaffManageRole>('teacher');
+  const [staffActive, setStaffActive] = useState(true);
+  const [editingStaffEmail, setEditingStaffEmail] = useState<string | null>(null);
+  const canManageUsers = canManageStaffUsers(currentStaff?.role);
+
   useEffect(() => {
     let alive = true;
     const unsubscribe = onAuthStateChanged(auth, async user => {
       setAuthChecking(true);
       try {
-        const allowed = user ? await canUseAdminConsole(user) : false;
-        if (!allowed && user) await signOut(auth);
-        if (alive) setIsLoggedIn(allowed);
+        const access = user ? await getAdminAccess(user) : { allowed: false, profile: null };
+        if (!access.allowed && user) await signOut(auth);
+        if (alive) {
+          setIsLoggedIn(access.allowed);
+          setCurrentStaff(access.profile);
+        }
       } catch (error) {
         console.error('Unable to verify admin auth state', error);
-        if (alive) setIsLoggedIn(false);
+        if (alive) {
+          setIsLoggedIn(false);
+          setCurrentStaff(null);
+        }
       } finally {
         if (alive) setAuthChecking(false);
       }
@@ -284,6 +348,18 @@ function Admin() {
     if (!isLoggedIn) return;
     refreshAll();
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !canManageUsers) {
+      setStaffUsers([]);
+      return;
+    }
+    loadStaffUsers();
+  }, [isLoggedIn, canManageUsers]);
+
+  useEffect(() => {
+    if (activeTab === 'staff' && !canManageUsers) setActiveTab('dashboard');
+  }, [activeTab, canManageUsers]);
 
   const refreshAll = async () => {
     setDbStatus('checking');
@@ -393,6 +469,107 @@ function Admin() {
     setActivities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Activity)));
   };
 
+  const loadStaffUsers = async () => {
+    if (!canManageUsers) return;
+    try {
+      const snap = await getDocs(collection(db, STAFF_USERS_COLLECTION));
+      const users = snap.docs.map(d => {
+        const data = d.data() as Partial<StaffUser> & { displayName?: string; role?: unknown };
+        return {
+          id: d.id,
+          email: data.email || d.id,
+          name: data.name || data.displayName || data.email || d.id,
+          role: toManageRole(roleFromClaim(data.role)),
+          active: data.active !== false,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+          updatedBy: data.updatedBy,
+        };
+      }).sort((a, b) => {
+        const order = STAFF_ROLE_OPTIONS.indexOf(a.role) - STAFF_ROLE_OPTIONS.indexOf(b.role);
+        return order === 0 ? a.email.localeCompare(b.email) : order;
+      });
+      setStaffUsers(users);
+    } catch (error) {
+      console.error('Unable to load staff users', error);
+      showToast('โหลดรายชื่อผู้ใช้ไม่สำเร็จ', 'error');
+    }
+  };
+
+  const resetStaffForm = () => {
+    setStaffEmail('');
+    setStaffName('');
+    setStaffRole('teacher');
+    setStaffActive(true);
+    setEditingStaffEmail(null);
+  };
+
+  const handleSubmitStaff = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!canManageUsers) {
+      showToast('บัญชีนี้ไม่มีสิทธิ์จัดการผู้ใช้', 'error');
+      return;
+    }
+
+    const email = normalizeStaffEmail(staffEmail);
+    if (!email || !email.includes('@')) {
+      showToast('กรุณากรอก Gmail/อีเมลให้ถูกต้อง', 'error');
+      return;
+    }
+    if (email === normalizeStaffEmail(currentStaff?.email || '') && !staffActive) {
+      showToast('ไม่ควรปิดสิทธิ์บัญชีที่กำลังใช้งานอยู่', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const now = new Date().toISOString();
+      await setDoc(doc(db, STAFF_USERS_COLLECTION, email), {
+        email,
+        name: staffName.trim() || email,
+        displayName: staffName.trim() || email,
+        role: staffRole,
+        active: staffActive,
+        updatedAt: now,
+        updatedBy: currentStaff?.email || auth.currentUser?.email || '',
+        ...(editingStaffEmail ? {} : { createdAt: now }),
+      }, { merge: true });
+      showToast(editingStaffEmail ? 'อัปเดตสิทธิ์ผู้ใช้แล้ว' : 'เพิ่ม Gmail เข้ารายชื่อผู้ใช้แล้ว', 'success');
+      resetStaffForm();
+      await loadStaffUsers();
+    } catch (error) {
+      console.error('Unable to save staff user', error);
+      showToast('บันทึกสิทธิ์ผู้ใช้ไม่สำเร็จ', 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleEditStaff = (user: StaffUser) => {
+    setEditingStaffEmail(user.email);
+    setStaffEmail(user.email);
+    setStaffName(user.name);
+    setStaffRole(user.role);
+    setStaffActive(user.active);
+  };
+
+  const handleDeleteStaff = (email: string) => {
+    const normalizedEmail = normalizeStaffEmail(email);
+    if (normalizedEmail === normalizeStaffEmail(currentStaff?.email || '')) {
+      showToast('ไม่ควรลบสิทธิ์บัญชีที่กำลังใช้งานอยู่', 'error');
+      return;
+    }
+    askConfirm(`ลบสิทธิ์ผู้ใช้ ${normalizedEmail}?`, async () => {
+      try {
+        await deleteDoc(doc(db, STAFF_USERS_COLLECTION, normalizedEmail));
+        showToast('ลบสิทธิ์ผู้ใช้แล้ว', 'success');
+        await loadStaffUsers();
+      } catch (error) {
+        console.error('Unable to delete staff user', error);
+        showToast('ลบสิทธิ์ผู้ใช้ไม่สำเร็จ', 'error');
+      }
+    });
+  };
+
   // ---------- Activities ----------
   const resetActivityForm = () => {
     setAId(null); setADate(new Date().toISOString().slice(0, 10)); setAEndDate('');
@@ -449,15 +626,39 @@ function Admin() {
     setLoading(true);
     try {
       const credential = await signInWithEmailAndPassword(auth, resolveAdminEmail(username), password);
-      const allowed = await canUseAdminConsole(credential.user);
-      if (!allowed) {
+      const access = await getAdminAccess(credential.user);
+      if (!access.allowed) {
         await signOut(auth);
         setLoginError(true);
         return;
       }
       setIsLoggedIn(true);
+      setCurrentStaff(access.profile);
     } catch (error) {
       console.error('Admin login failed', error);
+      setLoginError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoginError(false);
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const credential = await signInWithPopup(auth, provider);
+      const access = await getAdminAccess(credential.user);
+      if (!access.allowed) {
+        await signOut(auth);
+        setLoginError(true);
+        return;
+      }
+      setIsLoggedIn(true);
+      setCurrentStaff(access.profile);
+    } catch (error) {
+      console.error('Admin Google login failed', error);
       setLoginError(true);
     } finally {
       setLoading(false);
@@ -467,6 +668,8 @@ function Admin() {
   const handleLogout = async () => {
     await signOut(auth);
     setIsLoggedIn(false);
+    setCurrentStaff(null);
+    setStaffUsers([]);
   };
 
   // ---------- Posts ----------
@@ -751,7 +954,20 @@ function Admin() {
             <h3 className="fw-bold">KMD Admin Console</h3>
             <p className="text-muted">เข้าสู่ระบบเพื่อจัดการเว็บไซต์</p>
           </div>
-          {loginError && <div className="alert alert-danger p-2 text-center small mb-3">รหัสผ่านไม่ถูกต้อง</div>}
+          {loginError && <div className="alert alert-danger p-2 text-center small mb-3">บัญชีหรือสิทธิ์เข้าใช้งานไม่ถูกต้อง</div>}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="btn btn-light border w-100 py-3 rounded-4 fw-bold mb-3 d-flex align-items-center justify-content-center gap-2"
+          >
+            <ShieldCheck size={18} /> เข้าสู่ระบบด้วย Google
+          </button>
+          <div className="d-flex align-items-center gap-3 mb-3">
+            <div style={{ height: 1, background: '#E2E8F0', flex: 1 }} />
+            <span className="small text-muted">หรือใช้รหัสผ่าน</span>
+            <div style={{ height: 1, background: '#E2E8F0', flex: 1 }} />
+          </div>
           <form onSubmit={handleLogin}>
             <input type="text" className="form-control mb-3" placeholder="Username or email" value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" required />
             <input type="password" className="form-control mb-4" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
@@ -775,10 +991,25 @@ function Admin() {
     timetable: 'ตารางสอน-ตารางเรียน',
     roster: 'รายชื่อนักเรียน (เช็คชื่อ)',
     clubs: 'ชุมนุม / กิจกรรม / ลูกเสือ',
+    staff: 'ผู้ใช้และสิทธิ์',
     settings: 'ตั้งค่าระบบ'
   };
 
   const sliderCount = posts.filter(p => p.category === 'แบนเนอร์สไลด์หน้าแรก').length;
+  const navItems: [AdminTab, ReactNode, string][] = [
+    ['dashboard', <Database size={18} key="d" />, 'แดชบอร์ด'],
+    ['news', <Rss size={18} key="n" />, 'ข่าว & สไลด์เฮียร์โร'],
+    ['highlights', <Sparkles size={18} key="h" />, 'Highlight Slides'],
+    ['personnel', <Users size={18} key="p" />, 'บุคลากร'],
+    ['contents', <Globe size={18} key="c" />, 'เนื้อหาหน้าเว็บ'],
+    ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม'],
+    ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
+    ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
+    ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
+    ['clubs', <Users size={18} key="cb" />, 'ชุมนุม-กิจกรรม'],
+    ...(canManageUsers ? [['staff', <ShieldCheck size={18} key="sf" />, 'ผู้ใช้และสิทธิ์'] as [AdminTab, ReactNode, string]] : []),
+    ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
+  ];
 
   return (
     <div className="admin-dashboard-layout" style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(135deg,#FFF7ED 0%, #FFFFFF 50%, #FFF7ED 100%)' }}>
@@ -791,20 +1022,22 @@ function Admin() {
           <h4 className="fw-bold mb-0" style={{ color: '#FF6A01' }}>KMD Console</h4>
         </div>
 
+        {currentStaff && (
+          <div style={{ ...GLASS_CARD, padding: '0.9rem', marginBottom: '1.25rem' }}>
+            <div className="d-flex align-items-center gap-2 mb-2">
+              <ShieldCheck size={16} color="#FF6A01" />
+              <div className="small fw-bold" style={{ color: '#0F172A' }}>กำลังใช้งาน</div>
+            </div>
+            <div className="fw-bold text-truncate" style={{ color: '#0F172A' }}>{currentStaff.name}</div>
+            <div className="small text-muted text-truncate">{currentStaff.email}</div>
+            <span className="badge mt-2" style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>
+              {roleLabel(currentStaff.role)}
+            </span>
+          </div>
+        )}
+
         <nav className="d-flex flex-column gap-2">
-          {([
-            ['dashboard', <Database size={18} key="d" />, 'แดชบอร์ด'],
-            ['news', <Rss size={18} key="n" />, 'ข่าว & สไลด์เฮียร์โร'],
-            ['highlights', <Sparkles size={18} key="h" />, 'Highlight Slides'],
-            ['personnel', <Users size={18} key="p" />, 'บุคลากร'],
-            ['contents', <Globe size={18} key="c" />, 'เนื้อหาหน้าเว็บ'],
-            ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม'],
-            ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
-            ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
-            ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
-            ['clubs', <Users size={18} key="cb" />, 'ชุมนุม-กิจกรรม'],
-            ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
-          ] as [AdminTab, ReactNode, string][]).map(([key, icon, label]) => (
+          {navItems.map(([key, icon, label]) => (
             <button key={key} onClick={() => setActiveTab(key)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '12px',
@@ -1456,6 +1689,131 @@ function Admin() {
               <p className="text-muted small mb-0">สร้างชุมนุม → เพิ่มสมาชิกข้ามชั้น → ครูเช็คชื่อที่หน้า /club-attendance</p>
             </div>
             <ClubsManager />
+          </div>
+        )}
+        {/* Staff users */}
+        {activeTab === 'staff' && canManageUsers && (
+          <div className="row g-4">
+            <div className="col-lg-4">
+              <div style={{ ...GLASS_CARD, padding: '1.75rem' }}>
+                <h5 className="fw-bold mb-3">{editingStaffEmail ? 'แก้ไขสิทธิ์ผู้ใช้' : 'เพิ่ม Gmail ครู/ผู้ดูแล'}</h5>
+                <form onSubmit={handleSubmitStaff}>
+                  <label className="small fw-bold mb-2">Gmail / อีเมล</label>
+                  <input
+                    type="email"
+                    className="form-control mb-3"
+                    placeholder="teacher@gmail.com"
+                    value={staffEmail}
+                    onChange={e => setStaffEmail(e.target.value)}
+                    disabled={!!editingStaffEmail}
+                    required
+                  />
+
+                  <label className="small fw-bold mb-2">ชื่อที่แสดงในระบบ</label>
+                  <input
+                    type="text"
+                    className="form-control mb-3"
+                    placeholder="ชื่อครูหรือผู้ดูแล"
+                    value={staffName}
+                    onChange={e => setStaffName(e.target.value)}
+                  />
+
+                  <label className="small fw-bold mb-2">ระดับสิทธิ์</label>
+                  <select className="form-select mb-3" value={staffRole} onChange={e => setStaffRole(e.target.value as StaffManageRole)}>
+                    {STAFF_ROLE_OPTIONS.map(role => (
+                      <option key={role} value={role}>{STAFF_ROLE_LABELS[role]}</option>
+                    ))}
+                  </select>
+
+                  <label className="d-flex align-items-center gap-2 mb-4 small fw-bold" style={{ cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      className="form-check-input m-0"
+                      checked={staffActive}
+                      onChange={e => setStaffActive(e.target.checked)}
+                    />
+                    เปิดใช้งานบัญชีนี้
+                  </label>
+
+                  <div className="d-flex gap-2">
+                    <button type="submit" disabled={loading} className="btn text-white fw-bold flex-grow-1 rounded-3" style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)' }}>
+                      <Save size={16} className="me-2" /> {loading ? 'กำลังบันทึก...' : 'บันทึกสิทธิ์'}
+                    </button>
+                    {editingStaffEmail && (
+                      <button type="button" className="btn btn-light rounded-3" onClick={resetStaffForm}>
+                        <X size={18} />
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div className="col-lg-8">
+              <div style={{ ...GLASS_CARD, padding: '1.75rem' }}>
+                <div className="d-flex justify-content-between align-items-center gap-3 mb-3">
+                  <div>
+                    <h5 className="fw-bold mb-1">รายชื่อผู้มีสิทธิ์เข้าใช้งาน</h5>
+                    <div className="small text-muted">อีเมลในรายการนี้ใช้ล็อกอิน Google/Firebase และถูกตรวจซ้ำด้วย Firestore Rules</div>
+                  </div>
+                  <button className="btn btn-light border rounded-3 d-flex align-items-center gap-2" onClick={loadStaffUsers} disabled={loading}>
+                    <RefreshCw size={15} /> โหลดใหม่
+                  </button>
+                </div>
+
+                <div className="table-responsive" style={{ borderRadius: 14, border: '1px solid #FFEDD5' }}>
+                  <table className="table align-middle mb-0" style={{ background: 'white' }}>
+                    <thead style={{ background: '#FFF7ED' }}>
+                      <tr>
+                        <th>ผู้ใช้</th>
+                        <th style={{ width: '130px' }}>สิทธิ์</th>
+                        <th style={{ width: '110px' }}>สถานะ</th>
+                        <th style={{ width: '120px' }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staffUsers.map(user => {
+                        const isCurrentUser = normalizeStaffEmail(user.email) === normalizeStaffEmail(currentStaff?.email || '');
+                        return (
+                          <tr key={user.id}>
+                            <td>
+                              <div className="fw-bold">{user.name}</div>
+                              <div className="small text-muted">{user.email}</div>
+                              {user.updatedAt && <div className="small text-muted">อัปเดตล่าสุด {user.updatedAt.slice(0, 10)}</div>}
+                            </td>
+                            <td>
+                              <span className="badge" style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>
+                                {STAFF_ROLE_LABELS[user.role]}
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`badge ${user.active ? 'bg-success' : 'bg-secondary'}`}>
+                                {user.active ? 'ใช้งาน' : 'ปิดอยู่'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="d-flex gap-1 justify-content-end">
+                                <button className="btn btn-sm btn-light border" onClick={() => handleEditStaff(user)}>
+                                  <Edit2 size={13} />
+                                </button>
+                                <button className="btn btn-sm btn-light border text-danger" onClick={() => handleDeleteStaff(user.email)} disabled={isCurrentUser}>
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {staffUsers.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="text-center text-muted py-4">ยังไม่มีรายชื่อผู้ใช้ใน Firestore</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         )}
         {/* Settings */}

@@ -62,7 +62,7 @@ export default function Attendance() {
 }
 
 function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void }) {
-  const isSuper = role === 'super' || role === 'admin';
+  const isSuper = role === 'owner' || role === 'super' || role === 'admin';
   const today = todayStr();
   const [classes, setClasses] = useState<ClassRoster[]>(seedClasses);
   const [classId, setClassId] = useState<string>('');

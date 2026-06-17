@@ -36,7 +36,7 @@ export default function TeacherLeavePage() {
 function App({ role, userName, onLogout }: { role: Role; userName: string; onLogout: () => void }) {
   const [items, setItems] = useState<LeaveRequest[]>([]);
   const [editing, setEditing] = useState<LeaveRequest | null>(null);
-  const isSuper = role === 'super' || role === 'admin';
+  const isSuper = role === 'owner' || role === 'super' || role === 'admin';
 
   useEffect(() => {
     return onSnapshot(query(collection(db, 'teacher_leaves'), orderBy('createdAt', 'desc')), snap => {

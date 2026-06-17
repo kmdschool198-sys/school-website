@@ -40,6 +40,25 @@ const modalBtn = (color: string): React.CSSProperties => ({
   whiteSpace: 'nowrap', flex: 1, minWidth: 0,
 });
 
+const WORK_GROUP_LABELS: Record<string, string> = {
+  management: 'ฝ่ายบริหาร',
+  academic: 'งานวิชาการ',
+  budget: 'งานงบประมาณ',
+  personnel: 'งานบุคคล',
+  general: 'งานบริหารทั่วไป',
+  student: 'งานกิจการนักเรียน',
+};
+
+const PERSONNEL_CATEGORY_LABELS: Record<string, string> = {
+  director: 'ฝ่ายบริหาร',
+  board: 'คณะกรรมการสถานศึกษา',
+  teacher: 'ครู',
+  support: 'บุคลากรสนับสนุน',
+};
+
+const personnelLabel = (value: string | undefined, labels: Record<string, string>) =>
+  value && value !== 'none' ? labels[value] || value : '';
+
 const actionBtn = (color: string): React.CSSProperties => ({
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
   padding: '14px 18px', borderRadius: 14, background: color, color: 'white',
@@ -1062,7 +1081,7 @@ function ContentPage() {
                   <div style={infoRow}><span style={infoLabel}>วิชาเอก</span><span style={infoVal}>{activePerson.major}</span></div>
                 )}
                 {activePerson.workGroup && (
-                  <div style={infoRow}><span style={infoLabel}>กลุ่มงาน</span><span style={infoVal}>{activePerson.workGroup}</span></div>
+                  <div style={infoRow}><span style={infoLabel}>กลุ่มงาน</span><span style={infoVal}>{personnelLabel(activePerson.workGroup, WORK_GROUP_LABELS)}</span></div>
                 )}
                 {activePerson.positionNumber && (
                   <div style={infoRow}><span style={infoLabel}>เลขที่ตำแหน่ง</span><span style={infoVal}>{activePerson.positionNumber}</span></div>
@@ -1084,7 +1103,7 @@ function ContentPage() {
                   </div>
                 )}
                 {activePerson.category && (
-                  <div style={infoRow}><span style={infoLabel}>สังกัด</span><span style={infoVal}>{activePerson.category}</span></div>
+                  <div style={infoRow}><span style={infoLabel}>สังกัด</span><span style={infoVal}>{personnelLabel(activePerson.category, PERSONNEL_CATEGORY_LABELS)}</span></div>
                 )}
               </div>
 
@@ -1100,11 +1119,6 @@ function ContentPage() {
                   <a href={`tel:${activePerson.phone}`} style={modalBtn('#10B981')}>
                     📞 โทร
                   </a>
-                )}
-                {activePerson.id && (
-                  <Link to={`/admin?edit=personnel&id=${activePerson.id}`} style={modalBtn('#475569')}>
-                    ⚙ แก้ไขในระบบ
-                  </Link>
                 )}
               </div>
             </div>

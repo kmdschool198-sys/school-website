@@ -6,7 +6,7 @@ service cloud.firestore {
       return request.auth != null
         && (
           request.auth.token.admin == true
-          || request.auth.token.role in ['admin', 'teacher', 'super']
+          || request.auth.token.role in ['owner', 'admin', 'editor', 'teacher', 'super']
           || isListedStaff()
           || request.auth.token.email in [
             'adminkmd@web-site-kmd.firebaseapp.com',
@@ -23,21 +23,21 @@ service cloud.firestore {
       return hasAuthEmail()
         && exists(/databases/$(database)/documents/staff_users/$(request.auth.token.email))
         && get(/databases/$(database)/documents/staff_users/$(request.auth.token.email)).data.active != false
-        && get(/databases/$(database)/documents/staff_users/$(request.auth.token.email)).data.role in ['admin', 'teacher', 'super'];
+        && get(/databases/$(database)/documents/staff_users/$(request.auth.token.email)).data.role in ['owner', 'admin', 'editor', 'teacher', 'super'];
     }
 
     function isStaffAdmin() {
       return request.auth != null
         && (
           request.auth.token.admin == true
-          || request.auth.token.role in ['admin', 'super']
+          || request.auth.token.role in ['owner', 'admin', 'super']
           || request.auth.token.email in [
             'adminkmd@web-site-kmd.firebaseapp.com',
             'jameskmd@web-site-kmd.firebaseapp.com'
           ]
           || (
             isListedStaff()
-            && get(/databases/$(database)/documents/staff_users/$(request.auth.token.email)).data.role in ['admin', 'super']
+            && get(/databases/$(database)/documents/staff_users/$(request.auth.token.email)).data.role in ['owner', 'admin', 'super']
           )
         );
     }

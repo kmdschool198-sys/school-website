@@ -12,7 +12,8 @@ import {
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
-export type Role = 'teacher' | 'admin' | 'super';
+export type Role = 'owner' | 'admin' | 'editor' | 'teacher' | 'super';
+export type StaffManageRole = Exclude<Role, 'super'>;
 
 export interface AuthState {
   authed: boolean;
@@ -30,6 +31,13 @@ export type StaffProfile = {
 };
 
 export const STAFF_USERS_COLLECTION = 'staff_users';
+export const STAFF_ROLE_OPTIONS: StaffManageRole[] = ['owner', 'admin', 'editor', 'teacher'];
+export const STAFF_ROLE_LABELS: Record<StaffManageRole, string> = {
+  owner: 'Owner',
+  admin: 'Admin',
+  editor: 'Editor',
+  teacher: 'Teacher',
+};
 
 const STAFF_PROFILES: Record<string, StaffProfile> = {
   adminkmd: {
@@ -39,7 +47,7 @@ const STAFF_PROFILES: Record<string, StaffProfile> = {
   },
   jameskmd: {
     email: import.meta.env.VITE_KMD_SUPER_EMAIL || 'jameskmd@web-site-kmd.firebaseapp.com',
-    role: 'super',
+    role: 'owner',
     name: 'ผู้ดูแลระบบ',
   },
 };
@@ -58,9 +66,22 @@ export function resolveStaffEmail(usernameOrEmail: string): string {
   return STAFF_PROFILES[value]?.email || value;
 }
 
-function roleFromClaim(value: unknown): Role | null {
-  if (value === 'super' || value === 'admin' || value === 'teacher') return value;
+export function roleFromClaim(value: unknown): Role | null {
+  if (value === 'owner' || value === 'admin' || value === 'editor' || value === 'teacher' || value === 'super') return value;
   return null;
+}
+
+export function roleLabel(role: Role | null | undefined): string {
+  if (role === 'super') return STAFF_ROLE_LABELS.owner;
+  return role ? STAFF_ROLE_LABELS[role] : '';
+}
+
+export function canManageStaffUsers(role: Role | null | undefined): boolean {
+  return role === 'owner' || role === 'admin' || role === 'super';
+}
+
+export function canUseWebsiteAdmin(role: Role | null | undefined): boolean {
+  return canManageStaffUsers(role) || role === 'editor';
 }
 
 function fallbackProfile(user: User): StaffProfile | null {
