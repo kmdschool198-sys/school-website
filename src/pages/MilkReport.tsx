@@ -7,13 +7,16 @@ import { ChevronLeft, LogOut, Download, Sparkles } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import QuickDate from '../components/QuickDate';
+import { daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel, THAI_MONTHS_FULL } from '../utils/csvReport';
 
 const COLOR = '#3B82F6';
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
 interface Student { id: string; code?: string; name: string; }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
-interface AttDoc { classId: string; date: string; records: Record<string, { status: string }>; }
+interface AttDoc { classId: string; date: string; records: Record<string, { status: string; noMilk?: boolean }>; }
+type CsvPeriod = 'month' | 'year';
+type CsvScope = 'all' | string;
 
 export default function MilkReportPage() {
   const auth = useTeacherAuth();
@@ -24,6 +27,8 @@ export default function MilkReportPage() {
 function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
   const [classes, setClasses] = useState<ClassRoster[]>([]);
   const [date, setDate] = useState(todayStr());
+  const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
+  const [csvScope, setCsvScope] = useState<CsvScope>('all');
   const [allDocs, setAllDocs] = useState<AttDoc[]>([]);
 
   useEffect(() => {
@@ -60,6 +65,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
   const totalStudents = availableClasses.reduce((s, c) => s + c.students.length, 0);
   const month = date.slice(0, 7);
+  const year = date.slice(0, 4);
 
   // Per-day per-class for selected day
   const dayDocs = useMemo(() => allDocs.filter(d => d.date === date), [allDocs, date]);
@@ -91,17 +97,67 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   }, [allDocs]);
 
   const exportCsv = () => {
-    const rows = [['ชั้น', 'นักเรียน', '🥛 ที่ได้รับนม', 'เช็คแล้ว']];
-    dayPerClass.forEach(x => rows.push([
-      x.c.label, String(x.c.students.length), String(x.milk), x.checked ? '✓' : '-',
-    ]));
-    rows.push(['รวม', String(totalStudents), String(dayTotal), '']);
-    const csv = '﻿' + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `รายงานนม_${date}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    const targetClasses = csvScope === 'all'
+      ? availableClasses
+      : availableClasses.filter(c => c.id === csvScope);
+    const sections = targetClasses.map(classItem => {
+      const classDocs = allDocs.filter(docItem => docItem.classId === classItem.id);
+      const rows = csvPeriod === 'month'
+        ? classItem.students.map((student, index) => {
+          let totalMilk = 0;
+          let totalNoMilk = 0;
+          const marks = daysInMonth(month).map(day => {
+            const dateText = `${month}-${String(day).padStart(2, '0')}`;
+            const record = classDocs.find(docItem => docItem.date === dateText)?.records?.[student.id];
+            if (!record) return '';
+            const drankMilk = record.status === 'present' && !record.noMilk;
+            if (drankMilk) {
+              totalMilk++;
+              return '✓';
+            }
+            totalNoMilk++;
+            return '✗';
+          });
+          return [String(index + 1), student.code || '-', student.name, ...marks, String(totalMilk), String(totalNoMilk)];
+        })
+        : classItem.students.map((student, index) => {
+          const row = [String(index + 1), student.code || '-', student.name];
+          let totalMilk = 0;
+          let totalDays = 0;
+          THAI_MONTHS_FULL.forEach((_, monthIndex) => {
+            const prefix = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+            let monthMilk = 0;
+            let monthDays = 0;
+            classDocs.filter(docItem => docItem.date.startsWith(prefix)).forEach(docItem => {
+              const record = docItem.records?.[student.id];
+              if (!record) return;
+              monthDays++;
+              if (record.status === 'present' && !record.noMilk) monthMilk++;
+            });
+            totalMilk += monthMilk;
+            totalDays += monthDays;
+            row.push(monthDays ? `${monthMilk}/${monthDays}` : '-');
+          });
+          row.push(String(totalMilk), String(totalDays));
+          return row;
+        });
+
+      return {
+        title: `ชั้น ${classItem.label}`,
+        headers: csvPeriod === 'month'
+          ? ['ที่', 'รหัส', 'ชื่อ-สกุล', ...daysInMonth(month).map(String), 'รวมได้รับ', 'รวมไม่ได้รับ']
+          : ['ที่', 'รหัส', 'ชื่อ-สกุล', ...THAI_MONTHS_FULL.map(m => `${m} (ได้รับ/ทั้งหมด)`), 'รวมได้รับ', 'จำนวนวันที่มีข้อมูล'],
+        rows: rows.length ? rows : [['-', '-', 'ยังไม่มีรายชื่อนักเรียน']],
+      };
+    });
+    const reportRows = makeSectionedReportRows({
+      title: 'รายงานการดื่มนม โรงเรียนบ้านคลองมดแดง',
+      subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
+      meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${targetClasses[0]?.label || '-'}`], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
+      sections,
+      footerRows: [['คำอธิบาย', csvPeriod === 'month' ? '✓ = ได้รับนม, ✗ = ไม่ได้รับ/ขาด/ลา, ช่องว่าง = ยังไม่มีข้อมูล' : 'ช่องรายปีแสดงจำนวนได้รับ/จำนวนวันที่มีข้อมูล']],
+    });
+    downloadCsvReport(`รายงานนม_${csvScope === 'all' ? 'ทุกชั้น' : targetClasses[0]?.label || 'ชั้น'}_${csvPeriod === 'month' ? `รายเดือน_${month}` : `รายปี_${year}`}`, reportRows);
   };
 
   return (
@@ -127,7 +183,21 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
         <div style={{ background: 'white', borderRadius: 12, padding: '1rem', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <QuickDate value={date} onChange={setDate} color={COLOR} />
-          <button onClick={exportCsv} style={{ ...btnPrimary, background: COLOR }}><Download size={14} /> Export CSV</button>
+          <div>
+            <label style={lbl}>ช่วง CSV</label>
+            <select value={csvPeriod} onChange={e => setCsvPeriod(e.target.value as CsvPeriod)} style={inp}>
+              <option value="month">รายเดือน ({monthLabel(month)})</option>
+              <option value="year">รายปี ({yearLabel(year)})</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>ขอบเขต CSV</label>
+            <select value={csvScope} onChange={e => setCsvScope(e.target.value)} style={inp}>
+              <option value="all">ทุกชั้น</option>
+              {availableClasses.map(c => <option key={c.id} value={c.id}>ชั้น {c.label}</option>)}
+            </select>
+          </div>
+          <button onClick={exportCsv} style={{ ...btnPrimary, background: COLOR }}><Download size={14} /> โหลด CSV</button>
         </div>
 
         {/* Today Stats */}
@@ -239,6 +309,8 @@ const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${Stri
 const fmtThai = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']; return `${d} ${months[m - 1]} ${y + 543}`; };
 
 const lnk: React.CSSProperties = { color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 };
+const inp: React.CSSProperties = { padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: '0.9rem', minWidth: 190 };
+const lbl: React.CSSProperties = { display: 'block', fontSize: '0.75rem', color: '#64748B', marginBottom: 4, fontWeight: 800 };
 const btnPrimary: React.CSSProperties = { background: '#FF6A01', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 };
 const btnLogout: React.CSSProperties = { background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 };
 const th: React.CSSProperties = { padding: '10px 12px', fontWeight: 800, fontSize: '0.8rem', textAlign: 'center' };

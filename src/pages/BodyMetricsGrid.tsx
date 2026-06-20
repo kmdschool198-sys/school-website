@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { ChevronLeft, LogOut, Printer } from 'lucide-react';
+import { ChevronLeft, LogOut, Printer, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import PdpaNotice from '../components/PdpaNotice';
+import { THAI_MONTHS_FULL, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 
 const COLOR = '#EC4899';
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
@@ -15,6 +16,8 @@ const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', '�
 interface Student { id: string; code?: string; name: string; emoji?: string; }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
 interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; weight?: number; height?: number; bmi?: number; date?: string; }
+type CsvPeriod = 'month' | 'year';
+type CsvScope = 'class' | 'all';
 
 export default function BodyMetricsGridPage() {
   const auth = useTeacherAuth();
@@ -26,6 +29,8 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [classes, setClasses] = useState<ClassRoster[]>([]);
   const [classId, setClassId] = useState('');
   const [month, setMonth] = useState(thisMonth());
+  const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
+  const [csvScope, setCsvScope] = useState<CsvScope>('class');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [healthConsentOk, setHealthConsentOk] = useState(false);
@@ -67,11 +72,21 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const students = current?.students || [];
 
   // Find existing log entry for a student in this month (match by id OR name as fallback)
+  const matchesInClass = (l: LogEntry, s: Student, classLabel?: string) =>
+    (l.classLabel === classLabel || !l.classLabel) &&
+    (l.studentId === s.id || (l.studentName && l.studentName.trim() === s.name.trim()));
+
   const findEntry = (s: Student): LogEntry | undefined => {
     return logs.find(l =>
       l.date?.startsWith(month) &&
-      (l.classLabel === current?.label || !l.classLabel) &&
-      (l.studentId === s.id || (l.studentName && l.studentName.trim() === s.name.trim()))
+      matchesInClass(l, s, current?.label)
+    );
+  };
+
+  const findEntryForMonth = (s: Student, targetMonth: string, classLabel?: string): LogEntry | undefined => {
+    return logs.find(l =>
+      l.date?.startsWith(targetMonth) &&
+      matchesInClass(l, s, classLabel)
     );
   };
 
@@ -108,6 +123,63 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
   const filledCount = students.filter(s => findEntry(s)).length;
   const [yr, mn] = month.split('-').map(Number);
+
+  const exportCsv = () => {
+    if (!current) return;
+    if (!healthConsentOk) {
+      alert('กรุณารับทราบ notice ข้อมูลสุขภาพก่อนดาวน์โหลด CSV');
+      return;
+    }
+    const year = month.slice(0, 4);
+    const targetClasses = csvScope === 'all' ? availableClasses : [current];
+    const sections = targetClasses.map(classItem => {
+      const rows = csvPeriod === 'month'
+        ? classItem.students.map((s, i) => {
+        const e = findEntryForMonth(s, month, classItem.label);
+        return [
+          String(i + 1),
+          s.code || '',
+          s.name,
+          e?.weight !== undefined ? String(e.weight) : '-',
+          e?.height !== undefined ? String(e.height) : '-',
+          e?.bmi !== undefined ? String(e.bmi) : '-',
+          e?.bmi ? bmiStatus(e.bmi) : '-',
+        ];
+      })
+        : classItem.students.map((s, i) => {
+        const row = [
+          String(i + 1),
+          s.code || '',
+          s.name,
+        ];
+        let filled = 0;
+        Array.from({ length: 12 }, (_, idx) => idx + 1).forEach(m => {
+          const targetMonth = `${year}-${String(m).padStart(2, '0')}`;
+          const e = findEntryForMonth(s, targetMonth, classItem.label);
+          if (e?.weight || e?.height || e?.bmi) filled++;
+          row.push(e ? `${e.weight ?? '-'}/${e.height ?? '-'}/${e.bmi ?? '-'}` : '-');
+        });
+        row.push(String(filled));
+        return row;
+      });
+
+      return {
+        title: `ชั้น ${classItem.label}`,
+        headers: csvPeriod === 'month'
+          ? ['เลขที่', 'รหัส', 'ชื่อ-สกุล', 'น้ำหนัก (กก.)', 'ส่วนสูง (ซม.)', 'BMI', 'สถานะ']
+          : ['เลขที่', 'รหัส', 'ชื่อ-สกุล', ...THAI_MONTHS_FULL.map(m => `${m} (นน./สส./BMI)`), 'จำนวนเดือนที่บันทึก'],
+        rows: rows.length ? rows : [['-', '-', 'ยังไม่มีรายชื่อนักเรียน']],
+      };
+    });
+    const reportRows = makeSectionedReportRows({
+      title: 'รายงานน้ำหนัก-ส่วนสูง-BMI โรงเรียนบ้านคลองมดแดง',
+      subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
+      meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${current.label}`], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
+      sections,
+      footerRows: [['หมายเหตุ', csvPeriod === 'year' ? 'ช่องรายปีแสดง น้ำหนัก/ส่วนสูง/BMI' : 'ข้อมูลสุขภาพ ใช้ภายในโรงเรียนเท่านั้น']],
+    });
+    downloadCsvReport(`น้ำหนักส่วนสูง_${csvScope === 'all' ? 'ทุกชั้น' : current.label}_${csvPeriod === 'month' ? `รายเดือน_${month}` : `รายปี_${year}`}`, reportRows);
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#FFF7ED' }}>
@@ -152,11 +224,30 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
               📅 {THAI_MONTHS[mn - 1]} พ.ศ.{yr + 543}
             </div>
           </div>
+          <div>
+            <label style={lbl}>ช่วง CSV</label>
+            <select value={csvPeriod} onChange={e => setCsvPeriod(e.target.value as CsvPeriod)} style={inp}>
+              <option value="month">รายเดือน ({monthLabel(month)})</option>
+              <option value="year">รายปี ({yearLabel(month.slice(0, 4))})</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>ขอบเขต CSV</label>
+            <select value={csvScope} onChange={e => setCsvScope(e.target.value as CsvScope)} style={inp}>
+              <option value="class">ห้องนี้ ({current?.label || '-'})</option>
+              <option value="all">ทุกชั้น</option>
+            </select>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <div style={{ background: '#FFF7ED', borderRadius: 8, padding: '10px 14px', fontSize: '0.85rem', color: '#7C2D12', flex: 1 }}>
               ✏️ กรอกแล้ว <b>{filledCount}/{students.length}</b> คน
               {savedAt && <span style={{ color: '#10B981', marginLeft: 8 }}>✓ บันทึก {savedAt.toLocaleTimeString('th-TH')}</span>}
             </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <button onClick={exportCsv} style={{ width: '100%', background: COLOR, color: 'white', border: 'none', borderRadius: 8, padding: '10px 14px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Download size={14} /> โหลด CSV
+            </button>
           </div>
         </div>
 

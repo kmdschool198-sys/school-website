@@ -5,21 +5,24 @@ import { Link, useParams } from 'react-router-dom';
 import { collection, doc, onSnapshot, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { ChevronLeft, Printer, Calendar } from 'lucide-react';
+import { ChevronLeft, Printer, Calendar, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import { downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
 interface Student { id: string; code?: string; name: string; }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
-interface AttDoc { classId: string; date: string; records: Record<string, { status: string }>; }
+interface AttDoc { classId: string; date: string; records: Record<string, { status: string; noMilk?: boolean; noBrush?: boolean }>; }
 
 type FormType = 'attendance' | 'milk' | 'brush';
+type CsvPeriod = 'month' | 'year';
+type CsvScope = 'class' | 'all';
 const FORM_INFO: Record<FormType, { title: string; mark: string; missMark: string; legendDesc: string }> = {
   attendance: { title: 'แบบบันทึกการเข้าเรียน', mark: '✓', missMark: '✗', legendDesc: '✓ = มา · ✗ = ขาด · ล = ลา · / = วันหยุด' },
   milk: { title: 'แบบบันทึกการดื่มนม', mark: '✓', missMark: '−', legendDesc: '✓ = ดื่มนม · − = ไม่ได้รับ (ขาดเรียน/ลา) · / = วันหยุด' },
-  brush: { title: 'แบบบันทึกการแปรงฟัน', mark: '✓', missMark: '−', legendDesc: '✓ = แปรงฟัน · − = ไม่ได้แปรง (ขาดเรียน/ลา) · / = วันหยุด' },
+  brush: { title: 'แบบบันทึกการแปรงฟัน', mark: '✓', missMark: '✗', legendDesc: '✓ = แปรงฟัน · ✗ = ไม่ได้แปรง (ขาดเรียน/ลา) · / = วันหยุด' },
 };
 
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -32,11 +35,14 @@ export default function MonthlyFormPrintPage() {
 
 function App() {
   const { type = 'attendance' } = useParams<{ type: FormType }>();
-  const info = FORM_INFO[type as FormType] || FORM_INFO.attendance;
+  const formType = (type === 'milk' || type === 'brush' || type === 'attendance') ? type : 'attendance';
+  const info = FORM_INFO[formType];
 
   const [classes, setClasses] = useState<ClassRoster[]>([]);
   const [classId, setClassId] = useState('');
   const [month, setMonth] = useState(thisMonth());
+  const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
+  const [csvScope, setCsvScope] = useState<CsvScope>('class');
   const [docs, setDocs] = useState<AttDoc[]>([]);
   const [holidays, setHolidays] = useState<Record<string, string>>({}); // date → name
 
@@ -98,6 +104,13 @@ function App() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   // For each student × day → status
+  const didTarget = (rec: { status: string; noMilk?: boolean; noBrush?: boolean }) => {
+    if (rec.status !== 'present') return false;
+    if (formType === 'milk') return !rec.noMilk;
+    if (formType === 'brush') return !rec.noBrush;
+    return true;
+  };
+
   const statusFor = (studentId: string, day: number): string => {
     const dateStr = `${yearStr}-${monStr}-${String(day).padStart(2, '0')}`;
     const dt = new Date(`${dateStr}T00:00:00`);
@@ -107,9 +120,9 @@ function App() {
     if (!doc) return (isWeekend || isHoliday) ? '/' : '';
     const rec = doc.records?.[studentId];
     if (!rec) return (isWeekend || isHoliday) ? '/' : '';
-    if (rec.status === 'present') return info.mark;
-    if (rec.status === 'absent') return type === 'attendance' ? info.missMark : '−';
-    if (rec.status === 'leave') return type === 'attendance' ? 'ล' : '−';
+    if (rec.status === 'present') return didTarget(rec) ? info.mark : info.missMark;
+    if (rec.status === 'absent') return info.missMark;
+    if (rec.status === 'leave') return formType === 'attendance' ? 'ล' : info.missMark;
     return '';
   };
 
@@ -123,11 +136,106 @@ function App() {
       const rec = doc.records?.[studentId];
       if (!rec) return;
       totalDays++;
-      if (rec.status === 'present') present++;
+      if (didTarget(rec)) present++;
       else if (rec.status === 'absent') absent++;
       else if (rec.status === 'leave') leave++;
     });
     return { present, absent, leave, totalDays };
+  };
+
+  const exportCsv = async () => {
+    if (!current) return;
+    const docsForCsv = csvScope === 'all'
+      ? await loadDocsForCsv()
+      : docs;
+    const targetClasses = csvScope === 'all' ? availableClasses : [current];
+
+    const statusForDocs = (sourceDocs: AttDoc[], studentId: string, day: number): string => {
+      const dateStr = `${yearStr}-${monStr}-${String(day).padStart(2, '0')}`;
+      const dt = new Date(`${dateStr}T00:00:00`);
+      const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+      const isHoliday = !!holidays[dateStr];
+      const doc = sourceDocs.find(d => d.date === dateStr);
+      if (!doc) return (isWeekend || isHoliday) ? '/' : '';
+      const rec = doc.records?.[studentId];
+      if (!rec) return (isWeekend || isHoliday) ? '/' : '';
+      if (rec.status === 'present') return didTarget(rec) ? info.mark : info.missMark;
+      if (rec.status === 'absent') return info.missMark;
+      if (rec.status === 'leave') return formType === 'attendance' ? 'ล' : info.missMark;
+      return '';
+    };
+
+    const summaryForDocs = (sourceDocs: AttDoc[], studentId: string) => {
+      let present = 0, totalDays = 0;
+      days.forEach(d => {
+        const dateStr = `${yearStr}-${monStr}-${String(d).padStart(2, '0')}`;
+        const doc = sourceDocs.find(x => x.date === dateStr);
+        const rec = doc?.records?.[studentId];
+        if (!rec) return;
+        totalDays++;
+        if (didTarget(rec)) present++;
+      });
+      return { present, totalDays };
+    };
+
+    const sections = targetClasses.map(classItem => {
+      const classDocs = docsForCsv.filter(docItem => docItem.classId === classItem.id);
+      const rows = csvPeriod === 'month'
+        ? classItem.students.map((s, i) => {
+        const row = [String(i + 1), s.code || '', s.name];
+        days.forEach(d => row.push(statusForDocs(classDocs, s.id, d) || '-'));
+        const sum = summaryForDocs(classDocs, s.id);
+        row.push(formType === 'attendance' ? `${sum.present}/${sum.totalDays}` : `${sum.present} ครั้ง`);
+        return row;
+      })
+        : classItem.students.map((s, i) => {
+        const row = [String(i + 1), s.code || '', s.name];
+        let yearPresent = 0;
+        let yearTotal = 0;
+        THAI_MONTHS.forEach((_, idx) => {
+          const prefix = `${yearStr}-${String(idx + 1).padStart(2, '0')}`;
+          let monthPresent = 0;
+          let monthTotal = 0;
+          classDocs.filter(d => d.date.startsWith(prefix)).forEach(docItem => {
+            const rec = docItem.records?.[s.id];
+            if (!rec) return;
+            monthTotal++;
+            if (didTarget(rec)) monthPresent++;
+          });
+          yearPresent += monthPresent;
+          yearTotal += monthTotal;
+          row.push(monthTotal ? `${monthPresent}/${monthTotal}` : '-');
+        });
+        row.push(formType === 'attendance' ? `${yearPresent}/${yearTotal}` : `${yearPresent} ครั้ง`);
+        return row;
+      });
+
+      return {
+        title: `ชั้น ${classItem.label}`,
+        headers: csvPeriod === 'month'
+          ? ['ที่', 'รหัส', 'ชื่อ-สกุล', ...days.map(String), 'สรุปผล']
+          : ['ที่', 'รหัส', 'ชื่อ-สกุล', ...THAI_MONTHS.map(m => `${m} (ได้/ทั้งหมด)`), 'สรุปผล'],
+        rows: rows.length ? rows : [['-', '-', 'ยังไม่มีรายชื่อนักเรียน']],
+      };
+    });
+
+    const reportRows = makeSectionedReportRows({
+      title: `${info.title} โรงเรียนบ้านคลองมดแดง`,
+      subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(yearStr)}`,
+      meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${current.label}`], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
+      sections,
+      footerRows: [['คำอธิบาย', csvPeriod === 'month' ? info.legendDesc : 'ช่องรายปีแสดงจำนวนที่ทำได้/จำนวนวันที่มีข้อมูล']],
+    });
+    downloadCsvReport(`รายงาน_${info.title}_${csvScope === 'all' ? 'ทุกชั้น' : current.label}_${csvPeriod === 'month' ? `รายเดือน_${month}` : `รายปี_${yearStr}`}`, reportRows);
+  };
+
+  const loadDocsForCsv = async () => {
+    const start = csvPeriod === 'month' ? `${month}-01` : `${yearStr}-01-01`;
+    const end = csvPeriod === 'month' ? `${month}-31` : `${yearStr}-12-31`;
+    const snap = await getDocs(query(collection(db, 'attendance'), where('date', '>=', start), where('date', '<=', end)));
+    const arr: AttDoc[] = [];
+    snap.forEach(d => arr.push(d.data() as AttDoc));
+    return arr;
   };
 
   return (
@@ -149,6 +257,17 @@ function App() {
               📅 {THAI_MONTHS[monthNum - 1]} พ.ศ.{year + 543}
             </span>
           </div>
+          <select value={csvPeriod} onChange={e => setCsvPeriod(e.target.value as CsvPeriod)} style={inp}>
+            <option value="month">CSV รายเดือน</option>
+            <option value="year">CSV รายปี</option>
+          </select>
+          <select value={csvScope} onChange={e => setCsvScope(e.target.value as CsvScope)} style={inp}>
+            <option value="class">CSV ห้องนี้</option>
+            <option value="all">CSV ทุกชั้น</option>
+          </select>
+          <button onClick={exportCsv} style={btnCsv}>
+            <Download size={16} /> โหลด CSV
+          </button>
           <button onClick={() => window.print()} style={btnPrint}>
             <Printer size={16} /> พิมพ์
           </button>
@@ -220,7 +339,7 @@ function App() {
                     );
                   })}
                   <td style={{ ...td, background: '#FFFBEB', fontSize: '10px' }}>
-                    {type === 'attendance'
+                    {formType === 'attendance'
                       ? `${sum.present}/${sum.totalDays}`
                       : `${sum.present} ครั้ง`}
                   </td>
@@ -292,5 +411,6 @@ function thisMonth() {
 const lnk: React.CSSProperties = { color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 };
 const inp: React.CSSProperties = { padding: '6px 10px', borderRadius: 8, border: 'none', fontSize: '0.85rem', fontWeight: 700 };
 const btnPrint: React.CSSProperties = { background: 'white', color: '#7C2D12', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 };
+const btnCsv: React.CSSProperties = { background: 'white', color: '#15803D', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 };
 const th: React.CSSProperties = { border: '1px solid #94A3B8', padding: '4px 2px', fontSize: '11px', textAlign: 'center', fontWeight: 800 };
 const td: React.CSSProperties = { border: '1px solid #CBD5E1', padding: '3px 2px', textAlign: 'center' };

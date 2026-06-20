@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc, getDocs, collection, writeBatch, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { Trash2, UserPlus, Upload, Download, FileSpreadsheet } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { Trash2, UserPlus, Upload, Download } from 'lucide-react';
 import { PageLoading } from './PageState';
 
 interface Student { id: string; code?: string; name: string; emoji?: string; }
@@ -294,124 +293,6 @@ export default function RosterManager() {
     URL.revokeObjectURL(url);
   };
 
-  // ─── Excel exports ───
-  // 1) Single class as Excel
-  const exportExcelClass = () => {
-    if (!current) return;
-    const wb = XLSX.utils.book_new();
-    const data = [['ลำดับ', 'รหัสประจำตัว', 'ชื่อ-สกุล', 'Emoji'],
-      ...current.students.map((s, i) => [i + 1, s.code || '', s.name, s.emoji || ''])];
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 36 }, { wch: 8 }];
-    XLSX.utils.book_append_sheet(wb, ws, current.label.replace(/\//g, '-'));
-    XLSX.writeFile(wb, `รายชื่อ_${current.label.replace(/\//g, '-')}.xlsx`);
-  };
-
-  // 2) Summary across classes (counts, gender estimate)
-  const exportExcelSummary = () => {
-    const wb = XLSX.utils.book_new();
-    const isMale = (n: string) => /เด็กชาย|นาย|ด\.ช\./.test(n);
-    const isFemale = (n: string) => /เด็กหญิง|น\.ส\.|ด\.ญ\.|นางสาว|นาง/.test(n);
-    const data: any[][] = [['ลำดับ', 'ชั้นเรียน', 'จำนวนนักเรียน', 'ชาย', 'หญิง', 'อื่น ๆ']];
-    let totalAll = 0, totalM = 0, totalF = 0, totalO = 0;
-    classes.forEach((c, i) => {
-      const m = c.students.filter(s => isMale(s.name)).length;
-      const f = c.students.filter(s => isFemale(s.name)).length;
-      const o = c.students.length - m - f;
-      data.push([i + 1, c.label, c.students.length, m, f, o]);
-      totalAll += c.students.length; totalM += m; totalF += f; totalO += o;
-    });
-    data.push(['', 'รวมทั้งหมด', totalAll, totalM, totalF, totalO]);
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 16 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
-    XLSX.utils.book_append_sheet(wb, ws, 'สรุปจำนวนนักเรียน');
-    XLSX.writeFile(wb, `สรุปจำนวนนักเรียน_โรงเรียนบ้านคลองมดแดง.xlsx`);
-  };
-
-  // 3) Overview: all classes in one workbook (multiple sheets)
-  const exportExcelAll = () => {
-    const wb = XLSX.utils.book_new();
-    // Summary sheet first
-    const summary: any[][] = [['ลำดับ', 'ชั้นเรียน', 'จำนวนนักเรียน']];
-    let total = 0;
-    classes.forEach((c, i) => {
-      summary.push([i + 1, c.label, c.students.length]);
-      total += c.students.length;
-    });
-    summary.push(['', 'รวมทั้งหมด', total]);
-    const wsSum = XLSX.utils.aoa_to_sheet(summary);
-    wsSum['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 16 }];
-    XLSX.utils.book_append_sheet(wb, wsSum, '📊 สรุป');
-
-    // One sheet per class
-    classes.forEach(c => {
-      if (c.students.length === 0) return;
-      const data = [['ลำดับ', 'รหัสประจำตัว', 'ชื่อ-สกุล', 'Emoji'],
-        ...c.students.map((s, i) => [i + 1, s.code || '', s.name, s.emoji || ''])];
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 36 }, { wch: 8 }];
-      XLSX.utils.book_append_sheet(wb, ws, c.label.replace(/\//g, '-').slice(0, 31));
-    });
-    XLSX.writeFile(wb, `รายชื่อนักเรียนทั้งหมด_โรงเรียนบ้านคลองมดแดง.xlsx`);
-  };
-
-  const exportAttendanceHistory = async () => {
-    try {
-      const q = collection(db, 'attendance');
-      const snap = await getDocs(q);
-      const docs: any[] = [];
-      snap.forEach(d => docs.push(d.data()));
-
-      const statusTh: Record<string, string> = {
-        present: 'มาเรียน',
-        absent: 'ขาดเรียน',
-        leave: 'ลา'
-      };
-
-      const wb = XLSX.utils.book_new();
-      
-      classes.forEach(c => {
-        const classDocs = docs.filter(d => d.classId === c.classId);
-        if (classDocs.length === 0) return;
-        
-        const data: any[][] = [['วันที่', 'รหัสประจำตัว', 'ชื่อ-สกุล', 'สถานะ', 'หมายเหตุ']];
-        
-        // Sort documents by date
-        classDocs.sort((a, b) => a.date.localeCompare(b.date));
-        
-        classDocs.forEach(d => {
-          c.students.forEach(s => {
-            const rec = d.records?.[s.id];
-            if (rec) {
-              data.push([
-                d.date,
-                s.code || '',
-                s.name,
-                statusTh[rec.status] || rec.status,
-                rec.note || ''
-              ]);
-            }
-          });
-        });
-
-        if (data.length > 1) {
-          const ws = XLSX.utils.aoa_to_sheet(data);
-          ws['!cols'] = [{ wch: 12 }, { wch: 14 }, { wch: 30 }, { wch: 12 }, { wch: 20 }];
-          XLSX.utils.book_append_sheet(wb, ws, c.label.replace(/\//g, '-').slice(0, 31));
-        }
-      });
-      
-      if (wb.SheetNames.length === 0) {
-        alert('ยังไม่มีข้อมูลการมาเรียนในระบบ');
-        return;
-      }
-      XLSX.writeFile(wb, `ประวัติการมาเรียนทั้งหมด_โรงเรียนบ้านคลองมดแดง.xlsx`);
-    } catch (e) {
-      console.error(e);
-      alert('เกิดข้อผิดพลาดในการโหลดข้อมูลประวัติการมาเรียน');
-    }
-  };
-
   const downloadTemplate = () => {
     const csv = '\ufeff' + 'รหัส,ชื่อ,emoji\n68001,นาย ก. ใจดี,👦\n68002,น.ส. ข. ใจงาม,👧\n';
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -457,18 +338,6 @@ export default function RosterManager() {
           fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
           <Download size={14} />CSV
-        </button>
-        <button onClick={exportExcelClass} style={xBtn('#0E7C66')}>
-          <FileSpreadsheet size={14} />Excel ห้องนี้
-        </button>
-        <button onClick={exportExcelSummary} style={xBtn('#7C3AED')}>
-          <FileSpreadsheet size={14} />Excel สรุป
-        </button>
-        <button onClick={exportExcelAll} style={xBtn('#0F172A')}>
-          <FileSpreadsheet size={14} />Excel ภาพรวมทั้งหมด
-        </button>
-        <button onClick={exportAttendanceHistory} style={xBtn('#D97706')} title="ดาวน์โหลดประวัติการมาเรียนรายวัน">
-          <FileSpreadsheet size={14} />ประวัติเวลาเรียน
         </button>
         <button onClick={downloadTemplate} style={{
           background: 'white', color: '#7C2D12', padding: '6px 14px', borderRadius: 8, border: '1px solid #FFEDD5',
@@ -525,14 +394,8 @@ export default function RosterManager() {
       </div>
 
       <div className="alert alert-info small mt-3 mb-0">
-        💡 <b>เคล็ดลับ:</b> ดาวน์โหลด <b>เทมเพลต CSV</b> → กรอกในโปรแกรม Excel/Google Sheets → Save as CSV (UTF-8) → Import กลับมา
+        💡 <b>เคล็ดลับ:</b> ดาวน์โหลด <b>เทมเพลต CSV</b> → กรอกในโปรแกรมสเปรดชีต/Google Sheets → Save as CSV (UTF-8) → Import กลับมา
       </div>
     </div>
   );
 }
-
-const xBtn = (bg: string): React.CSSProperties => ({
-  background: bg, color: 'white', padding: '6px 14px', borderRadius: 8, border: 'none',
-  fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-  display: 'inline-flex', alignItems: 'center', gap: 6,
-});

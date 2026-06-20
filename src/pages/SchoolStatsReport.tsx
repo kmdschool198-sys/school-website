@@ -7,6 +7,7 @@ import { ChevronLeft, LogOut, Printer, Download, Sparkles, Calendar, Users, Chec
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { PageLoading } from '../components/PageState';
+import { downloadCsvReport, makeReportRows } from '../utils/csvReport';
 
 const COLOR = '#FF6A01';
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
@@ -155,15 +156,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const monthNum = Number(monStr);
 
   const exportCsv = () => {
-    const rows = [
-      ['สรุปรายงานสถิติประจำเดือน โรงเรียนบ้านคลองมดแดง'],
-      [`ประจำเดือน ${THAI_MONTHS[monthNum - 1]} พ.ศ. ${yearNum + 543}`],
-      [''],
-      ['ชั้น', 'จำนวนนักเรียน', 'วันทำการเช็คชื่อ', 'มาเรียนเฉลี่ย/วัน', 'อัตราการมาเรียน (%)', 'การดื่มนมรวม (กล่อง)', 'การแปรงฟันรวม (ครั้ง)']
-    ];
-
-    classStats.forEach(x => {
-      rows.push([
+    const rows = classStats.map(x => [
         x.label,
         String(x.studentCount),
         String(x.checkedDays),
@@ -172,27 +165,23 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         String(x.totalMilk),
         String(x.totalBrush)
       ]);
+    const reportRows = makeReportRows({
+      title: 'สรุปรายงานสถิติประจำเดือน โรงเรียนบ้านคลองมดแดง',
+      subtitle: `ประจำเดือน ${THAI_MONTHS[monthNum - 1]} พ.ศ. ${yearNum + 543}`,
+      meta: [['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
+      headers: ['ชั้น', 'จำนวนนักเรียน', 'วันทำการเช็คชื่อ', 'มาเรียนเฉลี่ย/วัน', 'อัตราการมาเรียน (%)', 'การดื่มนมรวม (กล่อง)', 'การแปรงฟันรวม (ครั้ง)'],
+      rows,
+      footerRows: [[
+        'สรุปภาพรวมโรงเรียน',
+        String(schoolSummary.totalStudents),
+        String(schoolSummary.avgDays),
+        '—',
+        `${schoolSummary.avgAttRate}%`,
+        String(schoolSummary.totalMilk),
+        String(schoolSummary.totalBrush)
+      ]],
     });
-
-    rows.push(['']);
-    rows.push([
-      'สรุปภาพรวมโรงเรียน',
-      String(schoolSummary.totalStudents),
-      String(schoolSummary.avgDays),
-      '—',
-      `${schoolSummary.avgAttRate}%`,
-      String(schoolSummary.totalMilk),
-      String(schoolSummary.totalBrush)
-    ]);
-
-    const csvContent = '\uFEFF' + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `รายงานสถิติประจำเดือน_${month}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsvReport(`รายงานสถิติประจำเดือน_${month}`, reportRows);
   };
 
   return (
@@ -211,7 +200,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
               <Printer size={15} /> พิมพ์รายงาน
             </button>
             <button onClick={exportCsv} style={{ ...btnPrint, color: '#16A34A', border: '1px solid #16A34A' }}>
-              <Download size={15} /> ส่งออก Excel
+              <Download size={15} /> ส่งออก CSV
             </button>
             <button onClick={onLogout} style={btnLogout}><LogOut size={12} />ออก</button>
           </div>

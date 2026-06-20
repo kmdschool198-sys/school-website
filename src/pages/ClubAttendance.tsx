@@ -1,16 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Check, X as XIcon, Clock, Save, Download, ChevronLeft, LogOut, Users, ClipboardCheck, Printer } from 'lucide-react';
 import type { Club, ClubAttendanceDoc, AttStatus, ClubEvaluation, EvalLevel } from '../data/clubs';
 import { EVAL_LABELS } from '../data/clubs';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 
 const BRAND = '#FF6A01';
 const STATUS_COLORS: Record<AttStatus, string> = { present: BRAND, absent: '#EF4444', leave: '#F59E0B' };
 const STATUS_LABELS: Record<AttStatus, string> = { present: 'มา', absent: 'ขาด', leave: 'ลา' };
+type CsvPeriod = 'month' | 'year';
 
 export default function ClubAttendancePage() {
   const auth = useTeacherAuth();
@@ -22,7 +24,9 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [clubs, setClubs] = useState<Club[]>([]);
   const [clubId, setClubId] = useState('');
   const [date, setDate] = useState(todayStr());
+  const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
   const [records, setRecords] = useState<ClubAttendanceDoc['records']>({});
+  const [clubHistory, setClubHistory] = useState<ClubAttendanceDoc[]>([]);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [tab, setTab] = useState<'check' | 'eval'>('check');
@@ -76,6 +80,16 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       else setRecords({});
     });
   }, [clubId, date]);
+
+  useEffect(() => {
+    if (!clubId) return;
+    const q = query(collection(db, 'club_attendance'), where('clubId', '==', clubId));
+    return onSnapshot(q, snap => {
+      const docs: ClubAttendanceDoc[] = [];
+      snap.forEach(d => docs.push(d.data() as ClubAttendanceDoc));
+      setClubHistory(docs);
+    });
+  }, [clubId]);
 
   const currentClub = clubs.find(c => c.id === clubId);
   const members = currentClub?.members || [];
@@ -143,21 +157,68 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
   const exportCsv = () => {
     if (!currentClub) return;
-    const rows = [['ที่', 'รหัส', 'ชื่อ-สกุล', 'ชั้น', 'สถานะ', 'หมายเหตุ']];
-    members.forEach((m, i) => {
-      const r = records[m.studentId];
-      rows.push([
-        String(i + 1), m.code, m.name, m.classLabel,
-        r ? STATUS_LABELS[r.status] : '-',
-        r?.note || '',
-      ]);
+    const month = date.slice(0, 7);
+    const year = date.slice(0, 4);
+    const classLabels = Array.from(new Set(members.map(m => m.classLabel || 'ไม่ระบุชั้น'))).sort((a, b) => a.localeCompare(b, 'th'));
+    const sections = classLabels.map(classLabel => {
+      const classMembers = members.filter(m => (m.classLabel || 'ไม่ระบุชั้น') === classLabel);
+      const rows = csvPeriod === 'month'
+        ? classMembers.map((m, i) => {
+        const row = [String(i + 1), m.code, m.name];
+        let present = 0;
+        let absent = 0;
+        let leave = 0;
+        daysInMonth(month).forEach(day => {
+          const dayText = `${month}-${String(day).padStart(2, '0')}`;
+          const rec = clubHistory.find(docItem => docItem.date === dayText)?.records?.[m.studentId];
+          if (rec?.status === 'present') present++;
+          if (rec?.status === 'absent') absent++;
+          if (rec?.status === 'leave') leave++;
+          row.push(rec ? STATUS_LABELS[rec.status] : '-');
+        });
+        row.push(String(present), String(absent), String(leave));
+        return row;
+      })
+        : classMembers.map((m, i) => {
+        const row = [String(i + 1), m.code, m.name];
+        let present = 0;
+        let absent = 0;
+        let leave = 0;
+        Array.from({ length: 12 }, (_, idx) => idx + 1).forEach(monthNumber => {
+          const prefix = `${year}-${String(monthNumber).padStart(2, '0')}`;
+          const docs = clubHistory.filter(docItem => docItem.date.startsWith(prefix));
+          let monthPresent = 0;
+          let monthTotal = 0;
+          docs.forEach(docItem => {
+            const rec = docItem.records?.[m.studentId];
+            if (!rec) return;
+            monthTotal++;
+            if (rec.status === 'present') { monthPresent++; present++; }
+            else if (rec.status === 'absent') absent++;
+            else if (rec.status === 'leave') leave++;
+          });
+          row.push(monthTotal ? `${monthPresent}/${monthTotal}` : '-');
+        });
+        row.push(String(present), String(absent), String(leave));
+        return row;
+      });
+
+      return {
+        title: `ชั้น ${classLabel}`,
+        headers: csvPeriod === 'month'
+          ? ['ที่', 'รหัส', 'ชื่อ-สกุล', ...daysInMonth(month).map(String), 'รวมมา', 'รวมขาด', 'รวมลา']
+          : ['ที่', 'รหัส', 'ชื่อ-สกุล', ...THAI_MONTHS_FULL.map(m => `${m} (มา/รวม)`), 'รวมมา', 'รวมขาด', 'รวมลา'],
+        rows: rows.length ? rows : [['-', '-', 'ยังไม่มีสมาชิก']],
+      };
     });
-    const csv = '﻿' + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `เช็คชื่อ_${currentClub.name}_${date}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    const reportRows = makeSectionedReportRows({
+      title: 'รายงานเช็คชื่อชุมนุม/กิจกรรม/ลูกเสือ โรงเรียนบ้านคลองมดแดง',
+      subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
+      meta: [['กิจกรรม', `${currentClub.type} · ${currentClub.name}`], ['ครูที่ปรึกษา', currentClub.advisor], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
+      sections,
+      footerRows: [['หมายเหตุ', csvPeriod === 'year' ? 'ช่องรายปีแสดงจำนวนมา/จำนวนวันที่มีข้อมูล' : 'มา/ขาด/ลา ตามข้อมูลที่บันทึก']],
+    });
+    downloadCsvReport(`เช็คชื่อชุมนุม_${currentClub.name}_${csvPeriod === 'month' ? `รายเดือน_${month}` : `รายปี_${year}`}`, reportRows);
   };
 
   return (
@@ -246,8 +307,12 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
               <button onClick={save} disabled={saving || !validation.isValid} style={{ ...quickBtn, background: '#0F172A', marginLeft: 'auto', opacity: (saving || !validation.isValid) ? 0.5 : 1, cursor: (saving || !validation.isValid) ? 'not-allowed' : 'pointer' }}>
                 <Save size={14} style={{ marginRight: 4 }} />{saving ? 'กำลังบันทึก…' : 'บันทึกข้อมูล'}
               </button>
+              <select value={csvPeriod} onChange={e => setCsvPeriod(e.target.value as CsvPeriod)} style={{ ...inp, width: 'auto', minWidth: 190 }}>
+                <option value="month">CSV รายเดือน ({monthLabel(date.slice(0, 7))})</option>
+                <option value="year">CSV รายปี ({yearLabel(date.slice(0, 4))})</option>
+              </select>
               <button onClick={exportCsv} style={{ ...quickBtn, background: '#10B981' }}>
-                <Download size={14} style={{ marginRight: 4 }} />CSV
+                <Download size={14} style={{ marginRight: 4 }} />โหลด CSV
               </button>
               {savedAt && <span style={{ fontSize: '0.72rem', color: BRAND, fontWeight: 700 }}>✓ {savedAt.toLocaleTimeString('th-TH')}</span>}
             </div>

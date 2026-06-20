@@ -7,6 +7,7 @@ import { ChevronLeft, LogOut, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import QuickDate from '../components/QuickDate';
+import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 
 const COLOR = '#10B981';
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
@@ -14,6 +15,8 @@ const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/
 interface Student { id: string; code?: string; name: string; emoji?: string; }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
 interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; amount?: number; date?: string; }
+type CsvPeriod = 'month' | 'year';
+type CsvScope = 'class' | 'all';
 
 export default function SavingGridPage() {
   const auth = useTeacherAuth();
@@ -25,6 +28,8 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [classes, setClasses] = useState<ClassRoster[]>([]);
   const [classId, setClassId] = useState('');
   const [date, setDate] = useState(todayStr());
+  const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
+  const [csvScope, setCsvScope] = useState<CsvScope>('class');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
@@ -65,14 +70,18 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const students = current?.students || [];
 
   // Match by id OR name (handles old data without studentId)
-  const matches = (l: LogEntry, s: Student) =>
-    (l.classLabel === current?.label || !l.classLabel) &&
+  const matchesInClass = (l: LogEntry, s: Student, classLabel?: string) =>
+    (l.classLabel === classLabel || !l.classLabel) &&
     (l.studentId === s.id || (l.studentName && l.studentName.trim() === s.name.trim()));
+  const matches = (l: LogEntry, s: Student) => matchesInClass(l, s, current?.label);
 
   const findEntry = (s: Student) => logs.find(l => matches(l, s) && l.date === date);
 
   const balanceOf = (s: Student) => logs
     .filter(l => matches(l, s))
+    .reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+  const balanceOfInClass = (s: Student, classLabel?: string) => logs
+    .filter(l => matchesInClass(l, s, classLabel))
     .reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
 
   const updateAmount = async (s: Student, amount: number | undefined) => {
@@ -100,17 +109,56 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
   const exportCsv = () => {
     if (!current) return;
-    const rows = [['เลขที่', 'รหัส', 'ชื่อ', `วันนี้ (${date})`, 'ยอดสะสม']];
-    students.forEach((s, i) => rows.push([
-      String(i + 1), s.code || '', s.name,
-      String(findEntry(s)?.amount || 0), String(balanceOf(s)),
-    ]));
-    const csv = '﻿' + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `ออมเงิน_${current.label}_${date}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    const month = date.slice(0, 7);
+    const year = date.slice(0, 4);
+    const days = daysInMonth(month);
+    const targetClasses = csvScope === 'all' ? availableClasses : [current];
+
+    const sections = targetClasses.map(classItem => {
+      const rows = csvPeriod === 'month'
+        ? classItem.students.map((s, i) => {
+        const row = [String(i + 1), s.code || '', s.name];
+        let monthSum = 0;
+        days.forEach(d => {
+          const dateStr = `${month}-${String(d).padStart(2, '0')}`;
+          const log = logs.find(l => matchesInClass(l, s, classItem.label) && l.date === dateStr);
+          const amt = log?.amount || 0;
+          row.push(amt > 0 ? String(amt) : '-');
+          monthSum += amt;
+        });
+        row.push(String(monthSum), String(balanceOfInClass(s, classItem.label)));
+        return row;
+      })
+        : classItem.students.map((s, i) => {
+        const row = [String(i + 1), s.code || '', s.name];
+        let yearSum = 0;
+        Array.from({ length: 12 }, (_, idx) => idx + 1).forEach(m => {
+          const monthPrefix = `${year}-${String(m).padStart(2, '0')}`;
+          const sum = logs
+            .filter(l => matchesInClass(l, s, classItem.label) && l.date?.startsWith(monthPrefix))
+            .reduce((total, log) => total + (Number(log.amount) || 0), 0);
+          row.push(sum > 0 ? String(sum) : '-');
+          yearSum += sum;
+        });
+        row.push(String(yearSum), String(balanceOfInClass(s, classItem.label)));
+        return row;
+      });
+      return {
+        title: `ชั้น ${classItem.label}`,
+        headers: csvPeriod === 'month'
+          ? ['ที่', 'รหัส', 'ชื่อ-สกุล', ...days.map(String), 'รวมเดือนนี้', 'สะสมทั้งหมด']
+          : ['ที่', 'รหัส', 'ชื่อ-สกุล', ...THAI_MONTHS_FULL, 'รวมปีนี้', 'สะสมทั้งหมด'],
+        rows: rows.length ? rows : [['-', '-', 'ยังไม่มีรายชื่อนักเรียน']],
+      };
+    });
+    const reportRows = makeSectionedReportRows({
+      title: 'รายงานออมเงินนักเรียน โรงเรียนบ้านคลองมดแดง',
+      subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
+      meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${current.label}`], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
+      sections,
+      footerRows: [['หมายเหตุ', csvPeriod === 'month' ? 'ช่องวันที่เป็นจำนวนเงินที่ออมในวันนั้น' : 'ช่องเดือนเป็นยอดรวมเงินออมของเดือนนั้น']],
+    });
+    downloadCsvReport(`ออมเงิน_${csvScope === 'all' ? 'ทุกชั้น' : current.label}_${csvPeriod === 'month' ? `รายเดือน_${month}` : `รายปี_${year}`}`, reportRows);
   };
 
   return (
@@ -135,8 +183,22 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
             </select>
           </div>
           <QuickDate value={date} onChange={setDate} color={COLOR} />
+          <div>
+            <label style={lbl}>ช่วง CSV</label>
+            <select value={csvPeriod} onChange={e => setCsvPeriod(e.target.value as CsvPeriod)} style={inp}>
+              <option value="month">รายเดือน ({monthLabel(date.slice(0, 7))})</option>
+              <option value="year">รายปี ({yearLabel(date.slice(0, 4))})</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>ขอบเขต CSV</label>
+            <select value={csvScope} onChange={e => setCsvScope(e.target.value as CsvScope)} style={inp}>
+              <option value="class">ห้องนี้ ({current?.label || '-'})</option>
+              <option value="all">ทุกชั้น</option>
+            </select>
+          </div>
           <button onClick={exportCsv} style={{ ...btnSecondary, background: COLOR, color: 'white', border: 'none' }}>
-            <Download size={14} /> CSV
+            <Download size={14} /> โหลด CSV
           </button>
         </div>
 

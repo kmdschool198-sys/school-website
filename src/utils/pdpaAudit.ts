@@ -87,7 +87,7 @@ export async function recordDataExport(input: {
   fileName: string;
   collections: string[];
 }) {
-  await recordPdpaAudit('data.export.excel', input.kind, input);
+  await recordPdpaAudit('data.export.csv', input.kind, input);
 }
 
 export async function createPdpaRequest(input: PdpaRequestInput) {

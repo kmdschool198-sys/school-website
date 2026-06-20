@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, FileSpreadsheet, Loader2, LogOut, Pin, PinOff, Search } from 'lucide-react';
+import { ChevronLeft, LogOut, Pin, PinOff } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
-import { exportHubCardExcel, type HubExcelKind } from '../utils/hubExcel';
 
 interface AppCard {
   id: string;
@@ -12,24 +11,21 @@ interface AppCard {
   icon: string;
   search: string;
   bg: string;
-  excelKind: HubExcelKind;
 }
 
 const PIN_STORAGE_KEY = 'kmd_teacher_hub_pinned_apps_v1';
 
 const STUDENT_APPS: AppCard[] = [
-  { id: 'class-dashboard', to: '/class-dashboard', title: 'แดชบอร์ดรายชั้นเรียน', icon: '📊', search: 'ภาพรวมทั้งชั้น', bg: '#FFEDD5', excelKind: 'dashboard' },
-  { id: 'attendance', to: '/attendance', title: 'ระบบเช็คชื่อนักเรียน', icon: '✅', search: 'เช็คนักเรียน', bg: '#FCE7F3', excelKind: 'attendance' },
-  { id: 'manage-roster', to: '/manage-roster', title: 'จัดการรายชื่อนักเรียน', icon: '👥', search: 'รายชื่อ-CSV', bg: '#E9D5FF', excelKind: 'roster' },
-  { id: 'club-attendance', to: '/club-attendance', title: 'เช็คชื่อชุมนุม-ลูกเสือ', icon: '🎯', search: 'ชุมนุม-ลูกเสือ', bg: '#DCFCE7', excelKind: 'clubAttendance' },
-  { id: 'manage-clubs', to: '/manage-clubs', title: 'จัดการชุมนุม-สมาชิก', icon: '⚙️', search: 'สร้างชุมนุม', bg: '#D1FAE5', excelKind: 'clubs' },
-  { id: 'milk-report', to: '/milk-report', title: 'รายงานการดื่มนม', icon: '🥛', search: 'ดื่มนม', bg: '#DBEAFE', excelKind: 'milk' },
-  { id: 'brush-log', to: '/brush-log', title: 'บันทึกการแปรงฟัน', icon: '🪥', search: 'แปรงฟัน', bg: '#CFFAFE', excelKind: 'brush' },
-  { id: 'saving', to: '/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3', excelKind: 'saving' },
-  { id: 'body-metrics', to: '/body-metrics', title: 'น้ำหนัก-ส่วนสูง-BMI', icon: '⚖️', search: 'น้ำหนักส่วนสูง', bg: '#FCE7F3', excelKind: 'bodyMetrics' },
-  { id: 'print-body-metrics', to: '/print-body-metrics', title: 'พิมพ์ฟอร์มน้ำหนัก-ส่วนสูง', icon: '🖨️', search: 'พิมพ์น้ำหนัก', bg: '#FCE7F3', excelKind: 'bodyMetrics' },
-  { id: 'print-club', to: '/print-club', title: 'พิมพ์ฟอร์มชุมนุม', icon: '🖨️', search: 'พิมพ์ชุมนุม', bg: '#DCFCE7', excelKind: 'clubs' },
-  { id: 'school-stats-report', to: '/school-stats-report', title: 'รายงานสรุปสถิติประจำเดือน', icon: '📈', search: 'สถิติประจำเดือน', bg: '#FFF7ED', excelKind: 'schoolStats' },
+  { id: 'class-dashboard', to: '/class-dashboard', title: 'แดชบอร์ดรายชั้นเรียน', icon: '📊', search: 'ภาพรวมทั้งชั้น', bg: '#FFEDD5' },
+  { id: 'attendance', to: '/attendance', title: 'ระบบเช็คชื่อนักเรียน', icon: '✅', search: 'เช็คนักเรียน', bg: '#FCE7F3' },
+  { id: 'manage-roster', to: '/manage-roster', title: 'จัดการรายชื่อนักเรียน', icon: '👥', search: 'รายชื่อ-CSV', bg: '#E9D5FF' },
+  { id: 'club-attendance', to: '/club-attendance', title: 'เช็คชื่อชุมนุม-ลูกเสือ', icon: '🎯', search: 'ชุมนุม-ลูกเสือ', bg: '#DCFCE7' },
+  { id: 'manage-clubs', to: '/manage-clubs', title: 'จัดการชุมนุม-สมาชิก', icon: '⚙️', search: 'สร้างชุมนุม', bg: '#D1FAE5' },
+  { id: 'milk-report', to: '/milk-report', title: 'รายงานการดื่มนม', icon: '🥛', search: 'ดื่มนม', bg: '#DBEAFE' },
+  { id: 'brush-log', to: '/brush-log', title: 'บันทึกการแปรงฟัน', icon: '🪥', search: 'แปรงฟัน', bg: '#CFFAFE' },
+  { id: 'saving', to: '/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3' },
+  { id: 'body-metrics', to: '/body-metrics', title: 'น้ำหนัก-ส่วนสูง-BMI', icon: '⚖️', search: 'น้ำหนักส่วนสูง', bg: '#FCE7F3' },
+  { id: 'school-stats-report', to: '/school-stats-report', title: 'รายงานสรุปสถิติประจำเดือน', icon: '📈', search: 'สถิติประจำเดือน', bg: '#FFF7ED' },
 ];
 
 export default function TeacherHubPage() {
@@ -42,7 +38,6 @@ export default function TeacherHubPage() {
 
 function Hub({ userName, onLogout }: { userName: string; onLogout: () => void }) {
   const [pinnedIds, setPinnedIds] = useState<string[]>(readPinnedIds);
-  const [exportingId, setExportingId] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedIds));
@@ -68,18 +63,6 @@ function Hub({ userName, onLogout }: { userName: string; onLogout: () => void })
     setPinnedIds(current => current.includes(id)
       ? current.filter(item => item !== id)
       : [id, ...current]);
-  };
-
-  const downloadExcel = async (app: AppCard) => {
-    setExportingId(app.id);
-    try {
-      await exportHubCardExcel(app.excelKind, app.title);
-    } catch (error: any) {
-      console.error(error);
-      alert(`โหลด Excel ไม่สำเร็จ: ${error?.message || error}`);
-    } finally {
-      setExportingId(null);
-    }
   };
 
   return (
@@ -111,15 +94,13 @@ function Hub({ userName, onLogout }: { userName: string; onLogout: () => void })
               key={app.id}
               app={app}
               pinned={pinnedIds.includes(app.id)}
-              exporting={exportingId === app.id}
               onTogglePin={togglePin}
-              onDownloadExcel={downloadExcel}
             />
           ))}
         </div>
 
         <div style={{ marginTop: 30, padding: '14px 18px', background: '#FFF7ED', borderLeft: '4px solid #FF6A01', borderRadius: 10, color: '#7C2D12', fontSize: '0.85rem' }}>
-          💡 <b>เคล็ดลับ:</b> กดหมุดเพื่อพินงานที่ใช้บ่อยขึ้นด้านหน้า และกดไอคอน Excel เพื่อโหลดข้อมูลของงานนั้น
+          💡 <b>เคล็ดลับ:</b> กดหมุดเพื่อพินงานที่ใช้บ่อยขึ้นด้านหน้า และเข้าแต่ละระบบเพื่อดาวน์โหลด CSV รายเดือน/รายปี
         </div>
       </main>
     </div>
@@ -145,15 +126,11 @@ function SectionHeader({ icon, title, subtitle, color }: { icon: string; title: 
 function AppCardView({
   app,
   pinned,
-  exporting,
   onTogglePin,
-  onDownloadExcel,
 }: {
   app: AppCard;
   pinned: boolean;
-  exporting: boolean;
   onTogglePin: (id: string) => void;
-  onDownloadExcel: (app: AppCard) => void;
 }) {
   return (
     <div
@@ -198,28 +175,9 @@ function AppCardView({
           >
             {pinned ? <PinOff size={14} /> : <Pin size={14} />}
           </button>
-          <button
-            type="button"
-            onClick={() => onDownloadExcel(app)}
-            title="โหลดไฟล์ Excel"
-            aria-label="โหลดไฟล์ Excel"
-            disabled={exporting}
-            style={{ ...iconButton, opacity: exporting ? 0.65 : 1 }}
-          >
-            {exporting ? <Loader2 size={14} /> : <FileSpreadsheet size={14} />}
-          </button>
         </div>
         <Link to={app.to} style={cardLink}>
-          <div style={{ fontSize: '3.5rem', lineHeight: 1, marginBottom: 10 }}>{app.icon}</div>
-          <div style={{
-            background: 'rgba(255,255,255,0.92)', borderRadius: 999,
-            padding: '4px 10px 4px 14px', display: 'inline-flex', alignItems: 'center', gap: 6,
-            border: '1px solid rgba(0,0,0,0.06)', color: '#0F172A',
-            fontSize: '0.78rem', fontWeight: 700, maxWidth: '100%',
-          }}>
-            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{app.search}</span>
-            <Search size={11} />
-          </div>
+          <div style={{ fontSize: '3.5rem', lineHeight: 1 }}>{app.icon}</div>
         </Link>
       </div>
       <Link to={app.to} style={titleLink}>

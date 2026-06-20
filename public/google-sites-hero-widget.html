@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KMD School Hero Widget</title>
+  <style>
+    /* นำเข้าฟอนต์ภาษาไทยและอังกฤษแบบพรีเมียม */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;800&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+    }
+
+    .kmd-hero {
+      font-family: 'Outfit', 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
+      min-height: 600px;
+      padding: 60px 40px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      /* พื้นหลังแบบผสมระหว่างรูปโรงเรียนจริงกับ Overlay โทนขาว-ส้ม เพื่อให้อ่านง่ายและดูหรูหรา */
+      background: 
+        linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.90) 50%, rgba(255, 247, 237, 0.85) 100%),
+        url('https://school-website-three-puce.vercel.app/school_banner.png') center / cover no-repeat;
+      color: #1e293b;
+      overflow: hidden;
+      border-radius: 24px;
+      border: 1px solid rgba(234, 88, 12, 0.15);
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.04);
+    }
+
+    /* ตกแต่งด้วยแสงเรืองแสงสีส้มเบาๆ เพิ่มมิติ */
+    .kmd-hero::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(253, 186, 116, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .kmd-wrap {
+      position: relative;
+      z-index: 2;
+      max-width: 1080px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .kmd-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .kmd-badge {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 16px;
+      border: 1px solid #ffd8a8;
+      border-radius: 999px;
+      background: rgba(255, 247, 237, 0.9);
+      color: #ea580c;
+      font-weight: 700;
+      font-size: 13.5px;
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.04);
+    }
+
+    .kmd-badge svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
+    .kmd-title {
+      font-size: clamp(30px, 4.5vw, 54px);
+      line-height: 1.25;
+      margin: 22px 0 16px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+
+    .kmd-title span.highlight {
+      color: #ea580c;
+      background: linear-gradient(120deg, #ea580c 40%, #f97316 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .kmd-sub {
+      font-size: clamp(15.5px, 1.6vw, 18.5px);
+      line-height: 1.7;
+      max-width: 620px;
+      margin: 0 0 32px;
+      color: #475569;
+      font-weight: 400;
+    }
+
+    .kmd-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .kmd-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 26px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15.5px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    .kmd-primary {
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      color: #ffffff;
+      box-shadow: 0 8px 20px -6px rgba(234, 88, 12, 0.35);
+    }
+
+    .kmd-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -5px rgba(234, 88, 12, 0.5);
+      filter: brightness(1.05);
+    }
+
+    .kmd-primary svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    .kmd-secondary {
+      background: rgba(255, 255, 255, 0.9);
+      color: #ea580c;
+      border: 2px solid #ffedd5;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
+      backdrop-filter: blur(4px);
+    }
+
+    .kmd-secondary:hover {
+      background: #fff7ed;
+      border-color: #fdba74;
+      transform: translateY(-2px);
+    }
+
+    .kmd-secondary svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    .kmd-panel {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(254, 215, 170, 0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: #1e293b;
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 20px 45px -12px rgba(234, 88, 12, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .kmd-panel h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 2px solid #ffedd5;
+      padding-bottom: 12px;
+    }
+
+    .kmd-panel h3 svg {
+      width: 18px;
+      height: 18px;
+      stroke: #ea580c;
+    }
+
+    .kmd-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: #ffffff;
+      color: #334155;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14.5px;
+      border: 1px solid #f1f5f9;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.01);
+    }
+
+    .kmd-link:hover {
+      background: #fff7ed;
+      border-color: #ffd8a8;
+      color: #ea580c;
+      transform: translateX(4px);
+    }
+
+    .kmd-link-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kmd-link-label svg {
+      width: 16px;
+      height: 16px;
+      stroke: #64748b;
+      transition: stroke 0.2s ease;
+    }
+
+    .kmd-link:hover .kmd-link-label svg {
+      stroke: #ea580c;
+    }
+
+    .kmd-tag {
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      letter-spacing: 0.2px;
+    }
+
+    .kmd-tag-success {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .kmd-tag-warning {
+      background: #ffedd5;
+      color: #c2410c;
+    }
+
+    /* กล่องคำขวัญและอัตลักษณ์ของโรงเรียนแบบพรีเมียม */
+    .kmd-motto-box {
+      margin-top: 14px;
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border: 1px dashed #fdba74;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 10px rgba(234, 88, 12, 0.02);
+    }
+
+    .kmd-motto-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .kmd-motto-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ea580c;
+      background: rgba(234, 88, 12, 0.1);
+      padding: 3px 8px;
+      border-radius: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .kmd-motto-value {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #475569;
+      text-align: right;
+    }
+
+    .kmd-motto-divider {
+      height: 1px;
+      background: rgba(234, 88, 12, 0.12);
+      width: 100%;
+    }
+
+    /* สไตล์สำหรับการแสดงผลบนมือถือและแท็บเล็ต */
+    @media(max-width: 900px) {
+      .kmd-hero {
+        padding: 40px 24px;
+        min-height: auto;
+      }
+      .kmd-wrap {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+
+    @media(max-width: 480px) {
+      .kmd-hero {
+        padding: 30px 16px;
+        border-radius: 16px;
+        background-position: center;
+      }
+      .kmd-badge {
+        padding: 6px 12px;
+        font-size: 12.5px;
+      }
+      .kmd-title {
+        margin: 16px 0 12px;
+      }
+      .kmd-sub {
+        margin-bottom: 24px;
+      }
+      .kmd-actions {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .kmd-btn {
+        width: 100%;
+        padding: 14px 20px;
+      }
+      .kmd-panel {
+        padding: 24px 16px;
+        border-radius: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<section class="kmd-hero">
+  <div class="kmd-wrap">
+    
+    <!-- ฝั่งซ้าย: เนื้อหาและปุ่มหลัก -->
+    <div class="kmd-left">
+      <div class="kmd-badge">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l4-2.222v5.393a1.5 1.5 0 01-1.285 1.485L12 20m0 0l-2.715-.452A1.5 1.5 0 018 18.062V12.78L12 14z" /></svg>
+        โรงเรียนบ้านคลองมดแดง · KMD School
+      </div>
+      
+      <h1 class="kmd-title">เว็บไซต์หลักโรงเรียน<br><span class="highlight">และระบบบริการออนไลน์</span></h1>
+      
+      <p class="kmd-sub">
+        เข้าสู่เว็บไซต์โรงเรียนบ้านคลองมดแดง เพื่อติดตามข่าวสารประชาสัมพันธ์ ข้อมูลโรงเรียน ตรวจสอบผลการเรียน และเข้าใช้งานระบบสำหรับครูผู้สอนผ่านช่องทางใหม่ที่สะดวกรวดเร็วยิ่งขึ้น
+      </p>
+      
+      <div class="kmd-actions">
+        <a class="kmd-btn kmd-primary" href="https://school-website-three-puce.vercel.app/" target="_blank">
+          เข้าสู่เว็บไซต์โรงเรียน
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+        </a>
+        <a class="kmd-btn kmd-secondary" href="https://school-website-three-puce.vercel.app/teacher-hub" target="_blank">
+          ระบบครู (Teacher Hub)
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- ฝั่งขวา: ลิงก์ด่วนสำคัญ -->
+    <div class="kmd-panel">
+      <h3>
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+        ทางลัดสำคัญ
+      </h3>
+      
+      <a class="kmd-link" href="https://school-website-three-puce.vercel.app/results" target="_blank">
+        <span class="kmd-link-label">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" /></svg>
+          ประกาศผลสอบ
+        </span>
+        <span class="kmd-tag kmd-tag-success">เปิด</span>
+      </a>
+      
+      <a class="kmd-link" href="https://school-website-three-puce.vercel.app/page/contact" target="_blank">
+        <span class="kmd-link-label">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 0 1 2-2h3.28a1 1 0 0 1 .94.725l.548 2.2a1 1 0 0 1-.321.988l-1.305.98a10.582 10.582 0 0 0 4.872 4.872l.98-1.305a1 1 0 0 1 .988-.321l2.2.548a1 1 0 0 1 .725.94V19a2 2 0 0 1-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+          ติดต่อโรงเรียน
+        </span>
+        <span class="kmd-tag kmd-tag-success">เปิด</span>
+      </a>
+      
+      <a class="kmd-link" href="https://school-website-three-puce.vercel.app/privacy" target="_blank">
+        <span class="kmd-link-label">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          นโยบายคุ้มครองข้อมูลฯ
+        </span>
+        <span class="kmd-tag kmd-tag-warning">PDPA</span>
+      </a>
+
+      <!-- กล่องข้อมูลอัตลักษณ์คำขวัญของโรงเรียน (แทนกล่องสถิติและคำแนะนำเดิม) -->
+      <div class="kmd-motto-box">
+        <div class="kmd-motto-row">
+          <div class="kmd-motto-label">คำขวัญโรงเรียน</div>
+          <div class="kmd-motto-value">พัฒนา · สามัคคี · มีวินัย</div>
+        </div>
+        <div class="kmd-motto-divider"></div>
+        <div class="kmd-motto-row">
+          <div class="kmd-motto-label">อัตลักษณ์</div>
+          <div class="kmd-motto-value">“นักเรียนอ่อนน้อมถ่อมตน”</div>
+        </div>
+      </div>
+
+    </div>
+    
+  </div>
+</section>
+
+</body>
+</html>

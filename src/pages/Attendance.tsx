@@ -10,6 +10,7 @@ import {
 import { useTeacherAuth, type Role } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { PageLoading } from '../components/PageState';
+import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 
 type Status = 'present' | 'absent' | 'leave';
 interface Student { id: string; code?: string; name: string; emoji?: string; }
@@ -42,6 +43,19 @@ const fmtThai = (iso: string) => {
   return `${d} ${months[m - 1]} ${y + 543}`;
 };
 
+async function loadAttendanceDocsForPeriod(period: CsvPeriod, month: string, year: string) {
+  const start = period === 'month' ? `${month}-01` : `${year}-01-01`;
+  const end = period === 'month' ? `${month}-31` : `${year}-12-31`;
+  const snap = await getDocs(query(
+    collection(db, 'attendance'),
+    where('date', '>=', start),
+    where('date', '<=', end),
+  ));
+  const docs: AttDoc[] = [];
+  snap.forEach(d => docs.push(d.data() as AttDoc));
+  return docs;
+}
+
 const KG_ROOMS = [
   { id: 'kg_a2_1', label: 'อ.2/1' },
   { id: 'kg_a3_1', label: 'อ.3/1' },
@@ -54,6 +68,8 @@ const seedClasses = (): ClassRoster[] => {
 };
 
 type Tab = 'check' | 'summary' | 'stats' | 'history' | 'school';
+type CsvPeriod = 'month' | 'year';
+type CsvScope = 'class' | 'all';
 
 export default function Attendance() {
   const auth = useTeacherAuth();
@@ -67,6 +83,8 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
   const [classes, setClasses] = useState<ClassRoster[]>(seedClasses);
   const [classId, setClassId] = useState<string>('');
   const [date, setDate] = useState<string>(todayStr());
+  const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
+  const [csvScope, setCsvScope] = useState<CsvScope>('class');
   const [records, setRecords] = useState<AttDoc['records']>({});
   const [tab, setTab] = useState<Tab>('check');
   const [saving, setSaving] = useState(false);
@@ -328,18 +346,75 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
     }
   };
 
-  const exportCsv = () => {
-    const rows = [['รหัส', 'ชื่อ', 'สถานะ', 'หมายเหตุ']];
-    students.forEach(s => {
-      const r = records[s.id];
-      rows.push([s.code || '', s.name, r ? STATUS_LABELS[r.status] : '-', r?.note || '']);
+  const exportCsv = async () => {
+    if (!currentClass) return;
+    const month = date.slice(0, 7);
+    const year = date.slice(0, 4);
+    const targetClasses = csvScope === 'all' ? classes : [currentClass];
+    const docs = csvScope === 'all'
+      ? await loadAttendanceDocsForPeriod(csvPeriod, month, year)
+      : history;
+
+    const sections = targetClasses.map(classItem => {
+      const classDocs = docs.filter(docItem => docItem.classId === classItem.classId);
+      const rows = csvPeriod === 'month'
+        ? classItem.students.map((s, i) => {
+        const row = [String(i + 1), s.code || '', s.name];
+        let present = 0;
+        let absent = 0;
+        let leave = 0;
+        daysInMonth(month).forEach(day => {
+          const dayText = `${month}-${String(day).padStart(2, '0')}`;
+          const rec = classDocs.find(docItem => docItem.date === dayText)?.records?.[s.id];
+          if (rec?.status === 'present') present++;
+          if (rec?.status === 'absent') absent++;
+          if (rec?.status === 'leave') leave++;
+          row.push(rec ? STATUS_LABELS[rec.status] : '-');
+        });
+        row.push(String(present), String(absent), String(leave));
+        return row;
+      })
+        : classItem.students.map((s, i) => {
+        const row = [String(i + 1), s.code || '', s.name];
+        let present = 0;
+        let absent = 0;
+        let leave = 0;
+        Array.from({ length: 12 }, (_, idx) => idx + 1).forEach(monthNumber => {
+          const prefix = `${year}-${String(monthNumber).padStart(2, '0')}`;
+          const docsInMonth = classDocs.filter(docItem => docItem.date.startsWith(prefix));
+          let monthPresent = 0;
+          let monthTotal = 0;
+          docsInMonth.forEach(docItem => {
+            const rec = docItem.records?.[s.id];
+            if (!rec) return;
+            monthTotal++;
+            if (rec.status === 'present') { monthPresent++; present++; }
+            else if (rec.status === 'absent') absent++;
+            else if (rec.status === 'leave') leave++;
+          });
+          row.push(monthTotal ? `${monthPresent}/${monthTotal}` : '-');
+        });
+        row.push(String(present), String(absent), String(leave));
+        return row;
+      });
+
+      return {
+        title: `ชั้น ${classItem.label}`,
+        headers: csvPeriod === 'month'
+          ? ['ที่', 'รหัส', 'ชื่อ-สกุล', ...daysInMonth(month).map(String), 'รวมมา', 'รวมขาด', 'รวมลา']
+          : ['ที่', 'รหัส', 'ชื่อ-สกุล', ...THAI_MONTHS_FULL.map(m => `${m} (มา/รวม)`), 'รวมมา', 'รวมขาด', 'รวมลา'],
+        rows: rows.length ? rows : [['-', '-', 'ยังไม่มีรายชื่อนักเรียน']],
+      };
     });
-    const csv = '\ufeff' + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `เช็คชื่อ_${currentClass?.label}_${date}.csv`; a.click();
-    URL.revokeObjectURL(url);
+
+    const reportRows = makeSectionedReportRows({
+      title: 'รายงานเช็คชื่อนักเรียน โรงเรียนบ้านคลองมดแดง',
+      subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
+      meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${currentClass.label}`], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
+      sections,
+      footerRows: [['หมายเหตุ', csvPeriod === 'year' ? 'ช่องรายปีแสดงจำนวนมาเรียน/จำนวนวันที่มีข้อมูล' : 'มาเรียน/ขาด/ลา ตามข้อมูลที่บันทึก']],
+    });
+    downloadCsvReport(`เช็คชื่อ_${csvScope === 'all' ? 'ทุกชั้น' : currentClass.label}_${csvPeriod === 'month' ? `รายเดือน_${month}` : `รายปี_${year}`}`, reportRows);
   };
 
   return (
@@ -676,12 +751,31 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
               )}
             </div>
 
-            <button onClick={exportCsv} style={{
-              background: BRAND, color: 'white', padding: '10px 16px', borderRadius: 10,
-              border: 'none', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+            <div style={{
+              background: 'white', borderRadius: 14, padding: '1rem', border: '1px solid #FFEDD5',
+              display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap',
             }}>
-              <Download size={14} />ดาวน์โหลด CSV
-            </button>
+              <div>
+                <label style={lbl}>ฟอร์ม CSV</label>
+                <select value={csvPeriod} onChange={e => setCsvPeriod(e.target.value as CsvPeriod)} style={inp}>
+                  <option value="month">รายเดือน ({monthLabel(date.slice(0, 7))})</option>
+                  <option value="year">รายปี ({yearLabel(date.slice(0, 4))})</option>
+                </select>
+              </div>
+              <div>
+                <label style={lbl}>ขอบเขต CSV</label>
+                <select value={csvScope} onChange={e => setCsvScope(e.target.value as CsvScope)} style={inp}>
+                  <option value="class">ห้องนี้ ({currentClass?.label || '-'})</option>
+                  <option value="all">ทุกชั้น</option>
+                </select>
+              </div>
+              <button onClick={exportCsv} style={{
+                background: BRAND, color: 'white', padding: '10px 16px', borderRadius: 10,
+                border: 'none', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                <Download size={14} />โหลด CSV
+              </button>
+            </div>
           </div>
         )}
 
