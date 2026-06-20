@@ -23,7 +23,8 @@ import {
   Minus,
   Calendar as CalendarIcon,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  MessageCircle
 } from 'lucide-react';
 import TimetableSmart from '../components/TimetableSmart';
 import RosterManager from '../components/RosterManager';
@@ -76,6 +77,7 @@ interface Post {
   imageType?: 'image' | 'pdf';
   albumUrl?: string;
   tiktokUrl?: string;
+  facebookUrl?: string;
   websiteUrl?: string;
   documentUrl?: string;
 }
@@ -252,6 +254,7 @@ function Admin() {
   const [newImageType, setNewImageType] = useState<'image' | 'pdf'>('image');
   const [newAlbumUrl, setNewAlbumUrl] = useState('');
   const [newTiktokUrl, setNewTiktokUrl] = useState('');
+  const [newFacebookUrl, setNewFacebookUrl] = useState('');
   const [newWebsiteUrl, setNewWebsiteUrl] = useState('');
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
   const [childMediaConsentOk, setChildMediaConsentOk] = useState(false);
@@ -691,14 +694,14 @@ function Admin() {
   // ---------- Posts ----------
   const resetPostForm = () => {
     setPostId(null); setNewTitle(''); setNewContent(''); setNewImageUrl(''); setNewImageType('image'); 
-    setNewAlbumUrl(''); setNewTiktokUrl(''); setNewWebsiteUrl(''); setNewDocumentUrl('');
+    setNewAlbumUrl(''); setNewTiktokUrl(''); setNewFacebookUrl(''); setNewWebsiteUrl(''); setNewDocumentUrl('');
     setNewCategory('ข่าวประชาสัมพันธ์');
     setNewDate(new Date().toISOString().split('T')[0]);
   };
 
   const handleSubmitPost = async (e: FormEvent) => {
     e.preventDefault();
-    const hasPublicMedia = [newImageUrl, newAlbumUrl, newTiktokUrl].some(value => value.trim() !== '');
+    const hasPublicMedia = [newImageUrl, newAlbumUrl, newTiktokUrl, newFacebookUrl].some(value => value.trim() !== '');
     if (hasPublicMedia && !childMediaConsentOk) {
       showToast('กรุณายืนยัน notice/consent รูปภาพเด็กก่อนบันทึกสื่อสาธารณะ', 'error');
       return;
@@ -713,6 +716,7 @@ function Admin() {
         imageType: newImageType,
         albumUrl: newAlbumUrl,
         tiktokUrl: newTiktokUrl,
+        facebookUrl: newFacebookUrl,
         websiteUrl: newWebsiteUrl,
         documentUrl: newDocumentUrl,
         date: newDate || new Date().toISOString().split('T')[0],
@@ -743,6 +747,7 @@ function Admin() {
     setNewImageType(p.imageType || 'image');
     setNewAlbumUrl(p.albumUrl || '');
     setNewTiktokUrl(p.tiktokUrl || '');
+    setNewFacebookUrl(p.facebookUrl || '');
     setNewWebsiteUrl(p.websiteUrl || '');
     setNewDocumentUrl(p.documentUrl || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1200,6 +1205,11 @@ function Admin() {
                     <input type="text" className="form-control" value={newTiktokUrl} onChange={e => setNewTiktokUrl(e.target.value)} placeholder="https://www.tiktok.com/@..." />
                   </div>
                   <div className="mb-3">
+                    <label className="form-label small fw-bold">ลิงก์โพสต์ Facebook</label>
+                    <input type="text" className="form-control" value={newFacebookUrl} onChange={e => setNewFacebookUrl(e.target.value)} placeholder="https://www.facebook.com/share/p/..." />
+                    <div className="form-text">แนะนำให้ใส่ทุกข่าวประชาสัมพันธ์ ใช้เป็นปุ่มไปโพสต์จริง ถ้าต้องการรูปหน้าการ์ด ให้ใส่ URL รูปภาพ / PDF เพิ่มด้วย</div>
+                  </div>
+                  <div className="mb-3">
                     <label className="form-label small fw-bold">ลิงก์เว็บไซต์เพิ่มเติม</label>
                     <input type="text" className="form-control" value={newWebsiteUrl} onChange={e => setNewWebsiteUrl(e.target.value)} placeholder="https://..." />
                   </div>
@@ -1209,7 +1219,7 @@ function Admin() {
                   </div>
                   <div className="mb-3">
                     <label className="form-label small fw-bold">เนื้อหาอย่างย่อ</label>
-                    <textarea className="form-control" rows={4} value={newContent} onChange={e => setNewContent(e.target.value)}></textarea>
+                    <textarea className="form-control" rows={4} value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="จะว่างไว้ก็ได้ถ้าใช้โพสต์ Facebook เป็นแหล่งข่าวหลัก"></textarea>
                   </div>
                   <div className="d-flex gap-2">
                     <button type="submit" className="btn text-white flex-grow-1 py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2"
@@ -1236,6 +1246,7 @@ function Admin() {
                             <div className="d-flex align-items-center gap-2">
                               {p.imageUrl && <DriveImage src={p.imageUrl} style={{ width: '40px', height: '30px', objectFit: 'cover', borderRadius: '6px' }} />}
                               <span className="fw-bold small text-truncate" style={{ maxWidth: '220px' }}>{p.title}</span>
+                              {p.facebookUrl && <span className="badge d-inline-flex align-items-center gap-1" style={{ background: '#EFF6FF', color: '#1877F2' }}><MessageCircle size={12} /> FB</span>}
                             </div>
                           </td>
                           <td>

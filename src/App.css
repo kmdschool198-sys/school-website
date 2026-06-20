@@ -432,6 +432,12 @@
   }
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Show hamburger only on mobile (default = hidden via inline display:none) */
 @media (min-width: 769px) {
   .mobile-menu-btn {

@@ -15,6 +15,7 @@ import Footer from '../components/Footer';
 import { getDirectImageUrl } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
+import FacebookPostCard from '../components/FacebookPostCard';
 import { DEFAULT_ACTIVITIES, COLOR_ACTIVITY } from '../data/defaultActivities';
 
 
@@ -29,6 +30,7 @@ interface HomePost {
   imageType?: 'image' | 'pdf';
   albumUrl?: string;
   tiktokUrl?: string;
+  facebookUrl?: string;
   websiteUrl?: string;
   documentUrl?: string;
 }
@@ -486,7 +488,13 @@ function Home() {
               <div key={post.id} className="col-lg-4 col-md-6">
                 <div onClick={() => setActivePost(post as NewsItem)} className="news-card" style={{ cursor: 'pointer', background: 'white', borderRadius: '24px', overflow: 'hidden', height: '100%', border: '1px solid #F1F5F9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', transition: 'all 0.4s ease' }}>
                   <div style={{ height: 220, background: '#F8FAFC', position: 'relative' }}>
-                    <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {post.imageUrl?.trim() ? (
+                      <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : post.facebookUrl?.trim() ? (
+                      <FacebookPostCard url={post.facebookUrl} preview />
+                    ) : (
+                      <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
                     <div style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(255,106,1,0.95)', color: 'white', padding: '6px 14px', borderRadius: 50, fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>
                       {post.category}
                     </div>
@@ -497,15 +505,22 @@ function Home() {
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '1rem', flexWrap: 'wrap' }}>
                       {post.albumUrl?.trim() && <Tag color="#EC4899" icon={<ImageIcon size={11} />} label="อัลบั้ม" />}
                       {post.tiktokUrl?.trim() && <Tag color="#000" icon={<Video size={11} />} label="TikTok" />}
+                      {post.facebookUrl?.trim() && <Tag color="#1877F2" icon={<Globe size={11} />} label="Facebook" />}
                       {post.websiteUrl?.trim() && <Tag color="#3B82F6" icon={<Globe size={11} />} label="เว็บ" />}
                       {post.documentUrl?.trim() && <Tag color="#10B981" icon={<FileText size={11} />} label="เอกสาร" />}
                       {post.imageType === 'pdf' && <Tag color="#EF4444" icon={<FileText size={11} />} label="PDF" />}
                     </div>
 
+                    {post.facebookUrl?.trim() && (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <FacebookPostCard url={post.facebookUrl} compact />
+                      </div>
+                    )}
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid #F1F5F9' }}>
                       <span style={{ fontSize: '0.82rem', color: '#94A3B8', fontWeight: 600 }}>{post.date}</span>
                       <span style={{ color: '#FF6A01', fontWeight: 800, fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        อ่านต่อ <ArrowRight size={14} />
+                        {post.facebookUrl?.trim() ? 'เปิดโพสต์' : 'อ่านต่อ'} <ArrowRight size={14} />
                       </span>
                     </div>
                   </div>

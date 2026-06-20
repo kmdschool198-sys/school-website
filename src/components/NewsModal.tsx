@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { getDrivePreviewUrl } from '../utils/imageUtils';
 import DriveImage from './DriveImage';
 import { X, Calendar, Tag, Image as ImageIcon, ExternalLink, FileText, Globe, Video } from 'lucide-react';
+import FacebookPostCard from './FacebookPostCard';
 
 export interface NewsItem {
   id: string;
@@ -13,6 +14,7 @@ export interface NewsItem {
   imageType?: 'image' | 'pdf';
   albumUrl?: string;
   tiktokUrl?: string;
+  facebookUrl?: string;
   websiteUrl?: string;
   documentUrl?: string;
 }
@@ -112,6 +114,16 @@ export default function NewsModal({ post, onClose }: Props) {
             <p style={{ fontSize: '1rem', color: '#334155', lineHeight: 1.85, whiteSpace: 'pre-wrap', marginBottom: '2rem' }}>
               {post.content}
             </p>
+          )}
+
+          {!post.content?.trim() && post.facebookUrl?.trim() && (
+            <p style={{ fontSize: '1rem', color: '#475569', lineHeight: 1.85, marginBottom: '1rem' }}>
+              อ่านรายละเอียด รูปภาพ และความเคลื่อนไหวต่อได้จากโพสต์ Facebook ของโรงเรียน
+            </p>
+          )}
+
+          {post.facebookUrl && post.facebookUrl.trim() !== '' && (
+            <FacebookPostCard url={post.facebookUrl} title={post.title} />
           )}
 
           {post.albumUrl && (

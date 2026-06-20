@@ -15,6 +15,7 @@ import { sidebarMenus, pageContent } from '../data/pageContent';
 import { getDirectImageUrl, getDrivePreviewUrl } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
+import FacebookPostCard from '../components/FacebookPostCard';
 import { DEFAULT_STUDENTS } from '../data/defaultStudents';
 import { BUILDINGS, STATUS_COLOR, CATEGORY_ICON } from '../data/buildings';
 import Building3D from '../components/Building3D';
@@ -76,11 +77,29 @@ function InfoCard({ color, icon, title, children }: { color: string; icon: strin
   );
 }
 
+function LoadingState({ text }: { text: string }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 2rem', background: '#f8fafc', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
+      <div style={{
+        width: 42,
+        height: 42,
+        borderRadius: '50%',
+        border: '4px solid #FFEDD5',
+        borderTopColor: '#FF6A01',
+        margin: '0 auto 1rem',
+        animation: 'spin 0.9s linear infinite',
+      }} />
+      <p style={{ color: '#64748b', fontSize: '1.05rem', fontWeight: 700 }}>{text}</p>
+    </div>
+  );
+}
+
 function ContentPage() {
   const { slug } = useParams<{ slug: string }>();
   const activeSlug = slug || '';
   const [firePersonnel, setFirePersonnel] = useState<any[]>([]);
   const [firebasePosts, setFirebasePosts] = useState<any[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
   const [studentsData, setStudentsData] = useState<{ title?: string; subtitle?: string; rows: any[] } | null>(null);
   const [dynamicPage, setDynamicPage] = useState<{ title?: string, content?: string, bannerUrl?: string, blocks?: any[] } | null>(null);
   const [activePost, setActivePost] = useState<NewsItem | null>(null);
@@ -92,6 +111,10 @@ function ContentPage() {
     let unsubPers: any = null;
     let unsubPage: any = null;
     let unsubStu: any = null;
+    const usesPostList = activeSlug === 'pr-news' || activeSlug === 'e-newsletter' || activeSlug === 'school-awards' || activeSlug === 'gallery';
+
+    setPostsLoading(usesPostList);
+    if (usesPostList) setFirebasePosts([]);
 
     if (activeSlug === 'students') {
       unsubStu = onSnapshot(doc(db, 'config', 'students_count'), snap => {
@@ -126,8 +149,10 @@ function ContentPage() {
           .filter(p => p.category === targetCat)
           .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
         setFirebasePosts(filtered);
+        setPostsLoading(false);
       }, (err) => {
         console.error("Posts snapshot error:", err);
+        setPostsLoading(false);
       });
     }
 
@@ -141,6 +166,10 @@ function ContentPage() {
           if (d.albumUrl && d.albumUrl.trim() !== '') results.push(d);
         });
         setFirebasePosts(results);
+        setPostsLoading(false);
+      }, (err) => {
+        console.error("Gallery snapshot error:", err);
+        setPostsLoading(false);
       });
     }
 
@@ -823,7 +852,9 @@ function ContentPage() {
     if (data.type === 'gallery') {
       return (
         <div className="animate-fade-in">
-          {firebasePosts.length === 0 ? (
+          {postsLoading ? (
+            <LoadingState text="กำลังโหลดอัลบั้มภาพ..." />
+          ) : firebasePosts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 2rem', background: '#f8fafc', borderRadius: '24px' }}>
               <ImageIcon size={48} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
               <p style={{ color: '#94a3b8', fontSize: '1.05rem', fontWeight: 600 }}>ยังไม่มีอัลบั้มภาพ</p>
@@ -880,6 +911,10 @@ function ContentPage() {
     }
 
     if (data.type === 'news') {
+      if (postsLoading) {
+        return <LoadingState text="กำลังโหลดข่าวสาร..." />;
+      }
+
       return (
         <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
           {firebasePosts.map((post) => (
@@ -888,17 +923,27 @@ function ContentPage() {
               onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)'; }}
             >
               <div style={{ height: '200px', background: '#f8fafc' }}>
-                <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {post.imageUrl?.trim() ? (
+                  <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : post.facebookUrl?.trim() ? (
+                  <FacebookPostCard url={post.facebookUrl} preview />
+                ) : (
+                  <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
               </div>
               <div style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.8rem', marginBottom: '0.8rem' }}>
                   <Calendar size={14} /> {post.date}
                 </div>
                 <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem', color: '#1e293b', lineHeight: 1.4 }}>{post.title}</h4>
-                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, marginBottom: '1.5rem' }}>{post.content.substring(0, 90)}...</p>
+                <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                  {post.content?.trim()
+                    ? `${post.content.substring(0, 90)}...`
+                    : (post.facebookUrl?.trim() ? 'อ่านรายละเอียด รูปภาพ และความเคลื่อนไหวต่อได้บน Facebook' : '')}
+                </p>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <span style={{ color: '#FF6A01', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    อ่านรายละเอียด <ChevronRight size={16} />
+                    {post.facebookUrl?.trim() ? 'เปิดโพสต์ Facebook' : 'อ่านรายละเอียด'} <ChevronRight size={16} />
                   </span>
                   {post.imageType === 'pdf' && (
                     <a href={post.imageUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#64748b', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
@@ -918,6 +963,11 @@ function ContentPage() {
                       <Video size={14} /> TikTok
                     </a>
                   )}
+                  {post.facebookUrl && post.facebookUrl.trim() !== '' && (
+                    <a href={post.facebookUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#1877F2', fontSize: '0.8rem', textDecoration: 'none', background: '#EFF6FF', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Globe size={14} /> Facebook
+                    </a>
+                  )}
                   {post.websiteUrl && post.websiteUrl.trim() !== '' && (
                     <a href={post.websiteUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#3B82F6', fontSize: '0.8rem', textDecoration: 'none', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Globe size={14} /> เว็บไซต์
@@ -929,6 +979,11 @@ function ContentPage() {
                     </a>
                   )}
                 </div>
+                {post.facebookUrl && post.facebookUrl.trim() !== '' && (
+                  <div style={{ marginTop: '1rem' }}>
+                    <FacebookPostCard url={post.facebookUrl} compact />
+                  </div>
+                )}
               </div>
             </div>
           ))}

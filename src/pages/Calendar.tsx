@@ -17,6 +17,7 @@ interface Post {
   imageType?: string;
   albumUrl?: string;
   tiktokUrl?: string;
+  facebookUrl?: string;
   websiteUrl?: string;
   documentUrl?: string;
   content?: string;
@@ -383,6 +384,9 @@ export default function CalendarPage() {
                               )}
                               {p.tiktokUrl && (
                                 <a href={p.tiktokUrl} target="_blank" rel="noreferrer" style={chipLink}><LinkIcon size={12} /> TikTok</a>
+                              )}
+                              {p.facebookUrl && (
+                                <a href={p.facebookUrl} target="_blank" rel="noreferrer" style={chipLink}><LinkIcon size={12} /> Facebook</a>
                               )}
                             </div>
                           </div>
