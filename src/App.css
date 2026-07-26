@@ -425,6 +425,15 @@
     margin-top: -2rem !important;
     padding-bottom: 3rem !important;
   }
+
+  /* PDPA consent banner: stack rows so text isn't squeezed */
+  .privacy-consent-card {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+  .privacy-consent-icon { display: none !important; }
+  .privacy-consent-actions { justify-content: flex-end; }
   /* Modals/dialogs fit the screen */
   div[style*="position: fixed"] > div[style*="maxWidth"],
   div[style*="position: fixed"] > div[style*="max-width"] {

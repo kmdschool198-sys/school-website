@@ -34,7 +34,7 @@ export default function PrivacyConsentBanner() {
       justifyContent: 'center',
       pointerEvents: 'none',
     }}>
-      <div style={{
+      <div className="privacy-consent-card" style={{
         width: 'min(960px, 100%)',
         background: '#0F172A',
         color: '#E2E8F0',
@@ -48,7 +48,7 @@ export default function PrivacyConsentBanner() {
         alignItems: 'center',
         pointerEvents: 'auto',
       }}>
-        <div style={{
+        <div className="privacy-consent-icon" style={{
           width: 38,
           height: 38,
           borderRadius: 10,
@@ -69,7 +69,7 @@ export default function PrivacyConsentBanner() {
             </Link>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="privacy-consent-actions" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={accept} style={{
             border: 'none',
             borderRadius: 8,

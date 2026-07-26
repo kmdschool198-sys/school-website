@@ -13,6 +13,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "preview"],
       "port": 4173
+    },
+    {
+      "name": "krujames-check",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "-s", "C:/Users/KruJames/.gemini/antigravity/scratch/krujamesoncom-website/dist", "-l", "5189"],
+      "port": 5189
     }
   ]
 }

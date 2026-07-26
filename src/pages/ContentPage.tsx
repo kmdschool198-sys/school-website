@@ -1014,8 +1014,8 @@ function ContentPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 600 }}>
             <HomeIcon size={16} /> <ChevronRight size={14} /> {catKey}
           </div>
-          <h1 style={{ color: 'white', fontSize: '3.5rem', fontWeight: 900, marginBottom: '0', letterSpacing: '-1px' }}>{data.title}</h1>
-          <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.2rem', marginTop: '1rem' }}>{data.subtitle}</p>
+          <h1 style={{ color: 'white', fontSize: 'clamp(1.6rem, 6vw, 3.5rem)', fontWeight: 900, marginBottom: '0', letterSpacing: '-1px', lineHeight: 1.15 }}>{data.title}</h1>
+          <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 'clamp(0.95rem, 3vw, 1.2rem)', marginTop: '1rem' }}>{data.subtitle}</p>
         </div>
       </section>
 
