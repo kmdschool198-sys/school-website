@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { ChevronLeft, Search, Calendar, X as XIcon, FileText, Award, Printer } from 'lucide-react';
 import type { PublicResultAnnouncement, ResultLookupDoc, ResultRow } from '../data/results';
 import { normalizeResultCode, resultLookupDocId, totalScore, pctColor } from '../data/results';
+import ShareBar from '../components/ShareBar';
 
 const BRAND = '#FF6A01';
 
@@ -71,9 +72,11 @@ export default function ResultsPage() {
             <Award size={36} />
             <h1 style={{ margin: 0, fontSize: '2.2rem', fontWeight: 900 }}>📢 ประกาศผลสอบนักเรียน</h1>
           </div>
-          <p style={{ opacity: 0.95, fontSize: '1rem', margin: 0 }}>
+          <p style={{ opacity: 0.95, fontSize: '1rem', margin: 0, marginBottom: 14 }}>
             เลือกประกาศ → กรอกเลขประจำตัวนักเรียน → ตรวจสอบผลสอบของตัวเอง
           </p>
+          {/* Let staff/parents share this page to LINE groups easily */}
+          <ShareBar url="/results" title="ประกาศผลสอบนักเรียน" compact />
         </div>
       </header>
 

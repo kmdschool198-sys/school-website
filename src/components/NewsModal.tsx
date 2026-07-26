@@ -3,6 +3,7 @@ import { getDrivePreviewUrl } from '../utils/imageUtils';
 import DriveImage from './DriveImage';
 import { X, Calendar, Tag, Image as ImageIcon, ExternalLink, FileText, Globe, Video } from 'lucide-react';
 import FacebookPostCard from './FacebookPostCard';
+import ShareBar from './ShareBar';
 
 export interface NewsItem {
   id: string;
@@ -201,6 +202,11 @@ export default function NewsModal({ post, onClose }: Props) {
                 <FileText size={16} /> เอกสารแนบ
               </a>
             )}
+          </div>
+
+          {/* Share this post */}
+          <div style={{ marginTop: '1.5rem' }}>
+            <ShareBar url={`/?post=${encodeURIComponent(post.id)}`} title={post.title} />
           </div>
 
           <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid #FFEDD5', textAlign: 'right' }}>

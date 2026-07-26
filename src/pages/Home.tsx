@@ -54,6 +54,7 @@ function Home() {
   const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
   const [currentHighlightSlide, setCurrentHighlightSlide] = useState(0);
   const [activePost, setActivePost] = useState<NewsItem | null>(null);
+  const [allPosts, setAllPosts] = useState<HomePost[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
 
   useEffect(() => {
@@ -88,6 +89,7 @@ function Home() {
       });
       setHeroSlides(fetchedSlides);
       setPosts(fetchedPosts.slice(0, 6));
+      setAllPosts(fetchedPosts);
     });
 
     const unsubAct = onSnapshot(collection(db, 'activities'), snap => {
@@ -101,6 +103,28 @@ function Home() {
 
     return () => { unsubscribe(); unsubH(); unsubAct(); };
   }, []);
+
+  // Deep link: /?post=<id> opens that news item directly (for shared links)
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('post');
+    if (!id || activePost || allPosts.length === 0) return;
+    const found = allPosts.find(p => String((p as any).id) === id);
+    if (found) setActivePost(found as unknown as NewsItem);
+  }, [allPosts, activePost]);
+
+  // Keep the URL in sync so users can copy/share the address bar too
+  const openPost = (p: any) => {
+    setActivePost(p as NewsItem);
+    const url = new URL(window.location.href);
+    url.searchParams.set('post', String(p.id));
+    window.history.replaceState({}, '', url);
+  };
+  const closePost = () => {
+    setActivePost(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('post');
+    window.history.replaceState({}, '', url);
+  };
 
   useEffect(() => {
     if (heroSlides.length <= 1) return;
@@ -486,7 +510,7 @@ function Home() {
             )}
             {posts.map((post) => (
               <div key={post.id} className="col-lg-4 col-md-6">
-                <div onClick={() => setActivePost(post as NewsItem)} className="news-card" style={{ cursor: 'pointer', background: 'white', borderRadius: '24px', overflow: 'hidden', height: '100%', border: '1px solid #F1F5F9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', transition: 'all 0.4s ease' }}>
+                <div onClick={() => openPost(post)} className="news-card" style={{ cursor: 'pointer', background: 'white', borderRadius: '24px', overflow: 'hidden', height: '100%', border: '1px solid #F1F5F9', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', transition: 'all 0.4s ease' }}>
                   <div style={{ height: 220, background: '#F8FAFC', position: 'relative' }}>
                     {post.imageUrl?.trim() ? (
                       <DriveImage src={post.imageUrl} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -594,7 +618,7 @@ function Home() {
         </div>
       </section>
 
-      <NewsModal post={activePost} onClose={() => setActivePost(null)} />
+      <NewsModal post={activePost} onClose={closePost} />
       <Footer />
 
       <style>{`
