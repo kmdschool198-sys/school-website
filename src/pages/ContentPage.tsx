@@ -11,6 +11,7 @@ import {
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
+import BranchPersonnel from '../components/BranchPersonnel';
 import '../App.css';
 import { sidebarMenus, pageContent } from '../data/pageContent';
 import { getDirectImageUrl, getDrivePreviewUrl } from '../utils/imageUtils';
@@ -842,6 +843,8 @@ function ContentPage() {
               ยังไม่มีรายชื่อบุคลากรในหมวดนี้
             </div>
           )}
+          {/* ครูโรงเรียนสาขา — ข้อมูลคนละชุดกับบุคลากรด้านบน แสดงเฉพาะหน้า "บุคลากร" */}
+          {activeSlug === 'teacher' && <BranchPersonnel />}
         </div>
       );
     }

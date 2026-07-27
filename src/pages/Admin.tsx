@@ -55,6 +55,7 @@ import Toast from '../components/Toast';
 import { DEFAULT_STUDENTS } from '../data/defaultStudents';
 import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 import PersonnelSync from '../components/PersonnelSync';
+import BranchPersonnelManager from '../components/BranchPersonnelManager';
 import {
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
@@ -120,7 +121,7 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'clubs' | 'staff' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'branch-personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'clubs' | 'staff' | 'settings';
 
 interface StudentRow {
   class: string;
@@ -1177,6 +1178,7 @@ function Admin() {
     news: 'จัดการข่าวสาร',
     highlights: 'จัดการ Highlight Slides',
     personnel: 'จัดการข้อมูลบุคลากร',
+    'branch-personnel': 'ครูโรงเรียนสาขา',
     contents: 'จัดการเนื้อหาหน้าเว็บ',
     activities: 'ปฏิทินกิจกรรม / วันหยุด',
     students: 'จำนวนนักเรียน',
@@ -1192,6 +1194,7 @@ function Admin() {
     news: 'เพิ่มข่าวจาก Facebook พร้อมรูปปกและลิงก์ที่เกี่ยวข้อง',
     highlights: 'จัดการสไลด์เนื้อหาสำคัญบนหน้าแรก',
     personnel: 'เพิ่ม แก้ไข และเรียงลำดับข้อมูลบุคลากร',
+    'branch-personnel': 'ข้อมูลแสดงอย่างเดียว แยกจากบุคลากรโรงเรียนหลัก ไม่นับรวมในสถิติใด ๆ',
     contents: 'แก้ไขข้อความและภาพประกอบในแต่ละหน้าของเว็บไซต์',
     activities: 'เพิ่มกิจกรรม วันสำคัญ และวันหยุดของโรงเรียน',
     students: 'ปรับจำนวนและข้อมูลนักเรียนแยกตามชั้น',
@@ -1214,6 +1217,7 @@ function Admin() {
         ['news', <Rss size={18} key="n" />, 'ข่าว & สไลด์ฮีโร่'],
         ['highlights', <Sparkles size={18} key="h" />, 'Highlight Slides'],
         ['personnel', <Users size={18} key="p" />, 'บุคลากร'],
+        ['branch-personnel', <Users size={18} key="bp" />, 'ครูโรงเรียนสาขา'],
         ['contents', <Globe size={18} key="c" />, 'เนื้อหาหน้าเว็บ'],
         ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม'],
         ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
@@ -1814,6 +1818,9 @@ function Admin() {
             </div>
           </div>
         )}
+
+        {/* ครูโรงเรียนสาขา — คนละชุดกับบุคลากรด้านบน */}
+        {activeTab === 'branch-personnel' && <BranchPersonnelManager />}
 
         {/* Contents */}
         {activeTab === 'contents' && (

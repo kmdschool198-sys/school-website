@@ -95,6 +95,13 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
+    // ครูโรงเรียนสาขา — ข้อมูลสำหรับแสดงบนหน้าบุคลากรเท่านั้น
+    // เก็บแยกจาก personnel เพื่อไม่ให้ปนกับบุคลากรและระบบงานของโรงเรียนหลัก
+    match /branch_personnel/{documentId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
     match /highlights/{documentId} {
       allow read: if true;
       allow write: if isStaff();
