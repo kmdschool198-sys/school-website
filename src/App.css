@@ -409,6 +409,77 @@
   background: #FFFBF5;
 }
 
+.admin-bulk-import {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #DBEAFE;
+  border-left: 3px solid #2563EB;
+  border-radius: 8px;
+  background: #F8FBFF;
+}
+
+.admin-bulk-consent {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  color: #475569;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.admin-bulk-consent input {
+  margin-top: 0.15rem;
+  flex: 0 0 auto;
+}
+
+.admin-bulk-json-paste {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem 0.75rem;
+}
+
+.admin-bulk-json-paste label {
+  grid-column: 1 / -1;
+}
+
+.admin-bulk-json-paste textarea {
+  min-height: 4.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  resize: vertical;
+  font: 0.78rem/1.45 Consolas, monospace;
+}
+
+.admin-bulk-json-paste .btn {
+  align-self: end;
+}
+
+@media (max-width: 640px) {
+  .admin-bulk-import {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-bulk-import .btn,
+  .admin-bulk-json-paste {
+    width: 100%;
+  }
+
+  .admin-bulk-json-paste {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-bulk-import .btn {
+    justify-content: center;
+  }
+}
+
 .admin-form-actions {
   position: sticky;
   bottom: 0;

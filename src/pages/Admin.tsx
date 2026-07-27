@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
+import { useState, useEffect, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import {
   Settings,
   Users,
@@ -34,7 +34,7 @@ import RosterManager from '../components/RosterManager';
 import ClubsManager from '../components/ClubsManager';
 import {
   collection, addDoc, getDocs, deleteDoc, doc, orderBy, query,
-  updateDoc, setDoc, getDoc
+  updateDoc, setDoc, getDoc, writeBatch
 } from 'firebase/firestore';
 import {
   GoogleAuthProvider,
@@ -261,6 +261,9 @@ function Admin() {
   const [newWebsiteUrl, setNewWebsiteUrl] = useState('');
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
   const [childMediaConsentOk, setChildMediaConsentOk] = useState(false);
+  const [bulkMediaConsentOk, setBulkMediaConsentOk] = useState(false);
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkImportJson, setBulkImportJson] = useState('');
   const [showAdvancedPostFields, setShowAdvancedPostFields] = useState(false);
   const [postSearch, setPostSearch] = useState('');
   const [postCategoryFilter, setPostCategoryFilter] = useState('all');
@@ -742,6 +745,79 @@ function Admin() {
       showToast('บันทึกไม่สำเร็จ', 'error');
     }
     setLoading(false);
+  };
+
+  const importBulkNewsJson = async (jsonText: string) => {
+    if (!bulkMediaConsentOk) {
+      showToast('กรุณายืนยันสิทธิ์เผยแพร่รูปข่าวก่อนนำเข้า', 'error');
+      return;
+    }
+
+    setBulkImporting(true);
+    try {
+      const raw = JSON.parse(jsonText);
+      if (!Array.isArray(raw) || raw.length === 0 || raw.length > 450) {
+        throw new Error('invalid-import-size');
+      }
+
+      const existingByFacebookUrl = new Map(
+        posts
+          .filter(post => post.facebookUrl?.trim())
+          .map(post => [post.facebookUrl!.trim(), post])
+      );
+      const seenFacebookUrls = new Set<string>();
+      const batch = writeBatch(db);
+      let created = 0;
+      let updated = 0;
+
+      raw.forEach((record: Record<string, unknown>) => {
+        const title = String(record.title || '').trim();
+        const date = String(record.date || '').trim();
+        const facebookUrl = String(record.facebookUrl || '').trim();
+        if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          throw new Error('invalid-import-record');
+        }
+        if (facebookUrl && seenFacebookUrls.has(facebookUrl)) return;
+        if (facebookUrl) seenFacebookUrls.add(facebookUrl);
+
+        const data = {
+          title,
+          date,
+          category: 'ข่าวประชาสัมพันธ์',
+          content: String(record.content || '').trim(),
+          imageUrl: String(record.imageUrl || '').trim(),
+          imageType: record.imageType === 'pdf' ? 'pdf' : 'image',
+          albumUrl: String(record.albumUrl || '').trim(),
+          tiktokUrl: String(record.tiktokUrl || '').trim(),
+          facebookUrl,
+          websiteUrl: String(record.websiteUrl || '').trim(),
+          documentUrl: String(record.documentUrl || '').trim(),
+        };
+
+        const existing = facebookUrl ? existingByFacebookUrl.get(facebookUrl) : undefined;
+        const target = existing ? doc(db, 'posts', existing.id) : doc(collection(db, 'posts'));
+        batch.set(target, data, { merge: true });
+        if (existing) updated += 1;
+        else created += 1;
+      });
+
+      await batch.commit();
+      await loadNews();
+      setBulkImportJson('');
+      showToast(`นำเข้าข่าวสำเร็จ: เพิ่ม ${created} อัปเดต ${updated}`, 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('นำเข้าไม่สำเร็จ กรุณาตรวจรูปแบบไฟล์ JSON', 'error');
+    } finally {
+      setBulkImporting(false);
+    }
+  };
+
+  const handleBulkNewsImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    await importBulkNewsJson(await file.text());
   };
 
   const handleEditPost = (p: Post) => {
@@ -1362,6 +1438,61 @@ function Admin() {
                   >
                     เพิ่มโพสต์ใหม่
                   </button>
+                </div>
+                <div className="admin-bulk-import mb-3">
+                  <div>
+                    <div className="fw-bold d-flex align-items-center gap-2">
+                      <ArrowUp size={17} />
+                      นำเข้าข่าวหลายรายการ
+                    </div>
+                    <div className="small text-muted">
+                      รองรับไฟล์ JSON และอัปเดตข่าวเดิมจากลิงก์ Facebook โดยไม่สร้างรายการซ้ำ
+                    </div>
+                  </div>
+                  <label className="admin-bulk-consent">
+                    <input
+                      type="checkbox"
+                      checked={bulkMediaConsentOk}
+                      onChange={event => setBulkMediaConsentOk(event.target.checked)}
+                    />
+                    <span>ยืนยันว่ารูปและข้อความในชุดนี้มีสิทธิ์เผยแพร่บนเว็บไซต์</span>
+                  </label>
+                  <label
+                    className={`btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2 ${bulkImporting ? 'disabled' : ''}`}
+                    aria-disabled={bulkImporting}
+                  >
+                    <ArrowUp size={15} />
+                    {bulkImporting ? 'กำลังนำเข้า...' : 'เลือกไฟล์ JSON'}
+                    <input
+                      type="file"
+                      accept="application/json,.json"
+                      hidden
+                      disabled={bulkImporting}
+                      onChange={handleBulkNewsImport}
+                    />
+                  </label>
+                  <div className="admin-bulk-json-paste">
+                    <label htmlFor="bulk-news-json" className="small fw-bold">
+                      หรือวางข้อมูล JSON
+                    </label>
+                    <textarea
+                      id="bulk-news-json"
+                      rows={3}
+                      value={bulkImportJson}
+                      disabled={bulkImporting}
+                      onChange={event => setBulkImportJson(event.target.value)}
+                      placeholder='วางข้อมูลรูปแบบ [{"title":"...","date":"2026-07-25"}]'
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-primary"
+                      disabled={bulkImporting || !bulkImportJson.trim()}
+                      onClick={() => void importBulkNewsJson(bulkImportJson)}
+                    >
+                      <ArrowUp size={15} />
+                      นำเข้าข้อมูลที่วาง
+                    </button>
+                  </div>
                 </div>
                 <div className="admin-list-filters mb-3">
                   <div className="admin-search-field">
