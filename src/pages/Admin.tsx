@@ -24,7 +24,10 @@ import {
   Calendar as CalendarIcon,
   ExternalLink,
   RefreshCw,
-  MessageCircle
+  MessageCircle,
+  Search,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import TimetableSmart from '../components/TimetableSmart';
 import RosterManager from '../components/RosterManager';
@@ -258,6 +261,9 @@ function Admin() {
   const [newWebsiteUrl, setNewWebsiteUrl] = useState('');
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
   const [childMediaConsentOk, setChildMediaConsentOk] = useState(false);
+  const [showAdvancedPostFields, setShowAdvancedPostFields] = useState(false);
+  const [postSearch, setPostSearch] = useState('');
+  const [postCategoryFilter, setPostCategoryFilter] = useState('all');
 
   // Students count — seed from DEFAULT_STUDENTS so admin form has same data as public page
   const [studentsTitle, setStudentsTitle] = useState(DEFAULT_STUDENTS.title);
@@ -697,6 +703,7 @@ function Admin() {
     setNewAlbumUrl(''); setNewTiktokUrl(''); setNewFacebookUrl(''); setNewWebsiteUrl(''); setNewDocumentUrl('');
     setNewCategory('ข่าวประชาสัมพันธ์');
     setNewDate(new Date().toISOString().split('T')[0]);
+    setShowAdvancedPostFields(false);
   };
 
   const handleSubmitPost = async (e: FormEvent) => {
@@ -750,6 +757,7 @@ function Admin() {
     setNewFacebookUrl(p.facebookUrl || '');
     setNewWebsiteUrl(p.websiteUrl || '');
     setNewDocumentUrl(p.documentUrl || '');
+    setShowAdvancedPostFields(Boolean(p.content || p.tiktokUrl || p.websiteUrl || p.documentUrl));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1019,27 +1027,70 @@ function Admin() {
     settings: 'ตั้งค่าระบบ'
   };
 
+  const tabDescription: Record<AdminTab, string> = {
+    dashboard: 'เลือกงานที่ต้องการทำจากปุ่มลัดหรือเมนูด้านซ้าย',
+    news: 'เพิ่มข่าวจาก Facebook พร้อมรูปปกและลิงก์ที่เกี่ยวข้อง',
+    highlights: 'จัดการสไลด์เนื้อหาสำคัญบนหน้าแรก',
+    personnel: 'เพิ่ม แก้ไข และเรียงลำดับข้อมูลบุคลากร',
+    contents: 'แก้ไขข้อความและภาพประกอบในแต่ละหน้าของเว็บไซต์',
+    activities: 'เพิ่มกิจกรรม วันสำคัญ และวันหยุดของโรงเรียน',
+    students: 'ปรับจำนวนและข้อมูลนักเรียนแยกตามชั้น',
+    timetable: 'ดูแลตารางสอนและตารางเรียน',
+    roster: 'จัดการรายชื่อนักเรียนสำหรับระบบเช็คชื่อ',
+    clubs: 'จัดการชุมนุม กิจกรรม และลูกเสือ',
+    staff: 'กำหนดผู้ใช้งานและระดับสิทธิ์ของครู',
+    settings: 'แก้ไขข้อมูลพื้นฐานและช่องทางติดต่อของโรงเรียน'
+  };
+
   const sliderCount = posts.filter(p => p.category === 'แบนเนอร์สไลด์หน้าแรก').length;
-  const navItems: [AdminTab, ReactNode, string][] = [
-    ['dashboard', <Database size={18} key="d" />, 'แดชบอร์ด'],
-    ['news', <Rss size={18} key="n" />, 'ข่าว & สไลด์เฮียร์โร'],
-    ['highlights', <Sparkles size={18} key="h" />, 'Highlight Slides'],
-    ['personnel', <Users size={18} key="p" />, 'บุคลากร'],
-    ['contents', <Globe size={18} key="c" />, 'เนื้อหาหน้าเว็บ'],
-    ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม'],
-    ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
-    ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
-    ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
-    ['clubs', <Users size={18} key="cb" />, 'ชุมนุม-กิจกรรม'],
-    ...(canManageUsers ? [['staff', <ShieldCheck size={18} key="sf" />, 'ผู้ใช้และสิทธิ์'] as [AdminTab, ReactNode, string]] : []),
-    ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
+  const navGroups: { label: string; items: [AdminTab, ReactNode, string][] }[] = [
+    {
+      label: 'ภาพรวม',
+      items: [['dashboard', <Database size={18} key="d" />, 'แดชบอร์ด']]
+    },
+    {
+      label: 'เว็บไซต์',
+      items: [
+        ['news', <Rss size={18} key="n" />, 'ข่าว & สไลด์ฮีโร่'],
+        ['highlights', <Sparkles size={18} key="h" />, 'Highlight Slides'],
+        ['personnel', <Users size={18} key="p" />, 'บุคลากร'],
+        ['contents', <Globe size={18} key="c" />, 'เนื้อหาหน้าเว็บ'],
+        ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม'],
+        ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
+      ]
+    },
+    {
+      label: 'งานครู',
+      items: [
+        ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
+        ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
+        ['clubs', <Users size={18} key="cb" />, 'ชุมนุม-กิจกรรม'],
+      ]
+    },
+    {
+      label: 'ระบบ',
+      items: [
+        ...(canManageUsers ? [['staff', <ShieldCheck size={18} key="sf" />, 'ผู้ใช้และสิทธิ์'] as [AdminTab, ReactNode, string]] : []),
+        ['settings', <Settings size={18} key="s" />, 'ตั้งค่า'],
+      ]
+    },
   ];
+  const normalizedPostSearch = postSearch.trim().toLocaleLowerCase('th-TH');
+  const filteredPosts = posts.filter(post => {
+    const matchesCategory = postCategoryFilter === 'all' || post.category === postCategoryFilter;
+    const matchesSearch = !normalizedPostSearch
+      || post.title.toLocaleLowerCase('th-TH').includes(normalizedPostSearch)
+      || (post.content || '').toLocaleLowerCase('th-TH').includes(normalizedPostSearch);
+    return matchesCategory && matchesSearch;
+  });
+  const postHasPublicMedia = [newImageUrl, newAlbumUrl, newTiktokUrl, newFacebookUrl]
+    .some(value => value.trim() !== '');
 
   return (
     <div className="admin-dashboard-layout" style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(135deg,#FFF7ED 0%, #FFFFFF 50%, #FFF7ED 100%)' }}>
       {/* Sidebar */}
-      <aside style={{ width: '280px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderRight: '1px solid #FFEDD5', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column' }}>
-        <div className="d-flex align-items-center gap-3 mb-5 px-2">
+      <aside className="admin-sidebar" style={{ width: '280px', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderRight: '1px solid #FFEDD5', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+        <div className="admin-sidebar-brand d-flex align-items-center gap-3 mb-4 px-2">
           <div style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', padding: '10px', borderRadius: '14px' }}>
             <Layout size={22} color="white" />
           </div>
@@ -1047,7 +1098,7 @@ function Admin() {
         </div>
 
         {currentStaff && (
-          <div style={{ ...GLASS_CARD, padding: '0.9rem', marginBottom: '1.25rem' }}>
+          <div className="admin-user-card" style={{ ...GLASS_CARD, padding: '0.9rem', marginBottom: '1.25rem' }}>
             <div className="d-flex align-items-center gap-2 mb-2">
               <ShieldCheck size={16} color="#FF6A01" />
               <div className="small fw-bold" style={{ color: '#0F172A' }}>กำลังใช้งาน</div>
@@ -1060,72 +1111,101 @@ function Admin() {
           </div>
         )}
 
-        <nav className="d-flex flex-column gap-2">
-          {navItems.map(([key, icon, label]) => (
-            <button key={key} onClick={() => setActiveTab(key)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '0.85rem 1rem', borderRadius: '12px',
-                border: 'none', textAlign: 'left',
-                background: activeTab === key ? 'linear-gradient(135deg,#FF6A01,#FB923C)' : 'transparent',
-                color: activeTab === key ? 'white' : '#475569',
-                fontWeight: 700, fontSize: '0.92rem',
-                boxShadow: activeTab === key ? '0 8px 20px rgba(255,106,1,0.25)' : 'none',
-                transition: 'all 0.25s ease'
-              }}>
-              {icon}<span>{label}</span>
-            </button>
+        <nav className="admin-nav">
+          {navGroups.map(group => (
+            <div className="admin-nav-group" key={group.label}>
+              <div className="admin-nav-label">{group.label}</div>
+              {group.items.map(([key, icon, label]) => (
+                <button
+                  key={key}
+                  className={`admin-nav-button${activeTab === key ? ' is-active' : ''}`}
+                  onClick={() => setActiveTab(key)}
+                  aria-current={activeTab === key ? 'page' : undefined}
+                >
+                  {icon}<span>{label}</span>
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 
-        <div className="mt-auto pt-4">
+        <div className="admin-sidebar-footer mt-auto pt-4">
           <div style={{ ...GLASS_CARD, padding: '0.9rem', marginBottom: '0.75rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
             {dbStatus === 'online' && <CheckCircle2 size={18} color="#22C55E" />}
             {dbStatus === 'offline' && <AlertTriangle size={18} color="#EF4444" />}
             {dbStatus === 'checking' && <Database size={18} color="#FB923C" />}
             <div style={{ fontSize: '0.78rem' }}>
               <div style={{ fontWeight: 700 }}>Firestore</div>
-              <div style={{ color: '#64748b' }}>{dbStatus === 'online' ? 'Connected' : dbStatus === 'offline' ? 'Offline' : 'Checking...'}</div>
+              <div style={{ color: '#64748b' }}>{dbStatus === 'online' ? 'เชื่อมต่อแล้ว' : dbStatus === 'offline' ? 'ออฟไลน์' : 'กำลังตรวจสอบ...'}</div>
             </div>
           </div>
-          <button onClick={handleLogout} className="btn btn-outline-danger w-100 rounded-3 d-flex align-items-center justify-content-center gap-2 py-2">
-            <LogOut size={16} /> Logout
+          <button onClick={handleLogout} className="btn btn-outline-danger w-100 rounded-3 d-flex align-items-center justify-content-center gap-2 py-2" aria-label="ออกจากระบบ" title="ออกจากระบบ">
+            <LogOut size={16} /> ออกจากระบบ
           </button>
         </div>
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, padding: '2.5rem 3rem', overflowY: 'auto' }}>
+      <main className="admin-main" style={{ flex: 1, padding: '2.5rem 3rem', overflowY: 'auto' }}>
         <header className="mb-4">
           <h2 className="fw-bold mb-1">{tabTitle[activeTab]}</h2>
-          <p className="text-muted mb-0">ปรับปรุงข้อมูลเรียลไทม์ลง Firebase Firestore</p>
+          <p className="text-muted mb-0">{tabDescription[activeTab]}</p>
         </header>
 
-        {/* Status Cards (always visible) */}
-        <div className="row g-3 mb-4">
-          {[
-            { label: 'โพสต์ทั้งหมด', val: posts.length, icon: <Rss size={20} />, color: '#FF6A01' },
-            { label: 'Hero Slides', val: sliderCount, icon: <ImageIcon size={20} />, color: '#FB923C' },
-            { label: 'Highlight Slides', val: highlights.length, icon: <Sparkles size={20} />, color: '#F59E0B' },
-            { label: 'บุคลากร', val: personnelList.length, icon: <Users size={20} />, color: '#FFD400' },
-          ].map((s, i) => (
-            <div key={i} className="col-md-3 col-6">
-              <div style={{ ...GLASS_CARD, padding: '1.25rem 1.4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>{s.label}</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 900, color: s.color, lineHeight: 1.1, marginTop: '4px' }}>{s.val}</div>
+        {/* Status Cards */}
+        {activeTab === 'dashboard' && (
+          <div className="row g-3 mb-4">
+            {[
+              { label: 'โพสต์ทั้งหมด', val: posts.length, icon: <Rss size={20} />, color: '#FF6A01' },
+              { label: 'Hero Slides', val: sliderCount, icon: <ImageIcon size={20} />, color: '#FB923C' },
+              { label: 'Highlight Slides', val: highlights.length, icon: <Sparkles size={20} />, color: '#F59E0B' },
+              { label: 'บุคลากร', val: personnelList.length, icon: <Users size={20} />, color: '#EAB308' },
+            ].map((s, i) => (
+              <div key={i} className="col-md-3 col-6">
+                <div className="admin-stat-card">
+                  <div>
+                    <div className="admin-stat-label">{s.label}</div>
+                    <div className="admin-stat-value" style={{ color: s.color }}>{s.val}</div>
+                  </div>
+                  <div className="admin-stat-icon" style={{ color: s.color }}>{s.icon}</div>
                 </div>
-                <div style={{ background: '#FFF7ED', color: s.color, padding: '14px', borderRadius: '14px' }}>{s.icon}</div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Dashboard */}
         {activeTab === 'dashboard' && (
-          <div style={{ ...GLASS_CARD, padding: '2rem' }}>
-            <h5 className="fw-bold mb-3">ยินดีต้อนรับสู่ KMD Admin</h5>
-            <p className="text-muted mb-4">ใช้เมนูด้านซ้ายเพื่อจัดการเนื้อหา ทุกฟอร์มที่ใส่รูปจะรองรับลิงก์ Google Drive และ Google Photos พร้อมระบบดูตัวอย่าง</p>
+          <div className="d-flex flex-column gap-4">
+            <section className="admin-dashboard-section">
+              <div className="d-flex align-items-start justify-content-between gap-3 mb-3">
+                <div>
+                  <h5 className="fw-bold mb-1">งานที่ใช้บ่อย</h5>
+                  <p className="text-muted small mb-0">เลือกแล้วเริ่มทำงานได้ทันที</p>
+                </div>
+              </div>
+              <div className="admin-quick-actions">
+                {[
+                  ['news', <Rss size={20} key="q-news" />, 'เพิ่มข่าว', 'Facebook / รูปปก'],
+                  ['personnel', <Users size={20} key="q-person" />, 'จัดการบุคลากร', 'รายชื่อและตำแหน่ง'],
+                  ['activities', <CalendarIcon size={20} key="q-event" />, 'เพิ่มกิจกรรม', 'ปฏิทินโรงเรียน'],
+                  ['staff', <ShieldCheck size={20} key="q-staff" />, 'เพิ่มสิทธิ์ครู', 'บัญชี Google'],
+                ].filter(([key]) => key !== 'staff' || canManageUsers).map(([key, icon, label, desc]) => (
+                  <button key={key as string} type="button" onClick={() => setActiveTab(key as AdminTab)} className="admin-quick-action">
+                    <span className="admin-quick-action-icon">{icon as ReactNode}</span>
+                    <span>
+                      <strong>{label as string}</strong>
+                      <small>{desc as string}</small>
+                    </span>
+                    <ChevronRight size={18} />
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="admin-dashboard-section">
+            <h5 className="fw-bold mb-2">คู่มือรูปและสื่อ</h5>
+            <p className="text-muted mb-4">ใช้เมื่อต้องเพิ่มรูปจาก Google Drive หรืออัลบั้ม Google Photos</p>
             <div className="row g-3">
               <div className="col-md-4">
                 <div style={{ padding: '1.25rem', borderRadius: '18px', background: '#FFF7ED', borderLeft: '4px solid #FF6A01', height: '100%' }}>
@@ -1160,7 +1240,7 @@ function Admin() {
                 </div>
               </div>
             </div>
-
+            </section>
           </div>
         )}
 
@@ -1169,76 +1249,148 @@ function Admin() {
           <div className="row g-4">
             <div className="col-lg-5">
               <div style={{ ...GLASS_CARD, padding: '1.75rem' }}>
-                <h5 className="fw-bold mb-4">{postId ? 'แก้ไขโพสต์' : 'เพิ่มโพสต์ใหม่'}</h5>
+                <div className="mb-4">
+                  <h5 className="fw-bold mb-1">{postId ? 'แก้ไขโพสต์' : 'เพิ่มโพสต์ใหม่'}</h5>
+                  <p className="text-muted small mb-0">กรอกประเภท วันที่ หัวข้อ และลิงก์ Facebook ก่อน ส่วนช่องอื่นเลือกใส่ได้</p>
+                </div>
                 <form onSubmit={handleSubmitPost}>
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">ประเภท</label>
-                    <select className="form-select" value={newCategory} onChange={e => setNewCategory(e.target.value)}>
-                      <option value="ข่าวประชาสัมพันธ์">ข่าวประชาสัมพันธ์</option>
-                      <option value="แบนเนอร์สไลด์หน้าแรก">แบนเนอร์ Hero (Home Slider)</option>
-                      <option value="จดหมายข่าว">จดหมายข่าว / E-Newsletter</option>
-                      <option value="ผลงานรางวัล">ผลงาน / รางวัล</option>
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">วันที่</label>
-                    <input type="date" className="form-control" value={newDate} onChange={e => setNewDate(e.target.value)} required />
+                  <div className="row g-3 mb-3">
+                    <div className="col-sm-7">
+                      <label className="form-label small fw-bold">ประเภท</label>
+                      <select className="form-select" value={newCategory} onChange={e => setNewCategory(e.target.value)}>
+                        <option value="ข่าวประชาสัมพันธ์">ข่าวประชาสัมพันธ์</option>
+                        <option value="แบนเนอร์สไลด์หน้าแรก">แบนเนอร์ Hero (Home Slider)</option>
+                        <option value="จดหมายข่าว">จดหมายข่าว / E-Newsletter</option>
+                        <option value="ผลงานรางวัล">ผลงาน / รางวัล</option>
+                      </select>
+                    </div>
+                    <div className="col-sm-5">
+                      <label className="form-label small fw-bold">วันที่</label>
+                      <input type="date" className="form-control" value={newDate} onChange={e => setNewDate(e.target.value)} required />
+                    </div>
                   </div>
                   <div className="mb-3">
                     <label className="form-label small fw-bold">หัวข้อ</label>
-                    <input type="text" className="form-control" value={newTitle} onChange={e => setNewTitle(e.target.value)} required />
-                  </div>
-                  <DriveImageInput label="URL รูปภาพ / PDF (Google Drive)" value={newImageUrl} onChange={setNewImageUrl} fileType={newImageType} onFileTypeChange={setNewImageType} />
-                   <GooglePhotosInput label="ลิงก์อัลบั้ม Google Photos (แชร์เป็นสาธารณะ)" value={newAlbumUrl} onChange={setNewAlbumUrl} placeholder="https://photos.app.goo.gl/..." />
-                  <div className="mb-3">
-                    <PdpaNotice
-                      title="รูปภาพ/วิดีโอเด็กและบริการภายนอก"
-                      consentKey="kmd_child_media_consent_v1"
-                      checkboxLabel="ยืนยันว่ามีความยินยอมหรือฐานกฎหมายที่เหมาะสมก่อนเผยแพร่รูป/วิดีโอเด็ก และรับทราบการใช้ Google/TikTok/Facebook"
-                      onAcceptedChange={setChildMediaConsentOk}
-                    >
-                      รูปหรืออัลบั้มที่แชร์เป็นสาธารณะอาจถูกเปิดผ่าน Google Drive, Google Photos, TikTok หรือบริการภายนอกอื่น ควรหลีกเลี่ยงข้อมูลที่ระบุตัวเด็กเกินจำเป็นหรือทำให้เด็กมีความเสี่ยง
-                    </PdpaNotice>
+                    <input type="text" className="form-control" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="เช่น ประกาศเปิดภาคเรียน ปีการศึกษา 2569" required />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label small fw-bold">ลิงก์ TikTok</label>
-                    <input type="text" className="form-control" value={newTiktokUrl} onChange={e => setNewTiktokUrl(e.target.value)} placeholder="https://www.tiktok.com/@..." />
+                    <label className="form-label small fw-bold d-flex align-items-center gap-2">
+                      ลิงก์โพสต์ Facebook
+                      <span className="badge" style={{ background: '#EFF6FF', color: '#1877F2' }}>แนะนำ</span>
+                    </label>
+                    <input type="url" className="form-control" value={newFacebookUrl} onChange={e => setNewFacebookUrl(e.target.value)} placeholder="https://www.facebook.com/share/p/..." />
+                    <div className="form-text">เว็บไซต์จะสร้างปุ่มเปิดโพสต์จริงให้อัตโนมัติ</div>
                   </div>
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">ลิงก์โพสต์ Facebook</label>
-                    <input type="text" className="form-control" value={newFacebookUrl} onChange={e => setNewFacebookUrl(e.target.value)} placeholder="https://www.facebook.com/share/p/..." />
-                    <div className="form-text">แนะนำให้ใส่ทุกข่าวประชาสัมพันธ์ ใช้เป็นปุ่มไปโพสต์จริง ถ้าต้องการรูปหน้าการ์ด ให้ใส่ URL รูปภาพ / PDF เพิ่มด้วย</div>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">ลิงก์เว็บไซต์เพิ่มเติม</label>
-                    <input type="text" className="form-control" value={newWebsiteUrl} onChange={e => setNewWebsiteUrl(e.target.value)} placeholder="https://..." />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">ลิงก์เอกสารเพิ่มเติม</label>
-                    <input type="text" className="form-control" value={newDocumentUrl} onChange={e => setNewDocumentUrl(e.target.value)} placeholder="https://..." />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold">เนื้อหาอย่างย่อ</label>
-                    <textarea className="form-control" rows={4} value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="จะว่างไว้ก็ได้ถ้าใช้โพสต์ Facebook เป็นแหล่งข่าวหลัก"></textarea>
-                  </div>
-                  <div className="d-flex gap-2">
+                  <DriveImageInput label="รูปปก / PDF (Google Drive)" value={newImageUrl} onChange={setNewImageUrl} fileType={newImageType} onFileTypeChange={setNewImageType} />
+                  <GooglePhotosInput label="อัลบั้ม Google Photos (ถ้ามี)" value={newAlbumUrl} onChange={setNewAlbumUrl} placeholder="https://photos.app.goo.gl/..." />
+
+                  {postHasPublicMedia && (
+                    <div className="mb-3">
+                      <PdpaNotice
+                        title="ตรวจสอบก่อนเผยแพร่สื่อ"
+                        consentKey="kmd_child_media_consent_v1"
+                        checkboxLabel="ยืนยันว่ามีความยินยอมหรือฐานกฎหมายที่เหมาะสม และรับทราบการใช้บริการภายนอก"
+                        onAcceptedChange={setChildMediaConsentOk}
+                      >
+                        ตรวจสอบว่ารูปหรือวิดีโอเด็กไม่เปิดเผยข้อมูลเกินจำเป็น และลิงก์ Google/Facebook/TikTok ตั้งค่าเผยแพร่อย่างเหมาะสม
+                      </PdpaNotice>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    className="admin-advanced-toggle"
+                    aria-expanded={showAdvancedPostFields}
+                    onClick={() => setShowAdvancedPostFields(value => !value)}
+                  >
+                    <span>
+                      <strong>ตัวเลือกเพิ่มเติม</strong>
+                      <small>คำอธิบาย TikTok เว็บไซต์ และเอกสาร</small>
+                    </span>
+                    <ChevronDown size={18} style={{ transform: showAdvancedPostFields ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }} />
+                  </button>
+
+                  {showAdvancedPostFields && (
+                    <div className="admin-advanced-panel">
+                      <div className="mb-3">
+                        <label className="form-label small fw-bold">เนื้อหาอย่างย่อ</label>
+                        <textarea className="form-control" rows={4} value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="ว่างไว้ได้ หากใช้โพสต์ Facebook เป็นแหล่งข่าวหลัก"></textarea>
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label small fw-bold">ลิงก์ TikTok</label>
+                        <input type="url" className="form-control" value={newTiktokUrl} onChange={e => setNewTiktokUrl(e.target.value)} placeholder="https://www.tiktok.com/@..." />
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label small fw-bold">ลิงก์เว็บไซต์เพิ่มเติม</label>
+                        <input type="url" className="form-control" value={newWebsiteUrl} onChange={e => setNewWebsiteUrl(e.target.value)} placeholder="https://..." />
+                      </div>
+                      <div>
+                        <label className="form-label small fw-bold">ลิงก์เอกสารเพิ่มเติม</label>
+                        <input type="url" className="form-control" value={newDocumentUrl} onChange={e => setNewDocumentUrl(e.target.value)} placeholder="https://..." />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="admin-form-actions d-flex gap-2">
                     <button type="submit" className="btn text-white flex-grow-1 py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2"
                       style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)' }} disabled={loading}>
                       <Save size={16} /> {loading ? 'กำลังบันทึก...' : (postId ? 'อัปเดตโพสต์' : 'บันทึกโพสต์')}
                     </button>
-                    {postId && <button type="button" className="btn btn-light rounded-3" onClick={resetPostForm}><X size={18} /></button>}
+                    {postId && (
+                      <button type="button" className="btn btn-light border rounded-3" onClick={resetPostForm} aria-label="ยกเลิกการแก้ไข" title="ยกเลิกการแก้ไข">
+                        <X size={18} />
+                      </button>
+                    )}
                   </div>
                 </form>
               </div>
             </div>
             <div className="col-lg-7">
               <div style={{ ...GLASS_CARD, padding: '1.75rem' }}>
-                <h5 className="fw-bold mb-4">รายการโพสต์ทั้งหมด ({posts.length})</h5>
+                <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                  <div>
+                    <h5 className="fw-bold mb-1">รายการโพสต์</h5>
+                    <div className="small text-muted">พบ {filteredPosts.length} จาก {posts.length} รายการ</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => {
+                      resetPostForm();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    เพิ่มโพสต์ใหม่
+                  </button>
+                </div>
+                <div className="admin-list-filters mb-3">
+                  <div className="admin-search-field">
+                    <Search size={16} />
+                    <input
+                      type="search"
+                      value={postSearch}
+                      onChange={event => setPostSearch(event.target.value)}
+                      placeholder="ค้นหาหัวข้อข่าว..."
+                      aria-label="ค้นหาโพสต์"
+                    />
+                  </div>
+                  <select
+                    value={postCategoryFilter}
+                    onChange={event => setPostCategoryFilter(event.target.value)}
+                    aria-label="กรองประเภทโพสต์"
+                  >
+                    <option value="all">ทุกประเภท</option>
+                    <option value="ข่าวประชาสัมพันธ์">ข่าวประชาสัมพันธ์</option>
+                    <option value="แบนเนอร์สไลด์หน้าแรก">แบนเนอร์ Hero</option>
+                    <option value="จดหมายข่าว">จดหมายข่าว</option>
+                    <option value="ผลงานรางวัล">ผลงาน / รางวัล</option>
+                  </select>
+                </div>
                 <div className="table-responsive">
                   <table className="table align-middle">
                     <thead><tr className="small text-muted"><th>วันที่</th><th>ประเภท</th><th>หัวข้อ</th><th style={{ width: 90 }}>จัดการ</th></tr></thead>
                     <tbody>
-                      {posts.map(p => (
+                      {filteredPosts.map(p => (
                         <tr key={p.id}>
                           <td className="small">{p.date}</td>
                           <td><span className="badge" style={{ background: '#FFF7ED', color: '#FF6A01' }}>{p.category}</span></td>
@@ -1251,13 +1403,19 @@ function Admin() {
                           </td>
                           <td>
                             <div className="d-flex gap-1">
-                              <button className="btn btn-sm btn-light border" onClick={() => handleEditPost(p)}><Edit2 size={14} /></button>
-                              <button className="btn btn-sm btn-light border text-danger" onClick={() => handleDeletePost(p.id)}><Trash2 size={14} /></button>
+                              <button className="btn btn-sm btn-light border" onClick={() => handleEditPost(p)} aria-label={`แก้ไข ${p.title}`} title="แก้ไข"><Edit2 size={14} /></button>
+                              <button className="btn btn-sm btn-light border text-danger" onClick={() => handleDeletePost(p.id)} aria-label={`ลบ ${p.title}`} title="ลบ"><Trash2 size={14} /></button>
                             </div>
                           </td>
                         </tr>
                       ))}
-                      {posts.length === 0 && <tr><td colSpan={4} className="text-center text-muted py-4">ยังไม่มีโพสต์</td></tr>}
+                      {filteredPosts.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="text-center text-muted py-4">
+                            {posts.length === 0 ? 'ยังไม่มีโพสต์' : 'ไม่พบโพสต์ที่ตรงกับคำค้น'}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>

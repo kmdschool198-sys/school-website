@@ -145,6 +145,11 @@ service cloud.firestore {
       allow read, write: if isStaff();
     }
 
+    // บันทึกกิจกรรมโฮมรูมรายวัน (ข้อมูลภายในโรงเรียน)
+    match /homeroom/{documentId} {
+      allow read, write: if isStaff();
+    }
+
     match /results/{documentId} {
       allow read, write: if isStaff();
     }
