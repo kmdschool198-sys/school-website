@@ -54,6 +54,7 @@ import PdpaNotice from '../components/PdpaNotice';
 import Toast from '../components/Toast';
 import { DEFAULT_STUDENTS } from '../data/defaultStudents';
 import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
+import PersonnelSync from '../components/PersonnelSync';
 import {
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
@@ -1768,7 +1769,9 @@ function Admin() {
                 <h5 className="fw-bold mb-4">รายชื่อในระบบ ({personnelList.length})</h5>
                 <div className="alert alert-light border small mb-3">
                   รายชื่อนี้เป็นข้อมูลหลักของหน้าบุคลากร กลุ่มงาน และครูประจำชั้น ส่วนสิทธิ์ล็อกอินจัดการแยกที่เมนู “ผู้ใช้และสิทธิ์”
+                  <br />จำนวนที่แสดงบนหน้าแรกของเว็บนับจากรายชื่อชุดนี้โดยตรง
                 </div>
+                <PersonnelSync existingNames={personnelList.map(p => p.name)} />
                 <div className="row g-3">
                   {personnelList.map(p => (
                     <div key={p.id} className="col-md-6">
