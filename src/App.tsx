@@ -27,6 +27,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyConsentBanner from './components/PrivacyConsentBanner';
 import GlobalToast from './components/GlobalToast';
 import ScrollReveal from './components/ScrollReveal';
+import ScrollProgress from './components/ScrollProgress';
 import RouteTitle from './components/RouteTitle';
 
 function App() {
@@ -65,6 +66,7 @@ function App() {
         <PrivacyConsentBanner />
         <GlobalToast />
         <ScrollReveal />
+        <ScrollProgress />
       </Router>
     </ErrorBoundary>
   );

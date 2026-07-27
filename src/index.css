@@ -167,6 +167,188 @@ textarea:focus-visible {
 .news-card img { transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 .news-card:hover img { transform: scale(1.05); }
 
+/* ═══════════════════════════════════════════════════════
+   แถบความคืบหน้าการอ่าน (ด้านบนสุด)
+   ═══════════════════════════════════════════════════════ */
+.scroll-progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  z-index: 10000;
+  pointer-events: none;
+  background: transparent;
+}
+.scroll-progress-bar {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #FF6A01, #FB923C, #FFD400);
+  box-shadow: 0 0 12px rgba(255, 106, 1, 0.6);
+}
+
+/* ปุ่มกลับขึ้นบน พร้อมวงแหวนบอกตำแหน่ง */
+.back-to-top {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: none;
+  background: white;
+  color: var(--primary-orange);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 9998;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px) scale(0.85);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
+}
+.back-to-top.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.back-to-top:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(255, 106, 1, 0.32);
+}
+.back-to-top-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  fill: none;
+  stroke-width: 3;
+}
+.back-to-top-ring .ring-track { stroke: rgba(255, 106, 1, 0.14); }
+.back-to-top-ring .ring-value {
+  stroke: var(--primary-orange);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.15s linear;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ลูกเล่นการ์ด: แสงกวาดผ่านตอนชี้
+   ═══════════════════════════════════════════════════════ */
+.shine { position: relative; overflow: hidden; }
+.shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -140%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-18deg);
+  pointer-events: none;
+}
+.shine:hover::after { animation: shine-sweep 0.85s ease; }
+@keyframes shine-sweep {
+  to { left: 160%; }
+}
+
+/* การ์ดสถิติ / จุดเน้น / ทางลัด — ยกตัวและเรืองแสงตอนชี้ */
+.stat-card, .pillar-card, .quick-card, .album-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s ease;
+}
+.stat-card:hover, .pillar-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 22px 44px rgba(255, 106, 1, 0.16);
+  border-color: #FDBA74 !important;
+}
+.quick-card:hover {
+  transform: translateY(-4px);
+  background: var(--light-orange);
+}
+.album-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: 0 26px 50px rgba(15, 23, 42, 0.2) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ดวงแสงลอยในส่วนหัวหน้าแรก
+   ═══════════════════════════════════════════════════════ */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  animation: orb-drift 18s ease-in-out infinite;
+}
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(40px, -30px) scale(1.12); }
+  66%      { transform: translate(-30px, 25px) scale(0.92); }
+}
+
+/* ปุ่มชวนเลื่อนลงใต้ส่วนหัว */
+.scroll-cue {
+  width: 26px;
+  height: 44px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  display: grid;
+  justify-items: center;
+  padding-top: 7px;
+}
+.scroll-cue span {
+  width: 4px;
+  height: 8px;
+  border-radius: 999px;
+  background: white;
+  animation: scroll-cue-dot 1.8s ease-in-out infinite;
+}
+@keyframes scroll-cue-dot {
+  0%   { opacity: 0; transform: translateY(0); }
+  35%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(15px); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   หัวข้อ: ตัวอักษรไล่สี + ขีดใต้เคลื่อนไหว
+   ═══════════════════════════════════════════════════════ */
+.gradient-text {
+  background: linear-gradient(120deg, #FF6A01 0%, #FB923C 45%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.title-underline { position: relative; display: inline-block; }
+.title-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -10px;
+  height: 5px;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #FF6A01, #FFD400);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+.reveal-in .title-underline::after,
+.title-underline.is-shown::after { transform: scaleX(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-orb, .scroll-cue span { animation: none !important; }
+  .shine:hover::after { animation: none !important; }
+  .title-underline::after { transform: scaleX(1) !important; }
+}
+
 /* Typography Overrides */
 h1, h2, h3, h4 {
   font-family: var(--font-display);

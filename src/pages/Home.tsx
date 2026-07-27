@@ -16,6 +16,7 @@ import { getDirectImageUrl } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
 import FacebookPostCard from '../components/FacebookPostCard';
+import CountUp from '../components/CountUp';
 import { DEFAULT_ACTIVITIES, COLOR_ACTIVITY } from '../data/defaultActivities';
 
 
@@ -177,6 +178,10 @@ function Home() {
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(15,23,42,0.55) 0%, rgba(15,23,42,0.4) 50%, rgba(15,23,42,0.85) 100%)' }} />
 
+        {/* ดวงแสงลอยช้า ๆ เพิ่มมิติให้ภาพพื้นหลัง */}
+        <div className="hero-orb" style={{ width: 420, height: 420, top: '-12%', right: '-6%', background: 'rgba(255,106,1,0.45)' }} />
+        <div className="hero-orb" style={{ width: 320, height: 320, bottom: '-10%', left: '-4%', background: 'rgba(255,212,0,0.28)', animationDelay: '-7s' }} />
+
         <div className="container" style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', alignItems: 'center' }}>
           <div style={{ maxWidth: '820px' }}>
             <div className="animate-fade-in" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.5rem 1.2rem', background: 'rgba(255,106,1,0.95)', borderRadius: '50px', marginBottom: '2rem', boxShadow: '0 10px 30px rgba(255,106,1,0.4)' }}>
@@ -218,6 +223,11 @@ function Home() {
             )}
           </div>
         </div>
+
+        {/* ชวนให้เลื่อนลงดูเนื้อหาต่อ */}
+        <div className="scroll-cue" style={{ position: 'absolute', left: '50%', bottom: 96, transform: 'translateX(-50%)', zIndex: 10 }} aria-hidden="true">
+          <span />
+        </div>
       </section>
 
       {/* ============== QUICK ACCESS STRIP ============== */}
@@ -254,9 +264,11 @@ function Home() {
               { val: personnelCount === null ? '—' : String(personnelCount), label: 'บุคลากร', sub: 'ข้อมูลปัจจุบันจากระบบ', icon: <Heart size={28} /> },
               { val: '4', label: 'ยุทธศาสตร์', sub: 'จุดเน้นการพัฒนา', icon: <Target size={28} /> },
             ].map((s, i) => (
-              <div key={i} className="stat-card" style={{ padding: '2rem 1.5rem', background: 'linear-gradient(135deg,#FFF7ED,#FFFFFF)', borderRadius: '24px', border: '1px solid #FFEDD5', position: 'relative', overflow: 'hidden' }}>
+              <div key={i} className="stat-card shine" style={{ padding: '2rem 1.5rem', background: 'linear-gradient(135deg,#FFF7ED,#FFFFFF)', borderRadius: '24px', border: '1px solid #FFEDD5', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 16, right: 16, color: '#FF6A01', opacity: 0.25 }}>{s.icon}</div>
-                <h3 style={{ fontSize: '3rem', fontWeight: 900, color: '#FF6A01', margin: '0 0 0.5rem 0' }}>{s.val}</h3>
+                <h3 style={{ fontSize: '3rem', fontWeight: 900, margin: '0 0 0.5rem 0' }}>
+                  <CountUp value={s.val} className="gradient-text" />
+                </h3>
                 <h5 style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A', marginBottom: '0.25rem' }}>{s.label}</h5>
                 <p style={{ color: '#64748B', fontSize: '0.82rem', margin: 0 }}>{s.sub}</p>
               </div>
@@ -271,7 +283,7 @@ function Home() {
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
             <h5 style={{ color: '#FF6A01', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '4px', fontSize: '0.8rem', marginBottom: '1rem' }}>Vision · Mission · Identity</h5>
             <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 950, margin: 0, color: '#0F172A' }}>
-              วิสัยทัศน์ <span style={{ color: '#FF6A01' }}>นำพานักเรียน</span> ก้าวไปด้วยกัน
+              วิสัยทัศน์ <span className="gradient-text title-underline">นำพานักเรียน</span> ก้าวไปด้วยกัน
             </h2>
           </div>
 
@@ -300,7 +312,7 @@ function Home() {
               { icon: <Sparkles size={26} />, title: 'นำเทคโนโลยี', desc: 'ใช้สื่อและนวัตกรรมการเรียนการสอนทันสมัย เปิดโลกการเรียนรู้', color: '#A855F7' },
               { icon: <ShieldCheck size={26} />, title: 'บริหารโปร่งใส', desc: 'ระบบบริหารจัดการมีคุณภาพ ตรวจสอบได้ ชุมชนมีส่วนร่วม', color: '#10B981' },
             ].map((p, i) => (
-              <div key={i} className="pillar-card" style={{ background: 'white', padding: '2rem 1.5rem', borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', transition: 'all .3s' }}>
+              <div key={i} className="pillar-card shine" style={{ background: 'white', padding: '2rem 1.5rem', borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', transition: 'all .3s' }}>
                 <div style={{ width: 56, height: 56, borderRadius: '16px', background: `${p.color}15`, color: p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
                   {p.icon}
                 </div>
@@ -374,7 +386,7 @@ function Home() {
             <div style={{ minWidth: 0 }}>
               <h5 style={{ color: '#FF6A01', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '4px', fontSize: '0.8rem', marginBottom: '1rem' }}>Our Story · 44 ปีแห่งการเรียนรู้</h5>
               <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', fontWeight: 950, marginBottom: '2.5rem', lineHeight: 1.15, color: '#0F172A' }}>
-                จากผืนดินเล็ก ๆ สู่<br /><span style={{ color: '#FF6A01' }}>บ้านหลังที่สอง</span> ของเด็ก ๆ
+                จากผืนดินเล็ก ๆ สู่<br /><span className="gradient-text title-underline">บ้านหลังที่สอง</span> ของเด็ก ๆ
               </h2>
 
               {/* Image collage */}
@@ -505,7 +517,7 @@ function Home() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: 16 }}>
             <div>
               <h5 style={{ color: '#FF6A01', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '4px', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Latest Updates</h5>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: 950, margin: 0, color: '#0F172A' }}>ก้าวทัน <span style={{ color: '#FF6A01' }}>ข่าวสาร</span> โรงเรียน</h2>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 950, margin: 0, color: '#0F172A' }}>ก้าวทัน <span className="gradient-text title-underline">ข่าวสาร</span> โรงเรียน</h2>
             </div>
             <Link to="/page/pr-news" style={{ padding: '0.85rem 1.75rem', borderRadius: '12px', background: 'white', color: '#FF6A01', border: '2px solid #FF6A01', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               ข่าวทั้งหมด <ArrowRight size={16} />
@@ -570,7 +582,7 @@ function Home() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: 16 }}>
               <div>
                 <h5 style={{ color: '#FF6A01', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '4px', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Photo Gallery</h5>
-                <h2 style={{ fontSize: '2.5rem', fontWeight: 950, margin: 0, color: '#0F172A' }}>อัลบั้ม <span style={{ color: '#FF6A01' }}>ภาพกิจกรรม</span></h2>
+                <h2 style={{ fontSize: '2.5rem', fontWeight: 950, margin: 0, color: '#0F172A' }}>อัลบั้ม <span className="gradient-text title-underline">ภาพกิจกรรม</span></h2>
               </div>
               <Link to="/page/gallery" style={{ padding: '0.85rem 1.75rem', borderRadius: 12, background: 'white', color: '#FF6A01', border: '2px solid #FF6A01', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 ดูทั้งหมด <ArrowRight size={16} />
@@ -578,7 +590,7 @@ function Home() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
               {albumPosts.map(p => (
-                <a key={p.id} href={p.albumUrl} target="_blank" rel="noreferrer" className="album-card" style={{ position: 'relative', borderRadius: '24px', overflow: 'hidden', height: 280, textDecoration: 'none', display: 'block', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+                <a key={p.id} href={p.albumUrl} target="_blank" rel="noreferrer" className="album-card shine" style={{ position: 'relative', borderRadius: '24px', overflow: 'hidden', height: 280, textDecoration: 'none', display: 'block', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
                   <DriveImage src={p.imageUrl} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%)' }} />
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '1.5rem', color: 'white' }}>
