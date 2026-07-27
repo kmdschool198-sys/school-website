@@ -19,7 +19,7 @@ const YoutubeIcon = ({ size = 18 }: { size?: number }) => (
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import DriveImage from './DriveImage';
-import { GOOGLE_SITE_URL, VERCEL_APP_URL } from '../config/siteLinks';
+import { GOOGLE_SITE_URL, VERCEL_APP_URL, SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 
 // TikTok icon (lucide doesn't have one)
 const TikTokIcon = ({ size = 18 }: { size?: number }) => (
@@ -33,8 +33,8 @@ export default function Footer() {
     name: 'โรงเรียนบ้านคลองมดแดง',
     motto: 'การศึกษาปฐมวัย และ ขั้นพื้นฐานที่มุ่งเน้นการพัฒนาทักษะชีวิตคู่ความรู้',
     address: '198 ม.3 ต.โป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร 62180',
-    phone: '0880998990',
-    email: 'websitekmd@gmail.com',
+    phone: SCHOOL_PHONE,
+    email: SCHOOL_EMAIL,
     facebook: 'โรงเรียนบ้านคลองมดแดง',
     logoUrl: '',
   });
@@ -146,7 +146,7 @@ export default function Footer() {
                 {info.address}
               </ContactRow>
               <ContactRow icon={<Phone size={14} />}>
-                <a href={`tel:${info.phone}`} style={contactLink}>{info.phone || '055-xxx-xxx'}</a>
+                <a href={`tel:${info.phone}`} style={contactLink}>{info.phone || SCHOOL_PHONE}</a>
               </ContactRow>
               {info.email && (
                 <ContactRow icon={<Mail size={14} />}>

@@ -17,6 +17,7 @@ import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
 import FacebookPostCard from '../components/FacebookPostCard';
 import CountUp from '../components/CountUp';
+import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 import { DEFAULT_ACTIVITIES, COLOR_ACTIVITY } from '../data/defaultActivities';
 
 
@@ -631,8 +632,8 @@ function Home() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <ContactItem icon={<MapPin size={20} />} label="ที่ตั้ง" value="ต.โป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร" />
-              <ContactItem icon={<Phone size={20} />} label="โทรศัพท์" value={schoolInfo?.phone || '055-000-000'} />
-              <ContactItem icon={<Mail size={20} />} label="อีเมล" value={schoolInfo?.email || 'school@kmd.ac.th'} />
+              <ContactItem icon={<Phone size={20} />} label="โทรศัพท์" value={schoolInfo?.phone || SCHOOL_PHONE} />
+              <ContactItem icon={<Mail size={20} />} label="อีเมล" value={schoolInfo?.email || SCHOOL_EMAIL} />
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 import '../App.css';
 import { sidebarMenus, pageContent } from '../data/pageContent';
 import { getDirectImageUrl, getDrivePreviewUrl } from '../utils/imageUtils';
@@ -1051,7 +1052,9 @@ function ContentPage() {
             <div style={{ marginTop: '2rem', padding: '2rem', background: 'linear-gradient(to bottom right, #FFFFFF, #FFF7ED)', borderRadius: '24px', border: '1px solid #FFEDD5', textAlign: 'center' }}>
               <h5 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#C2410C', marginBottom: '0.8rem' }}>ติดต่อสอบถาม</h5>
               <p style={{ fontSize: '0.85rem', color: '#9a3412', lineHeight: 1.6, margin: 0 }}>
-                ฝ่ายบริหารงานโรงเรียน<br />โทร: 055-xxx-xxx
+                ฝ่ายบริหารงานโรงเรียน<br />
+                โทร: <a href={`tel:${SCHOOL_PHONE}`} style={{ color: 'inherit' }}>{SCHOOL_PHONE}</a><br />
+                อีเมล: <a href={`mailto:${SCHOOL_EMAIL}`} style={{ color: 'inherit' }}>{SCHOOL_EMAIL}</a>
               </p>
             </div>
           </aside>

@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type FormEvent } from 'react';
 import { Send, ShieldCheck } from 'lucide-react';
 import { createPdpaRequest, type PdpaRequestType } from '../utils/pdpaAudit';
+import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 
 const requestTypes: { value: PdpaRequestType; label: string }[] = [
   { value: 'access', label: 'ขอเข้าถึง/ขอสำเนาข้อมูล' },
@@ -108,7 +109,7 @@ export default function PdpaRequestForm() {
       )}
       {status === 'error' && (
         <div style={{ ...notice, background: '#FEE2E2', color: '#991B1B', borderColor: '#FECACA' }}>
-          ส่งคำขอไม่สำเร็จ กรุณาติดต่อโรงเรียนโดยตรงที่ 0880998990 หรือ websitekmd@gmail.com
+          ส่งคำขอไม่สำเร็จ กรุณาติดต่อโรงเรียนโดยตรงที่ {SCHOOL_PHONE} หรือ {SCHOOL_EMAIL}
         </div>
       )}
 

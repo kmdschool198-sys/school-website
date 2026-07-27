@@ -53,6 +53,7 @@ import GooglePhotosInput from '../components/GooglePhotosInput';
 import PdpaNotice from '../components/PdpaNotice';
 import Toast from '../components/Toast';
 import { DEFAULT_STUDENTS } from '../data/defaultStudents';
+import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 import {
   STAFF_ROLE_LABELS,
   STAFF_ROLE_OPTIONS,
@@ -328,8 +329,8 @@ function Admin() {
     name: 'โรงเรียนบ้านคลองมดแดง',
     motto: 'พัฒนา สามัคคี มีวินัย',
     address: '198 ม.3 ต.โป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร 62180',
-    phone: '0880998990',
-    email: 'websitekmd@gmail.com',
+    phone: SCHOOL_PHONE,
+    email: SCHOOL_EMAIL,
     facebook: 'โรงเรียนบ้านคลองมดแดง',
     logoUrl: ''
   });

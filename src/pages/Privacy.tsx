@@ -14,10 +14,11 @@ import {
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PdpaRequestForm from '../components/PdpaRequestForm';
+import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 
 const updatedAt = '17 มิถุนายน 2569';
-const privacyPhone = '0880998990';
-const privacyEmail = 'websitekmd@gmail.com';
+const privacyPhone = SCHOOL_PHONE;
+const privacyEmail = SCHOOL_EMAIL;
 
 const sections = [
   {
