@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { collection, query, orderBy, where, onSnapshot, doc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
   ChevronRight,
@@ -57,6 +57,18 @@ const PERSONNEL_CATEGORY_LABELS: Record<string, string> = {
   support: 'บุคลากรสนับสนุน',
 };
 
+const PERSONNEL_FILTERS: Record<string, { field: 'category' | 'workGroup'; value: string }> = {
+  directors: { field: 'category', value: 'director' },
+  board: { field: 'category', value: 'board' },
+  teacher: { field: 'category', value: 'teacher' },
+  support: { field: 'category', value: 'support' },
+  'academic-affairs': { field: 'workGroup', value: 'academic' },
+  budget: { field: 'workGroup', value: 'budget' },
+  personnel: { field: 'workGroup', value: 'personnel' },
+  'general-affairs': { field: 'workGroup', value: 'general' },
+  'student-affairs': { field: 'workGroup', value: 'student' },
+};
+
 const personnelLabel = (value: string | undefined, labels: Record<string, string>) =>
   value && value !== 'none' ? labels[value] || value : '';
 
@@ -98,6 +110,7 @@ function ContentPage() {
   const { slug } = useParams<{ slug: string }>();
   const activeSlug = slug || '';
   const [firePersonnel, setFirePersonnel] = useState<any[]>([]);
+  const [personnelLoading, setPersonnelLoading] = useState(true);
   const [firebasePosts, setFirebasePosts] = useState<any[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [studentsData, setStudentsData] = useState<{ title?: string; subtitle?: string; rows: any[] } | null>(null);
@@ -173,32 +186,19 @@ function ContentPage() {
       });
     }
 
-    // Personnel snapshot logic (Category and WorkGroup mapping)
-    const slugToFilter: Record<string, { field: string, value: string }> = {
-      'directors': { field: 'category', value: 'director' },
-      'board': { field: 'category', value: 'board' },
-      'teacher': { field: 'category', value: 'teacher' }, // from /personnel/teacher
-      'support': { field: 'category', value: 'support' }, // from /personnel/support
-      'academic-affairs': { field: 'workGroup', value: 'academic' },
-      'budget': { field: 'workGroup', value: 'budget' },
-      'personnel': { field: 'workGroup', value: 'personnel' },
-      'general-affairs': { field: 'workGroup', value: 'general' },
-      'student-affairs': { field: 'workGroup', value: 'student' }
-    };
-
-    const filter = slugToFilter[activeSlug];
-    if (filter) {
-      const q = query(collection(db, 'personnel'), where(filter.field, '==', filter.value));
-      unsubPers = onSnapshot(q, (snapshot) => {
-        let results: any[] = [];
-        snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() }));
-
-        results.sort((a, b) => (a.order || 0) - (b.order || 0));
-        setFirePersonnel(results);
-      });
-    } else {
+    // One master personnel source is shared by personnel, work-group and student pages.
+    setPersonnelLoading(true);
+    const personnelQuery = query(collection(db, 'personnel'), orderBy('order', 'asc'));
+    unsubPers = onSnapshot(personnelQuery, (snapshot) => {
+      const results: any[] = [];
+      snapshot.forEach(personnelDoc => results.push({ id: personnelDoc.id, ...personnelDoc.data() }));
+      setFirePersonnel(results);
+      setPersonnelLoading(false);
+    }, (error) => {
+      console.error('Personnel snapshot error:', error);
       setFirePersonnel([]);
-    }
+      setPersonnelLoading(false);
+    });
 
     window.scrollTo(0, 0);
     return () => {
@@ -234,6 +234,13 @@ function ContentPage() {
     title: dynamicPage?.title || staticData.title,
     content: dynamicPage?.content || staticData.content
   };
+  const activePersonnelFilter = PERSONNEL_FILTERS[activeSlug];
+  const displayPersonnel = activeSlug === 'teachers'
+    ? firePersonnel.filter(person => person.category !== 'board')
+    : activePersonnelFilter
+      ? firePersonnel.filter(person => person[activePersonnelFilter.field] === activePersonnelFilter.value)
+      : firePersonnel;
+  const personnelById = new Map(firePersonnel.map(person => [person.id, person]));
 
   const renderFormattedText = (text: string) => {
     if (!text || typeof text !== 'string') return null;
@@ -477,6 +484,7 @@ function ContentPage() {
     const sd = (studentsData && studentsData.rows && studentsData.rows.length > 0) ? studentsData : DEFAULT_STUDENTS;
     const rows = sd.rows.map((r: any) => ({
       ...r,
+      teacher: (r.teacherId && personnelById.get(r.teacherId)?.name) || r.teacher || '',
       male: Number(r.male) || 0,
       female: Number(r.female) || 0,
       total: (Number(r.male) || 0) + (Number(r.female) || 0),
@@ -794,25 +802,8 @@ function ContentPage() {
         </div>
       );
 
-      // Handle Static Personnel Groups (e.g. Academic Affairs)
-      if (data.type === 'personnel-groups' && firePersonnel.length === 0 && data.personnelGroups) {
-        return (
-          <div className="animate-fade-in">
-            {data.personnelGroups.map((group: any, idx: number) => (
-              <div key={idx} style={{ marginBottom: '4rem' }}>
-                <SectionHeading text={group.title} />
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '2rem' }}>
-                  {group.personnel.map((person: any, pIdx: number) => (
-                    <div key={pIdx}>{renderPersonCard(person)}</div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      }
+      if (personnelLoading) return <LoadingState text="กำลังโหลดข้อมูลบุคลากร..." />;
 
-      const displayPersonnel = firePersonnel.length > 0 ? firePersonnel : (data.personnelData || []);
       const heads = displayPersonnel.filter(p => p.isHead);
       const others = displayPersonnel.filter(p => !p.isHead);
 
@@ -844,6 +835,11 @@ function ContentPage() {
                 {others.map(person => renderPersonCard(person))}
               </div>
             </>
+          )}
+          {displayPersonnel.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '4rem 2rem', background: '#F8FAFC', borderRadius: 20, color: '#64748B' }}>
+              ยังไม่มีรายชื่อบุคลากรในหมวดนี้
+            </div>
           )}
         </div>
       );

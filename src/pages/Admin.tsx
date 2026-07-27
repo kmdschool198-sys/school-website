@@ -34,7 +34,7 @@ import RosterManager from '../components/RosterManager';
 import ClubsManager from '../components/ClubsManager';
 import {
   collection, addDoc, getDocs, deleteDoc, doc, orderBy, query,
-  updateDoc, setDoc, getDoc, writeBatch
+  updateDoc, setDoc, getDoc, writeBatch, onSnapshot
 } from 'firebase/firestore';
 import {
   GoogleAuthProvider,
@@ -92,6 +92,7 @@ interface Personnel {
   major?: string;
   positionNumber?: string;
   phone?: string;
+  email?: string;
   category: string;
   workGroup?: string;
   image: string;
@@ -119,7 +120,14 @@ interface Highlight {
 
 type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'clubs' | 'staff' | 'settings';
 
-interface StudentRow { class: string; male: number; female: number; teacher: string; note: string; }
+interface StudentRow {
+  class: string;
+  male: number;
+  female: number;
+  teacher: string;
+  teacherId?: string;
+  note: string;
+}
 
 interface Activity {
   id: string;
@@ -174,6 +182,10 @@ function resolveAdminEmail(usernameOrEmail: string) {
 
 function normalizeStaffEmail(value: string) {
   return value.trim().toLowerCase();
+}
+
+function normalizePersonName(value: string | undefined) {
+  return (value || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('th-TH');
 }
 
 function toManageRole(role: Role | null | undefined): StaffManageRole {
@@ -378,6 +390,20 @@ function Admin() {
   }, [isLoggedIn]);
 
   useEffect(() => {
+    if (!isLoggedIn) return;
+    const personnelQuery = query(collection(db, 'personnel'), orderBy('order', 'asc'));
+    return onSnapshot(personnelQuery, snapshot => {
+      setPersonnelList(snapshot.docs.map(personnelDoc => ({
+        id: personnelDoc.id,
+        ...personnelDoc.data(),
+      } as Personnel)));
+    }, error => {
+      console.error('Unable to watch personnel', error);
+      showToast('เชื่อมข้อมูลบุคลากรแบบเรียลไทม์ไม่สำเร็จ', 'error');
+    });
+  }, [isLoggedIn]);
+
+  useEffect(() => {
     if (!isLoggedIn || !canManageUsers) {
       setStaffUsers([]);
       return;
@@ -425,9 +451,19 @@ function Admin() {
   const saveStudents = async () => {
     setLoading(true);
     try {
-      await setDoc(doc(db, 'config', 'students_count'), {
-        title: studentsTitle, subtitle: studentsSubtitle, rows: studentRows
+      const linkedRows = studentRows.map(row => {
+        const linkedPerson = personnelList.find(person => person.id === row.teacherId)
+          || personnelList.find(person => normalizePersonName(person.name) === normalizePersonName(row.teacher));
+        if (linkedPerson) {
+          return { ...row, teacherId: linkedPerson.id, teacher: linkedPerson.name };
+        }
+        if (row.teacherId) return { ...row, teacherId: '', teacher: '' };
+        return row;
       });
+      await setDoc(doc(db, 'config', 'students_count'), {
+        title: studentsTitle, subtitle: studentsSubtitle, rows: linkedRows
+      });
+      setStudentRows(linkedRows);
       showToast('บันทึกข้อมูลนักเรียนเรียบร้อย', 'success');
     } catch (e) { console.error(e); showToast('บันทึกไม่สำเร็จ', 'error'); }
     setLoading(false);
@@ -875,14 +911,37 @@ function Admin() {
         order: editingId ? personnelList.find(x => x.id === editingId)?.order ?? personnelList.length + 1 : personnelList.length + 1 
       };
       if (editingId) {
-        await updateDoc(doc(db, 'personnel', editingId), data);
+        const existingPerson = personnelList.find(person => person.id === editingId);
+        const personnelRef = doc(db, 'personnel', editingId);
+        const studentsRef = doc(db, 'config', 'students_count');
+        const studentsSnapshot = await getDoc(studentsRef);
+        const batch = writeBatch(db);
+        batch.update(personnelRef, data);
+
+        if (studentsSnapshot.exists() && Array.isArray(studentsSnapshot.data().rows)) {
+          let changed = false;
+          const linkedRows = studentsSnapshot.data().rows.map((row: StudentRow) => {
+            const linked = row.teacherId === editingId
+              || (!row.teacherId
+                && normalizePersonName(row.teacher) === normalizePersonName(existingPerson?.name));
+            if (!linked) return row;
+            changed = true;
+            return { ...row, teacherId: editingId, teacher: pName };
+          });
+          if (changed) {
+            batch.update(studentsRef, { rows: linkedRows });
+            setStudentRows(linkedRows);
+          }
+        }
+
+        await batch.commit();
         showToast('อัปเดตบุคลากรแล้ว', 'success');
       } else {
         await addDoc(collection(db, 'personnel'), data);
         showToast('เพิ่มบุคลากรสำเร็จ', 'success');
       }
       resetPersonnelForm();
-      loadPersonnel();
+      await loadPersonnel();
     } catch (err) {
       console.error(err);
       showToast('บันทึกไม่สำเร็จ', 'error');
@@ -891,11 +950,34 @@ function Admin() {
   };
 
   const handleDeletePersonnel = (id: string) => {
-    askConfirm('ยืนยันการลบรายชื่อนี้?', async () => {
+    const person = personnelList.find(item => item.id === id);
+    askConfirm(`ยืนยันการลบ ${person?.name || 'รายชื่อนี้'}? ข้อมูลในหน้าบุคลากรและครูประจำชั้นจะอัปเดตพร้อมกัน`, async () => {
       try {
-        await deleteDoc(doc(db, 'personnel', id));
+        const studentsRef = doc(db, 'config', 'students_count');
+        const studentsSnapshot = await getDoc(studentsRef);
+        const batch = writeBatch(db);
+        batch.delete(doc(db, 'personnel', id));
+
+        if (studentsSnapshot.exists() && Array.isArray(studentsSnapshot.data().rows)) {
+          let changed = false;
+          const linkedRows = studentsSnapshot.data().rows.map((row: StudentRow) => {
+            const linked = row.teacherId === id
+              || (!row.teacherId
+                && normalizePersonName(row.teacher) === normalizePersonName(person?.name));
+            if (!linked) return row;
+            changed = true;
+            return { ...row, teacherId: '', teacher: '' };
+          });
+          if (changed) {
+            batch.update(studentsRef, { rows: linkedRows });
+            setStudentRows(linkedRows);
+          }
+        }
+
+        await batch.commit();
+        setPersonnelList(current => current.filter(item => item.id !== id));
+        if (editingId === id) resetPersonnelForm();
         showToast('ลบรายชื่อแล้ว', 'success');
-        loadPersonnel();
       } catch {
         showToast('ลบไม่สำเร็จ', 'error');
       }
@@ -1235,7 +1317,7 @@ function Admin() {
               { label: 'โพสต์ทั้งหมด', val: posts.length, icon: <Rss size={20} />, color: '#FF6A01' },
               { label: 'Hero Slides', val: sliderCount, icon: <ImageIcon size={20} />, color: '#FB923C' },
               { label: 'Highlight Slides', val: highlights.length, icon: <Sparkles size={20} />, color: '#F59E0B' },
-              { label: 'บุคลากร', val: personnelList.length, icon: <Users size={20} />, color: '#EAB308' },
+              { label: 'บุคลากรทั้งหมด', val: personnelList.length, icon: <Users size={20} />, color: '#EAB308' },
             ].map((s, i) => (
               <div key={i} className="col-md-3 col-6">
                 <div className="admin-stat-card">
@@ -1683,6 +1765,9 @@ function Admin() {
             <div className="col-lg-8">
               <div style={{ ...GLASS_CARD, padding: '1.75rem' }}>
                 <h5 className="fw-bold mb-4">รายชื่อในระบบ ({personnelList.length})</h5>
+                <div className="alert alert-light border small mb-3">
+                  รายชื่อนี้เป็นข้อมูลหลักของหน้าบุคลากร กลุ่มงาน และครูประจำชั้น ส่วนสิทธิ์ล็อกอินจัดการแยกที่เมนู “ผู้ใช้และสิทธิ์”
+                </div>
                 <div className="row g-3">
                   {personnelList.map(p => (
                     <div key={p.id} className="col-md-6">
@@ -1936,7 +2021,23 @@ function Admin() {
                       <td><input type="number" min="0" className="form-control form-control-sm" value={r.male} onChange={e => updateStudentRow(i, 'male', Number(e.target.value))} /></td>
                       <td><input type="number" min="0" className="form-control form-control-sm" value={r.female} onChange={e => updateStudentRow(i, 'female', Number(e.target.value))} /></td>
                       <td className="fw-bold text-center" style={{ color: '#FF6A01' }}>{(r.male || 0) + (r.female || 0)}</td>
-                      <td><input className="form-control form-control-sm" value={r.teacher} onChange={e => updateStudentRow(i, 'teacher', e.target.value)} /></td>
+                      <td>
+                        <select
+                          className="form-select form-select-sm"
+                          value={r.teacherId || personnelList.find(person => normalizePersonName(person.name) === normalizePersonName(r.teacher))?.id || ''}
+                          onChange={e => {
+                            const person = personnelList.find(item => item.id === e.target.value);
+                            setStudentRows(rows => rows.map((row, index) => index === i
+                              ? { ...row, teacherId: person?.id || '', teacher: person?.name || '' }
+                              : row));
+                          }}
+                        >
+                          <option value="">-- ยังไม่ระบุ --</option>
+                          {personnelList
+                            .filter(person => person.category === 'teacher' || person.category === 'director')
+                            .map(person => <option key={person.id} value={person.id}>{person.name}</option>)}
+                        </select>
+                      </td>
                       <td><input className="form-control form-control-sm" value={r.note} onChange={e => updateStudentRow(i, 'note', e.target.value)} /></td>
                       <td><button className="btn btn-sm btn-light text-danger" onClick={() => removeStudentRow(i)}><Trash2 size={12} /></button></td>
                     </tr>

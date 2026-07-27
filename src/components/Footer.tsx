@@ -118,7 +118,7 @@ export default function Footer() {
               <FooterRouterLink to="/calendar" icon={<CalendarIcon size={13} />}>ปฏิทินโรงเรียน</FooterRouterLink>
               <FooterRouterLink to="/page/timetable" icon={<ClipboardList size={13} />}>ตารางสอน-ตารางเรียน</FooterRouterLink>
               <FooterRouterLink to="/attendance" icon={<ClipboardList size={13} />}>ระบบเช็คชื่อนักเรียน</FooterRouterLink>
-              <FooterRouterLink to="/page/personnel" icon={<BookOpen size={13} />}>บุคลากร</FooterRouterLink>
+              <FooterRouterLink to="/personnel/teacher" icon={<BookOpen size={13} />}>บุคลากร</FooterRouterLink>
               <FooterRouterLink to="/page/about" icon={<BookOpen size={13} />}>เกี่ยวกับโรงเรียน</FooterRouterLink>
               <FooterRouterLink to="/privacy" icon={<ShieldCheck size={13} />}>นโยบายความเป็นส่วนตัว</FooterRouterLink>
               <FooterExt href={GOOGLE_SITE_URL}>เว็บไซต์หลัก Google Sites</FooterExt>

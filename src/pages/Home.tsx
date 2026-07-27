@@ -56,6 +56,7 @@ function Home() {
   const [activePost, setActivePost] = useState<NewsItem | null>(null);
   const [allPosts, setAllPosts] = useState<HomePost[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
+  const [personnelCount, setPersonnelCount] = useState<number | null>(null);
 
   useEffect(() => {
     getDoc(doc(db, 'config', 'home_assets')).then(snap => {
@@ -101,7 +102,14 @@ function Home() {
       setActivities(merged);
     });
 
-    return () => { unsubscribe(); unsubH(); unsubAct(); };
+    const unsubPersonnel = onSnapshot(collection(db, 'personnel'), snap => {
+      setPersonnelCount(snap.size);
+    }, error => {
+      console.error('Unable to load personnel count', error);
+      setPersonnelCount(null);
+    });
+
+    return () => { unsubscribe(); unsubH(); unsubAct(); unsubPersonnel(); };
   }, []);
 
   // Deep link: /?post=<id> opens that news item directly (for shared links)
@@ -243,7 +251,7 @@ function Home() {
             {[
               { val: '44+', label: 'ปีแห่งการก่อตั้ง', sub: 'ก่อตั้ง พ.ศ. 2525', icon: <Award size={28} /> },
               { val: '300+', label: 'นักเรียน', sub: 'ระดับอนุบาล - ม.3', icon: <Users size={28} /> },
-              { val: '20+', label: 'บุคลากร', sub: 'ครูและสายสนับสนุน', icon: <Heart size={28} /> },
+              { val: personnelCount === null ? '—' : String(personnelCount), label: 'บุคลากร', sub: 'ข้อมูลปัจจุบันจากระบบ', icon: <Heart size={28} /> },
               { val: '4', label: 'ยุทธศาสตร์', sub: 'จุดเน้นการพัฒนา', icon: <Target size={28} /> },
             ].map((s, i) => (
               <div key={i} className="stat-card" style={{ padding: '2rem 1.5rem', background: 'linear-gradient(135deg,#FFF7ED,#FFFFFF)', borderRadius: '24px', border: '1px solid #FFEDD5', position: 'relative', overflow: 'hidden' }}>

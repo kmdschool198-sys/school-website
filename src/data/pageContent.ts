@@ -208,30 +208,8 @@ export const pageContent: Record<string, PageContent> = {
   'academic-affairs': {
     title: 'กลุ่มบริหารงานวิชาการ',
     subtitle: 'การบริหารงาน',
-    type: 'personnel-groups',
-    content: 'คณะกรรมการและบุคลากรผู้รับผิดชอบงานวิชาการ',
-    personnelGroups: [
-      {
-        title: 'หัวหน้ากลุ่มงานวิชาการ',
-        personnel: [
-          { name: 'คุณครูระพีพร สุวรรณ', position: 'หัวหน้าฝ่ายวิชาการ', image: 'https://picsum.photos/seed/acad1/400/500' }
-        ]
-      },
-      {
-        title: 'งานพัฒนาหลักสูตร',
-        personnel: [
-          { name: 'คุณครูสมหญิง รักเรียน', position: 'เจ้าหน้าที่หลักสูตร', image: 'https://picsum.photos/seed/acad2/400/500' },
-          { name: 'คุณครูสมพงษ์ เรียนดี', position: 'เจ้าหน้าที่หลักสูตร', image: 'https://picsum.photos/seed/acad3/400/500' }
-        ]
-      },
-      {
-        title: 'งานวัดและประเมินผล',
-        personnel: [
-          { name: 'คุณครูจิราพร ใจดี', position: 'เจ้าหน้าที่วัดผล', image: 'https://picsum.photos/seed/acad4/400/500' },
-          { name: 'คุณครูมานะ ขยันกิจ', position: 'เจ้าหน้าที่ทะเบียน', image: 'https://picsum.photos/seed/acad5/400/500' }
-        ]
-      }
-    ]
+    type: 'personnel',
+    content: 'คณะกรรมการและบุคลากรผู้รับผิดชอบงานวิชาการ'
   },
   'org-chart': {
     title: 'โครงสร้างการบริหารงาน',
@@ -243,11 +221,7 @@ export const pageContent: Record<string, PageContent> = {
     title: 'ข้อมูลครูและบุคลากรทางการศึกษา',
     subtitle: 'บุคลากร',
     type: 'personnel',
-    content: 'คณะครูและบุคลากรทางการศึกษาประจำการ',
-    personnelData: [
-      { name: 'คณะครูผู้สอน', position: 'ครูประจำการ', image: 'https://picsum.photos/seed/teachers/400/500' },
-      { name: 'บุคลากรสนับสนุน', position: 'เจ้าหน้าที่สำนักงาน', image: 'https://picsum.photos/seed/staff/400/500' },
-    ]
+    content: 'คณะครูและบุคลากรทางการศึกษาประจำการ'
   },
   'contact': {
     title: 'แผนที่และข้อมูลติดต่อ',
