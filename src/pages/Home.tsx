@@ -59,6 +59,9 @@ function Home() {
   const [allPosts, setAllPosts] = useState<HomePost[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [personnelCount, setPersonnelCount] = useState<number | null>(null);
+  const [studentCount, setStudentCount] = useState<number | null>(null);
+  const [classCount, setClassCount] = useState<number | null>(null);
+  const [postsLoaded, setPostsLoaded] = useState(false);
 
   useEffect(() => {
     getDoc(doc(db, 'config', 'home_assets')).then(snap => {
@@ -93,6 +96,19 @@ function Home() {
       setHeroSlides(fetchedSlides);
       setPosts(fetchedPosts.slice(0, 6));
       setAllPosts(fetchedPosts);
+      setPostsLoaded(true);
+    }, () => setPostsLoaded(true));
+
+    // จำนวนนักเรียนและห้องเรียน นับจากรายชื่อจริงที่ครูใช้เช็คชื่อ
+    // (ฐานเดียวกับทุกระบบ ไม่ต้องมากรอกซ้ำให้ตัวเลขขัดกันเอง)
+    const unsubRoster = onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
+      const classes = (snap.data()?.classes || []) as Array<{ students?: unknown[] }>;
+      const withStudents = classes.filter(c => (c.students?.length || 0) > 0);
+      const total = withStudents.reduce((sum, c) => sum + (c.students?.length || 0), 0);
+      setStudentCount(total > 0 ? total : null);
+      setClassCount(withStudents.length > 0 ? withStudents.length : null);
+    }, error => {
+      console.error('Unable to load roster count', error);
     });
 
     const unsubAct = onSnapshot(collection(db, 'activities'), snap => {
@@ -111,7 +127,7 @@ function Home() {
       setPersonnelCount(null);
     });
 
-    return () => { unsubscribe(); unsubH(); unsubAct(); unsubPersonnel(); };
+    return () => { unsubscribe(); unsubH(); unsubAct(); unsubPersonnel(); unsubRoster(); };
   }, []);
 
   // Deep link: /?post=<id> opens that news item directly (for shared links)
@@ -261,9 +277,9 @@ function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
             {[
               { val: '44+', label: 'ปีแห่งการก่อตั้ง', sub: 'ก่อตั้ง พ.ศ. 2525', icon: <Award size={28} /> },
-              { val: '300+', label: 'นักเรียน', sub: 'ระดับอนุบาล - ม.3', icon: <Users size={28} /> },
+              { val: studentCount === null ? '—' : String(studentCount), label: 'นักเรียน', sub: 'ระดับอนุบาล - ม.3', icon: <Users size={28} /> },
               { val: personnelCount === null ? '—' : String(personnelCount), label: 'บุคลากร', sub: 'ข้อมูลปัจจุบันจากระบบ', icon: <Heart size={28} /> },
-              { val: '4', label: 'ยุทธศาสตร์', sub: 'จุดเน้นการพัฒนา', icon: <Target size={28} /> },
+              { val: classCount === null ? '—' : String(classCount), label: 'ห้องเรียน', sub: 'เปิดสอนในปีการศึกษานี้', icon: <Target size={28} /> },
             ].map((s, i) => (
               <div key={i} className="stat-card shine" style={{ padding: '2rem 1.5rem', background: 'linear-gradient(135deg,#FFF7ED,#FFFFFF)', borderRadius: '24px', border: '1px solid #FFEDD5', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 16, right: 16, color: '#FF6A01', opacity: 0.25 }}>{s.icon}</div>
@@ -526,8 +542,25 @@ function Home() {
           </div>
 
           <div className="row g-4">
-            {posts.length === 0 && (
-              <div className="col-12" style={{ textAlign: 'center', padding: '3rem', color: '#94A3B8' }}>ยังไม่มีข่าวสาร</div>
+            {/* ระหว่างรอข้อมูล แสดงโครงการ์ดจาง ๆ แทนหน้าว่าง */}
+            {!postsLoaded && [0, 1, 2].map(i => (
+              <div key={`sk-${i}`} className="col-lg-4 col-md-6">
+                <div style={{ background: 'white', borderRadius: 24, overflow: 'hidden', border: '1px solid #F1F5F9' }}>
+                  <div className="skeleton" style={{ height: 220 }} />
+                  <div style={{ padding: '1.75rem' }}>
+                    <div className="skeleton" style={{ height: 18, borderRadius: 6, marginBottom: 12 }} />
+                    <div className="skeleton" style={{ height: 18, width: '70%', borderRadius: 6, marginBottom: 20 }} />
+                    <div className="skeleton" style={{ height: 12, width: '40%', borderRadius: 6 }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+            {postsLoaded && posts.length === 0 && (
+              <div className="col-12" style={{ textAlign: 'center', padding: '3.5rem 1rem', color: '#94A3B8' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📰</div>
+                <div style={{ fontWeight: 800, color: '#64748B', marginBottom: 4 }}>ยังไม่มีข่าวสาร</div>
+                <div style={{ fontSize: '0.85rem' }}>ข่าวใหม่จะแสดงที่นี่ทันทีเมื่อโรงเรียนเผยแพร่</div>
+              </div>
             )}
             {posts.map((post) => (
               <div key={post.id} className="col-lg-4 col-md-6">

@@ -18,7 +18,9 @@ export default function CountUp({
   const target = match ? Number(match[2]) : null;
 
   const ref = useRef<HTMLSpanElement>(null);
-  const [shown, setShown] = useState(target === null ? null : 0);
+  // ตั้งต้นด้วยเลขจริงเสมอ ถ้าอนิเมชันไม่ทำงานก็ยังอ่านค่าถูก
+  // (ดีกว่าค้างที่ 0 ซึ่งเป็นตัวเลขที่ผิด)
+  const [shown, setShown] = useState(target);
 
   useEffect(() => {
     if (target === null) return;
@@ -39,6 +41,7 @@ export default function CountUp({
       entries => {
         if (!entries[0]?.isIntersecting) return;
         observer.disconnect();
+        setShown(0);
         const start = performance.now();
         const step = (now: number) => {
           const t = Math.min(1, (now - start) / duration);
@@ -64,7 +67,7 @@ export default function CountUp({
 
   return (
     <span ref={ref} className={className} style={style}>
-      {match![1]}{(shown ?? 0).toLocaleString('th-TH')}{match![3]}
+      {match![1]}{(shown ?? target).toLocaleString('th-TH')}{match![3]}
     </span>
   );
 }

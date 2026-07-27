@@ -234,6 +234,22 @@ textarea:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════
+   โครงร่างจาง ๆ ระหว่างรอข้อมูล (skeleton)
+   ═══════════════════════════════════════════════════════ */
+.skeleton {
+  background: linear-gradient(100deg, #F1F5F9 30%, #FFF7ED 50%, #F1F5F9 70%);
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  from { background-position: 180% 0; }
+  to   { background-position: -20% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; background: #F1F5F9; }
+}
+
+/* ═══════════════════════════════════════════════════════
    ลูกเล่นการ์ด: แสงกวาดผ่านตอนชี้
    ═══════════════════════════════════════════════════════ */
 .shine { position: relative; overflow: hidden; }
