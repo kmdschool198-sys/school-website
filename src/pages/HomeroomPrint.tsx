@@ -157,7 +157,7 @@ function App() {
         <Section title="2. แนวทางแก้ไขปัญหาของครูที่ปรึกษา" items={solutions} prefix="2" />
 
         <div style={{ marginTop: 18 }}>
-          <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 8 }}>๓. ข้อเสนอแนะ</div>
+          <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 8 }}>3. ข้อเสนอแนะ</div>
           {suggestions.length === 0 && !extra.trim() ? (
             <div style={{ color: '#94A3B8', paddingLeft: '2rem' }}>—</div>
           ) : (
@@ -168,11 +168,10 @@ function App() {
           )}
         </div>
 
-        {/* signatures */}
-        <div style={{ marginTop: 60 }}>
-          <SignRow left="ครูที่ปรึกษา" right="ครูที่ปรึกษา" />
-          <div style={{ height: 46 }} />
-          <SignRow left="หัวหน้าระดับ" right="หัวหน้างานระบบดูแลฯ" />
+        {/* signature — ครูที่ปรึกษาเท่านั้น */}
+        <div style={{ marginTop: 70, textAlign: 'center', fontSize: '0.95rem' }}>
+          <div>ลงชื่อ ................................................ ครูที่ปรึกษา</div>
+          <div style={{ marginTop: 6 }}>(………………………………………………….)</div>
         </div>
 
         {termLogs.length === 0 && (
@@ -213,19 +212,6 @@ function Section({ title, items, prefix }: { title: string; items: string[]; pre
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function SignRow({ left, right }: { left: string; right: string }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, fontSize: '0.95rem' }}>
-      {[left, right].map((role, i) => (
-        <div key={i} style={{ textAlign: 'center' }}>
-          <div>ลงชื่อ ................................................ {role}</div>
-          <div style={{ marginTop: 6 }}>(………………………………………………….)</div>
-        </div>
-      ))}
     </div>
   );
 }
