@@ -26,6 +26,7 @@ import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyConsentBanner from './components/PrivacyConsentBanner';
 import GlobalToast from './components/GlobalToast';
+import ScrollReveal from './components/ScrollReveal';
 import RouteTitle from './components/RouteTitle';
 
 function App() {
@@ -63,6 +64,7 @@ function App() {
         </Routes>
         <PrivacyConsentBanner />
         <GlobalToast />
+        <ScrollReveal />
       </Router>
     </ErrorBoundary>
   );

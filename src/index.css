@@ -90,11 +90,93 @@ body::before {
   animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* ═══════════════════════════════════════════════════════
+   Scroll reveal — sections/cards rise into view
+   ═══════════════════════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+/* Stagger cards inside a revealed grid for a gentle cascade */
+.reveal-in .news-card { transition-delay: 0.05s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Never let an un-revealed section print blank (แบบฟอร์มราชการ) */
+@media print {
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Polish: scrolling, selection, focus, scrollbar
+   ═══════════════════════════════════════════════════════ */
+html { scroll-behavior: smooth; }
+
+::selection {
+  background: rgba(255, 106, 1, 0.22);
+  color: var(--deep-orange);
+}
+
+/* Keyboard focus ring — visible but on-brand */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(255, 106, 1, 0.45);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Slim branded scrollbar (desktop) */
+@media (min-width: 769px) {
+  * { scrollbar-width: thin; scrollbar-color: #FDBA74 transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #FDBA74, #FB923C);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover { background: #FF6A01; background-clip: content-box; }
+}
+
+/* Softer, layered card shadows + lift on hover */
+.news-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.news-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px rgba(255, 106, 1, 0.14),
+              0 4px 12px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Images inside cards zoom slightly on hover */
+.news-card img { transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.news-card:hover img { transform: scale(1.05); }
+
 /* Typography Overrides */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
 }
+
+/* Thai headings read better slightly tighter than default */
+h1, h2 { line-height: 1.2; }
+h3, h4, h5 { line-height: 1.35; }
+p { line-height: 1.75; }
 
 /* Glassmorphism */
 .glass-box {
@@ -137,21 +219,6 @@ h1, h2, h3, h4 {
 .btn-outline-white:hover {
   background: white;
   color: var(--primary-orange);
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: var(--off-white);
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-orange);
 }
 
 /* Sidebar Specific */
