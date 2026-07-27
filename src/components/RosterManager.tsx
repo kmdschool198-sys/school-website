@@ -1,12 +1,27 @@
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot, setDoc, getDocs, collection, writeBatch, query, where } from 'firebase/firestore';
+import {
+  doc, onSnapshot, getDoc, getDocs, collection, writeBatch, query, where,
+  type DocumentData, type QuerySnapshot,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { Trash2, UserPlus, Upload, Download } from 'lucide-react';
+import { Trash2, UserPlus, Upload, Download, RefreshCw } from 'lucide-react';
 import { PageLoading } from './PageState';
+import type { ResultAnnouncement } from '../data/results';
+import {
+  buildStudentCountRows,
+  detectRosterChanges,
+  findExistingStudent,
+  syncClubMembers,
+  syncDraftResultRows,
+  type LinkedClubMember,
+  type RosterClass,
+  type RosterStudent,
+  type StudentCountRow,
+} from '../utils/studentRosterSync';
 
-interface Student { id: string; code?: string; name: string; emoji?: string; }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
+type Student = RosterStudent;
+type ClassRoster = RosterClass;
 
 const KG_CLASSES: ClassRoster[] = [
   { classId: 'kg_a2_1', label: 'อ.2/1', students: [] },
@@ -48,45 +63,27 @@ export default function RosterManager() {
 
   const current = classes.find(c => c.classId === classId);
 
-  const save = async (next: ClassRoster[]) => {
-    // 1. Identify added and removed students
-    const currentStudentsMap = new Map<string, string>(); // studentId -> classId
-    classes.forEach(c => c.students.forEach(s => currentStudentsMap.set(s.id, c.classId)));
-
-    const nextStudentsMap = new Map<string, string>(); // studentId -> classId
-    next.forEach(c => c.students.forEach(s => nextStudentsMap.set(s.id, c.classId)));
-
-    const added: { id: string; classId: string }[] = [];
-    next.forEach(c => {
-      c.students.forEach(s => {
-        if (!currentStudentsMap.has(s.id)) {
-          added.push({ id: s.id, classId: c.classId });
-        }
-      });
-    });
-
-    const removed: { id: string; classId: string }[] = [];
-    classes.forEach(c => {
-      c.students.forEach(s => {
-        if (!nextStudentsMap.has(s.id)) {
-          removed.push({ id: s.id, classId: c.classId });
-        }
-      });
-    });
-
+  const save = async (next: ClassRoster[], forceSync = false) => {
+    const changes = detectRosterChanges(classes, next);
     setClasses(next);
     setSaving(true);
     try {
-      // First save the main config document
-      await setDoc(doc(db, 'config', 'attendance_classes'), { classes: next });
+      const now = Date.now();
+      const studentCountRef = doc(db, 'config', 'students_count');
+      const studentCountSnapshot = await getDoc(studentCountRef);
+      const existingCountRows = studentCountSnapshot.exists()
+        && Array.isArray(studentCountSnapshot.data().rows)
+        ? studentCountSnapshot.data().rows as StudentCountRow[]
+        : [];
+      const countRows = buildStudentCountRows(next, existingCountRows);
+      const configBatch = writeBatch(db);
+      configBatch.set(doc(db, 'config', 'attendance_classes'), { classes: next, updatedAt: now });
+      configBatch.set(studentCountRef, { rows: countRows, updatedAt: now }, { merge: true });
+      await configBatch.commit();
 
-      // If roster changes exist, sync Firestore collections
-      if (added.length > 0 || removed.length > 0) {
-        // Group by classId to minimize daily attendance queries
-        const affectedClasses = new Set<string>();
-        added.forEach(x => affectedClasses.add(x.classId));
-        removed.forEach(x => affectedClasses.add(x.classId));
-
+      // Removed and moved students must disappear from their previous class history.
+      if (changes.removedFromClass.length > 0) {
+        const affectedClasses = new Set(changes.removedFromClass.map(item => item.classId));
         for (const cid of affectedClasses) {
           const q = query(collection(db, 'attendance'), where('classId', '==', cid));
           const snap = await getDocs(q);
@@ -100,18 +97,7 @@ export default function RosterManager() {
               const records = { ...(docData.records || {}) };
               let changed = false;
 
-              // Backfill added students for this class with 'present'
-              added.forEach(x => {
-                if (x.classId === cid) {
-                  if (!records[x.id]) {
-                    records[x.id] = { status: 'present' };
-                    changed = true;
-                  }
-                }
-              });
-
-              // Clean up removed students for this class
-              removed.forEach(x => {
+              changes.removedFromClass.forEach(x => {
                 if (x.classId === cid) {
                   if (records[x.id]) {
                     delete records[x.id];
@@ -131,11 +117,57 @@ export default function RosterManager() {
             }
           }
         }
+      }
 
-        // Clean up removed students from other collections
-        for (const x of removed) {
+      const shouldSyncDependents = forceSync || changes.hasChanges;
+      let clubsSnapshot: QuerySnapshot<DocumentData> | null = null;
+
+      if (shouldSyncDependents) {
+        // Club member cards are references by studentId; refresh copied labels for every reader.
+        clubsSnapshot = await getDocs(collection(db, 'clubs'));
+        if (!clubsSnapshot.empty) {
+          const clubBatch = writeBatch(db);
+          let changedClubs = 0;
+          clubsSnapshot.docs.forEach(clubDoc => {
+            const clubData = clubDoc.data();
+            const result = syncClubMembers(
+              (clubData.members || []) as LinkedClubMember[],
+              changes.nextIndex,
+            );
+            if (result.changed) {
+              clubBatch.update(clubDoc.ref, { members: result.members, updatedAt: now });
+              changedClubs++;
+            }
+          });
+          if (changedClubs > 0) await clubBatch.commit();
+        }
+
+        // Draft results follow the live roster. Published results remain an audit snapshot.
+        const resultsSnapshot = await getDocs(collection(db, 'results'));
+        if (!resultsSnapshot.empty) {
+          const resultBatch = writeBatch(db);
+          let changedResults = 0;
+          resultsSnapshot.docs.forEach(resultDoc => {
+            const result = { id: resultDoc.id, ...resultDoc.data() } as ResultAnnouncement;
+            if (result.visible) return;
+            const rosterClass = next.find(item => item.classId === result.classId);
+            if (!rosterClass) return;
+            const records = syncDraftResultRows(result.records || [], rosterClass.students);
+            resultBatch.update(resultDoc.ref, {
+              className: rosterClass.label,
+              records,
+              rosterUpdatedAt: now,
+            });
+            changedResults++;
+          });
+          if (changedResults > 0) await resultBatch.commit();
+        }
+      }
+
+      // Permanently deleted students are removed from sensitive operational records.
+      for (const studentId of changes.deletedIds) {
           // 1. Delete body metrics records
-          const bmQuery = query(collection(db, 'log_body_metrics'), where('studentId', '==', x.id));
+          const bmQuery = query(collection(db, 'log_body_metrics'), where('studentId', '==', studentId));
           const bmSnap = await getDocs(bmQuery);
           if (!bmSnap.empty) {
             const bmBatch = writeBatch(db);
@@ -144,7 +176,7 @@ export default function RosterManager() {
           }
 
           // 2. Delete savings records
-          const svQuery = query(collection(db, 'log_saving'), where('studentId', '==', x.id));
+          const svQuery = query(collection(db, 'log_saving'), where('studentId', '==', studentId));
           const svSnap = await getDocs(svQuery);
           if (!svSnap.empty) {
             const svBatch = writeBatch(db);
@@ -152,18 +184,14 @@ export default function RosterManager() {
             await svBatch.commit();
           }
 
-          // 3. Remove from clubs list, attendance, and evaluations
-          const clubsSnap = await getDocs(collection(db, 'clubs'));
+          // 3. Remove club attendance and evaluations for clubs the student belonged to.
+          const clubsSnap = clubsSnapshot || await getDocs(collection(db, 'clubs'));
           if (!clubsSnap.empty) {
             for (const clubDoc of clubsSnap.docs) {
               const clubData = clubDoc.data();
               const membersList = clubData.members || [];
-              const hasMember = membersList.some((m: any) => m.studentId === x.id);
+              const hasMember = membersList.some((member: LinkedClubMember) => member.studentId === studentId);
               if (hasMember) {
-                const updatedMembers = membersList.filter((m: any) => m.studentId !== x.id);
-                await setDoc(clubDoc.ref, { ...clubData, members: updatedMembers });
-
-                // Delete club attendance records
                 const clubAttQuery = query(collection(db, 'club_attendance'), where('clubId', '==', clubDoc.id));
                 const clubAttSnap = await getDocs(clubAttQuery);
                 if (!clubAttSnap.empty) {
@@ -171,9 +199,9 @@ export default function RosterManager() {
                   let changedAtt = false;
                   clubAttSnap.docs.forEach(caDoc => {
                     const caData = caDoc.data();
-                    if (caData.records?.[x.id]) {
+                    if (caData.records?.[studentId]) {
                       const recs = { ...caData.records };
-                      delete recs[x.id];
+                      delete recs[studentId];
                       clubAttBatch.update(caDoc.ref, { records: recs });
                       changedAtt = true;
                     }
@@ -189,10 +217,12 @@ export default function RosterManager() {
                   if (!evalSnap.empty) {
                     const evalDoc = evalSnap.docs[0];
                     const evalData = evalDoc.data();
-                    if (evalData.records?.[x.id]) {
+                    if (evalData.records?.[studentId]) {
                       const recs = { ...evalData.records };
-                      delete recs[x.id];
-                      await setDoc(evalDoc.ref, { ...evalData, records: recs });
+                      delete recs[studentId];
+                      const evalBatch = writeBatch(db);
+                      evalBatch.update(evalDoc.ref, { records: recs });
+                      await evalBatch.commit();
                     }
                   }
                 } catch (err) {
@@ -201,7 +231,6 @@ export default function RosterManager() {
               }
             }
           }
-        }
       }
 
       setSavedAt(new Date());
@@ -247,6 +276,7 @@ export default function RosterManager() {
         const hasHeader = /รหัส|code/i.test(first[0]);
         const dataLines = hasHeader ? lines.slice(1) : lines;
 
+        const usedIds = new Set<string>();
         const newStudents: Student[] = dataLines.map((line, i) => {
           // CSV-aware split (handle commas inside quotes)
           const cells: string[] = [];
@@ -258,8 +288,16 @@ export default function RosterManager() {
           }
           cells.push(cur);
           const [code, name, emoji] = cells.map(c => c.trim().replace(/^"|"$/g, ''));
+          const existing = findExistingStudent(classes, code, name || code);
+          let id = existing?.id;
+          if (!id || usedIds.has(id)) {
+            const safeCode = (code || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+            id = safeCode ? `student_${safeCode}` : `${classId}_s${Date.now()}_${i}`;
+            while (usedIds.has(id)) id = `${id}_${i}`;
+          }
+          usedIds.add(id);
           return {
-            id: `${classId}_s${Date.now()}_${i}`,
+            id,
             code: code || '',
             name: name || code || `นักเรียน ${i + 1}`,
             emoji: emoji || '🧒',
@@ -273,7 +311,22 @@ export default function RosterManager() {
           `[OK] = แทนที่รายชื่อเดิมทั้งหมด\n` +
           `[Cancel] = ต่อท้ายรายชื่อเดิม`
         );
-        updateStudents(s => mode ? newStudents : [...s, ...newStudents]);
+        const currentStudents = classes.find(item => item.classId === classId)?.students || [];
+        const mergedStudents = new Map(
+          (mode ? [] : currentStudents).map(student => [student.id, student]),
+        );
+        newStudents.forEach(student => mergedStudents.set(student.id, student));
+        const importedIds = new Set(newStudents.map(student => student.id));
+        const nextClasses = classes.map(rosterClass => {
+          if (rosterClass.classId === classId) {
+            return { ...rosterClass, students: Array.from(mergedStudents.values()) };
+          }
+          return {
+            ...rosterClass,
+            students: rosterClass.students.filter(student => !importedIds.has(student.id)),
+          };
+        });
+        save(nextClasses);
       } catch (e: any) {
         alert('❌ อ่านไฟล์ไม่สำเร็จ: ' + (e?.message || e));
       }
@@ -315,6 +368,19 @@ export default function RosterManager() {
         <span style={{ fontSize: '0.85rem', color: '#64748B' }}>
           📊 รวม <b style={{ color: '#FF6A01' }}>{classes.reduce((s, c) => s + c.students.length, 0)}</b> คน · {classes.length} ชั้นเรียน
         </span>
+        <button
+          onClick={() => save(classes, true)}
+          disabled={saving}
+          title="อัปเดตยอดสรุป ชุมนุม และผลสอบฉบับร่างจากทะเบียนนี้"
+          style={{
+            marginLeft: 'auto', padding: '7px 12px', borderRadius: 8,
+            border: '1px solid #FDBA74', background: 'white', color: '#C2410C',
+            fontWeight: 800, fontSize: '0.8rem', cursor: saving ? 'wait' : 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <RefreshCw size={14} />ซิงก์ทุกระบบ
+        </button>
         {saving && <span style={{ fontSize: '0.78rem', color: '#F59E0B', fontWeight: 700 }}>💾 กำลังบันทึก…</span>}
         {savedAt && !saving && <span style={{ fontSize: '0.78rem', color: '#10B981', fontWeight: 700 }}>✓ {savedAt.toLocaleTimeString('th-TH')}</span>}
       </div>

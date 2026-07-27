@@ -11,6 +11,7 @@ import {
   subjectsFromTimetable, totalScore, pctColor,
   normalizeResultCode, publicAnnouncementFromResult, resultLookupDocId,
 } from '../data/results';
+import { syncDraftResultRows } from '../utils/studentRosterSync';
 
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
@@ -47,7 +48,11 @@ async function syncPublicResult(result: ResultAnnouncement) {
   if (!result.visible) return;
 
   const records = result.records
-    .map(row => ({ ...row, code: normalizeResultCode(row.code) }))
+    .map(row => {
+      const publicRow = { ...row };
+      delete publicRow.studentId;
+      return { ...publicRow, code: normalizeResultCode(publicRow.code) };
+    })
     .filter(row => row.code);
 
   await commitBatched([
@@ -113,9 +118,7 @@ export default function ResultsManager() {
       classId: cls?.id || '',
       className: cls?.label || '',
       subjects,
-      records: cls?.students.map(s => ({
-        code: s.code || s.id, name: s.name, scores: {}, note: '',
-      })) || [],
+      records: syncDraftResultRows([], cls?.students || []),
       publishedAt: Date.now(),
       visible: false,
     });
@@ -223,12 +226,7 @@ function Editor({ item, availableClasses, onSave, onCancel }: {
       const old = a.subjects.find(x => x.name === s.name);
       return old ? { ...s, maxScore: old.maxScore } : s;
     });
-    const newRecords: ResultRow[] = cls.students.map(s => {
-      const existing = a.records.find(r => r.code === (s.code || s.id));
-      return existing
-        ? { ...existing, name: s.name, code: s.code || s.id }
-        : { code: s.code || s.id, name: s.name, scores: {}, note: '' };
-    });
+    const newRecords: ResultRow[] = syncDraftResultRows(a.records, cls.students);
     setA({ ...a, classId, className: cls.label, subjects, records: newRecords });
   };
 

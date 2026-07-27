@@ -8,6 +8,7 @@ export interface SubjectInfo {
 }
 
 export interface ResultRow {
+  studentId?: string;
   code: string;
   name: string;
   scores: Record<string, string | number>;  // วิชา → คะแนนที่ได้ (ไม่เกิน maxScore)
