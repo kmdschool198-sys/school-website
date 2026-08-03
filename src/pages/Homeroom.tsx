@@ -5,8 +5,9 @@ import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import {
   ChevronLeft, LogOut, Save, Printer, CalendarDays, PenLine, ListChecks,
-  Trash2, Users, Plus, Check,
+  Trash2, Users, Plus, Check, Wand2,
 } from 'lucide-react';
+import HomeroomBackfill from '../components/HomeroomBackfill';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import QuickDate from '../components/QuickDate';
@@ -23,7 +24,7 @@ interface Student { id: string; code?: string; name: string; }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
 interface AttDoc { classId: string; date: string; records: Record<string, { status: string }>; }
 
-type Tab = 'entry' | 'calendar' | 'report';
+type Tab = 'entry' | 'calendar' | 'report' | 'backfill';
 
 export default function HomeroomPage() {
   const auth = useTeacherAuth();
@@ -207,6 +208,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
             ['entry', <PenLine size={14} key="e" />, 'บันทึกโฮมรูม'],
             ['calendar', <CalendarDays size={14} key="c" />, 'ปฏิทินการบันทึก'],
             ['report', <ListChecks size={14} key="r" />, `รายงาน (${classLogs.length})`],
+            ['backfill', <Wand2 size={14} key="b" />, 'เติมย้อนหลัง'],
           ] as const).map(([k, ic, label]) => (
             <button key={k} onClick={() => setTab(k as Tab)} style={{
               padding: '9px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -238,6 +240,18 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
         {tab === 'report' && (
           <ReportView logs={classLogs} onPick={(d) => { setDate(d); setTab('entry'); }} onDelete={removeLog} />
+        )}
+
+        {tab === 'backfill' && current && (
+          <HomeroomBackfill
+            classId={classId}
+            className={current.label}
+            totalStudents={current.students.length}
+            attDocs={attDocs}
+            existingLogs={logs}
+            teacherName={userName}
+            onDone={() => setTab('report')}
+          />
         )}
       </main>
     </div>
