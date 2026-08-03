@@ -22,6 +22,7 @@ import ClassDashboard from './pages/ClassDashboard';
 import Homeroom from './pages/Homeroom';
 import HomeroomPrint from './pages/HomeroomPrint';
 import SchoolStatsReport from './pages/SchoolStatsReport';
+import SchoolCalendar from './pages/SchoolCalendar';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyConsentBanner from './components/PrivacyConsentBanner';
@@ -59,6 +60,7 @@ function App() {
           <Route path="/homeroom" element={<Homeroom />} />
           <Route path="/print-homeroom" element={<HomeroomPrint />} />
           <Route path="/school-stats-report" element={<SchoolStatsReport />} />
+          <Route path="/school-calendar" element={<SchoolCalendar />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />
           <Route path="*" element={<NotFound />} />

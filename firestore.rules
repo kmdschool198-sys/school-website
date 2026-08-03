@@ -157,6 +157,13 @@ service cloud.firestore {
       allow read, write: if isStaff();
     }
 
+    // ปฏิทินเปิด-ปิดโรงเรียน (วันเรียนชดเชย / ปิดกรณีพิเศษ)
+    // เปิดให้อ่านสาธารณะเพราะผู้ปกครองควรเห็นว่าวันไหนโรงเรียนเปิด
+    match /school_calendar/{documentId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
     match /results/{documentId} {
       allow read, write: if isStaff();
     }

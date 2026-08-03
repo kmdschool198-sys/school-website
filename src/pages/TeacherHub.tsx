@@ -19,6 +19,7 @@ const STUDENT_APPS: AppCard[] = [
   { id: 'class-dashboard', to: '/class-dashboard', title: 'แดชบอร์ดรายชั้นเรียน', icon: '📊', search: 'ภาพรวมทั้งชั้น', bg: '#FFEDD5' },
   { id: 'attendance', to: '/attendance', title: 'ระบบเช็คชื่อนักเรียน', icon: '✅', search: 'เช็คนักเรียน', bg: '#FCE7F3' },
   { id: 'homeroom', to: '/homeroom', title: 'บันทึกกิจกรรมโฮมรูม', icon: '🏫', search: 'โฮมรูม', bg: '#EDE9FE' },
+  { id: 'school-calendar', to: '/school-calendar', title: 'ปฏิทินเปิด-ปิดโรงเรียน', icon: '🗓️', search: 'วันหยุด-เรียนชดเชย', bg: '#E0F2FE' },
   { id: 'manage-roster', to: '/manage-roster', title: 'จัดการรายชื่อนักเรียน', icon: '👥', search: 'รายชื่อ-CSV', bg: '#E9D5FF' },
   { id: 'club-attendance', to: '/club-attendance', title: 'เช็คชื่อชุมนุม-ลูกเสือ', icon: '🎯', search: 'ชุมนุม-ลูกเสือ', bg: '#DCFCE7' },
   { id: 'manage-clubs', to: '/manage-clubs', title: 'จัดการชุมนุม-สมาชิก', icon: '⚙️', search: 'สร้างชุมนุม', bg: '#D1FAE5' },

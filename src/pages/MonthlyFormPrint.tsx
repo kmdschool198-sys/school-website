@@ -9,6 +9,11 @@ import { ChevronLeft, Printer, Calendar, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
+import {
+  SCHOOL_CALENDAR_COLLECTION,
+  resolveSchoolDay,
+  type SchoolDayOverride,
+} from '../data/schoolCalendar';
 
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
@@ -44,7 +49,8 @@ function App() {
   const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
   const [csvScope, setCsvScope] = useState<CsvScope>('class');
   const [docs, setDocs] = useState<AttDoc[]>([]);
-  const [holidays, setHolidays] = useState<Record<string, string>>({}); // date → name
+  const [holidays, setHolidays] = useState<Record<string, string>>({});
+  const [schoolDays, setSchoolDays] = useState<Record<string, SchoolDayOverride>>({}); // date → name
 
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
@@ -93,6 +99,15 @@ function App() {
     });
   }, []);
 
+  // ปฏิทินเปิด-ปิดโรงเรียน (วันเรียนชดเชย / ปิดกรณีพิเศษ)
+  useEffect(() => {
+    return onSnapshot(collection(db, SCHOOL_CALENDAR_COLLECTION), snap => {
+      const map: Record<string, SchoolDayOverride> = {};
+      snap.forEach(d => { map[d.id] = { date: d.id, ...(d.data() as Omit<SchoolDayOverride, 'date'>) }; });
+      setSchoolDays(map);
+    });
+  }, []);
+
   const current = availableClasses.find(c => c.id === classId);
   const students = current?.students || [];
 
@@ -113,13 +128,11 @@ function App() {
 
   const statusFor = (studentId: string, day: number): string => {
     const dateStr = `${yearStr}-${monStr}-${String(day).padStart(2, '0')}`;
-    const dt = new Date(`${dateStr}T00:00:00`);
-    const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
-    const isHoliday = !!holidays[dateStr];
+    const closed = !resolveSchoolDay(dateStr, schoolDays, holidays).open;
     const doc = docs.find(d => d.date === dateStr);
-    if (!doc) return (isWeekend || isHoliday) ? '/' : '';
+    if (!doc) return closed ? '/' : '';
     const rec = doc.records?.[studentId];
-    if (!rec) return (isWeekend || isHoliday) ? '/' : '';
+    if (!rec) return closed ? '/' : '';
     if (rec.status === 'present') return didTarget(rec) ? info.mark : info.missMark;
     if (rec.status === 'absent') return info.missMark;
     if (rec.status === 'leave') return formType === 'attendance' ? 'ล' : info.missMark;
@@ -152,13 +165,11 @@ function App() {
 
     const statusForDocs = (sourceDocs: AttDoc[], studentId: string, day: number): string => {
       const dateStr = `${yearStr}-${monStr}-${String(day).padStart(2, '0')}`;
-      const dt = new Date(`${dateStr}T00:00:00`);
-      const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
-      const isHoliday = !!holidays[dateStr];
+      const closed = !resolveSchoolDay(dateStr, schoolDays, holidays).open;
       const doc = sourceDocs.find(d => d.date === dateStr);
-      if (!doc) return (isWeekend || isHoliday) ? '/' : '';
+      if (!doc) return closed ? '/' : '';
       const rec = doc.records?.[studentId];
-      if (!rec) return (isWeekend || isHoliday) ? '/' : '';
+      if (!rec) return closed ? '/' : '';
       if (rec.status === 'present') return didTarget(rec) ? info.mark : info.missMark;
       if (rec.status === 'absent') return info.missMark;
       if (rec.status === 'leave') return formType === 'attendance' ? 'ล' : info.missMark;
@@ -295,8 +306,9 @@ function App() {
               {days.map(d => {
                 const dateStr = `${yearStr}-${monStr}-${String(d).padStart(2, '0')}`;
                 const dt = new Date(year, monthNum - 1, d);
-                const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
-                const holiday = holidays[dateStr];
+                const dayInfo = resolveSchoolDay(dateStr, schoolDays, holidays);
+                const isWeekend = dayInfo.reason === 'weekend';
+                const holiday = dayInfo.open ? '' : dayInfo.label;
                 const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][dt.getDay()];
                 return (
                   <th key={d} title={holiday || ''} style={{
@@ -322,9 +334,9 @@ function App() {
                   {days.map(d => {
                     const status = statusFor(s.id, d);
                     const dateStr = `${yearStr}-${monStr}-${String(d).padStart(2, '0')}`;
-                    const dt = new Date(year, monthNum - 1, d);
-                    const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
-                    const isHoliday = !!holidays[dateStr];
+                    const dayInfo = resolveSchoolDay(dateStr, schoolDays, holidays);
+                    const isWeekend = dayInfo.reason === 'weekend';
+                    const isHoliday = !dayInfo.open && dayInfo.reason !== 'weekend';
                     let color = '#0F172A';
                     if (status === info.missMark || status === '−') color = '#DC2626';
                     else if (status === 'ล') color = '#D97706';

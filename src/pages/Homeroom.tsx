@@ -13,6 +13,11 @@ import QuickDate from '../components/QuickDate';
 import { toast } from '../components/GlobalToast';
 import type { HomeroomDoc } from '../data/homeroom';
 import { HOMEROOM_TOPICS, COMMON_PROBLEMS, COMMON_SOLUTIONS, homeroomDocId } from '../data/homeroom';
+import {
+  SCHOOL_CALENDAR_COLLECTION,
+  resolveSchoolDay,
+  type SchoolDayOverride,
+} from '../data/schoolCalendar';
 
 const COLOR = '#7C3AED';
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
@@ -39,6 +44,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [logs, setLogs] = useState<HomeroomDoc[]>([]);
   const [attDocs, setAttDocs] = useState<AttDoc[]>([]);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
+  const [schoolDays, setSchoolDays] = useState<Record<string, SchoolDayOverride>>({});
   const [saving, setSaving] = useState(false);
 
   // form fields
@@ -83,6 +89,14 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         if (a.isHoliday && a.date) map[a.date] = a.title || 'วันหยุด';
       });
       setHolidays(map);
+    });
+  }, []);
+
+  useEffect(() => {
+    return onSnapshot(collection(db, SCHOOL_CALENDAR_COLLECTION), snap => {
+      const map: Record<string, SchoolDayOverride> = {};
+      snap.forEach(d => { map[d.id] = { date: d.id, ...(d.data() as Omit<SchoolDayOverride, 'date'>) }; });
+      setSchoolDays(map);
     });
   }, []);
 
@@ -231,7 +245,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
         {tab === 'calendar' && (
           <CalendarView
-            logs={classLogs} holidays={holidays}
+            logs={classLogs} holidays={holidays} schoolDays={schoolDays}
             onPick={(d) => { setDate(d); setTab('entry'); }}
           />
         )}
@@ -371,8 +385,11 @@ function PickerField({ label, value, setValue, presets, onPick, placeholder }: a
 }
 
 // ════════════════════════════════════════════════════════════════
-function CalendarView({ logs, holidays, onPick }: {
-  logs: HomeroomDoc[]; holidays: Record<string, string>; onPick: (d: string) => void;
+function CalendarView({ logs, holidays, schoolDays, onPick }: {
+  logs: HomeroomDoc[];
+  holidays: Record<string, string>;
+  schoolDays: Record<string, SchoolDayOverride>;
+  onPick: (d: string) => void;
 }) {
   const now = new Date();
   const [ym, setYm] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
@@ -390,12 +407,11 @@ function CalendarView({ logs, holidays, onPick }: {
   const iso = (d: number) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   const todayIso = todayStr();
 
-  // count school days (weekday, not holiday, not future) that are missing
+  // นับเฉพาะวันที่โรงเรียนเปิดจริงตามปฏิทินเปิด-ปิด (รวมวันเรียนชดเชยเสาร์อาทิตย์)
   let missing = 0, done = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const s = iso(d);
-    const dow = new Date(y, m - 1, d).getDay();
-    if (dow === 0 || dow === 6 || holidays[s] || s > todayIso) continue;
+    if (!resolveSchoolDay(s, schoolDays, holidays).open || s > todayIso) continue;
     if (recorded.has(s)) done++; else missing++;
   }
 
@@ -434,21 +450,21 @@ function CalendarView({ logs, holidays, onPick }: {
         {cells.map((d, i) => {
           if (d === null) return <div key={i} />;
           const s = iso(d);
-          const dow = new Date(y, m - 1, d).getDay();
-          const isWeekend = dow === 0 || dow === 6;
-          const holiday = holidays[s];
+          const day = resolveSchoolDay(s, schoolDays, holidays);
           const has = recorded.has(s);
           const future = s > todayIso;
           const isToday = s === todayIso;
 
           let bg = '#F8FAFC', color = '#94A3B8', label = '';
           if (has) { bg = '#DCFCE7'; color = '#166534'; label = '✓'; }
-          else if (holiday) { bg = '#FED7AA'; color = '#7C2D12'; label = 'หยุด'; }
-          else if (isWeekend) { bg = '#FEF2F2'; color = '#FCA5A5'; }
+          else if (day.reason === 'override' && day.open) { bg = future ? '#EFF6FF' : '#FEE2E2'; color = future ? '#1E40AF' : '#991B1B'; label = future ? 'เปิด' : '—'; }
+          else if (!day.open && day.reason === 'override') { bg = '#DBEAFE'; color = '#1E40AF'; label = 'ปิด'; }
+          else if (day.reason === 'holiday') { bg = '#FED7AA'; color = '#7C2D12'; label = 'หยุด'; }
+          else if (day.reason === 'weekend') { bg = '#FEF2F2'; color = '#FCA5A5'; }
           else if (!future) { bg = '#FEE2E2'; color = '#991B1B'; label = '—'; }
 
           return (
-            <button key={i} onClick={() => onPick(s)} title={holiday || (has ? 'มีบันทึก' : 'ยังไม่บันทึก')} style={{
+            <button key={i} onClick={() => onPick(s)} title={day.label + (has ? ' · มีบันทึก' : day.open ? ' · ยังไม่บันทึก' : '')} style={{
               aspectRatio: '1', borderRadius: 10, cursor: 'pointer',
               background: bg, color,
               border: isToday ? `2px solid ${COLOR}` : '1px solid transparent',
