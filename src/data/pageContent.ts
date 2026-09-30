@@ -76,6 +76,12 @@ export interface PageContent {
 }
 
 export const pageContent: Record<string, PageContent> = {
+  'timetable': {
+    title: 'ตารางสอนและตารางเรียน',
+    subtitle: 'E-Service นักเรียน',
+    type: 'text',
+    content: 'ตรวจสอบตารางเรียนรายห้องและตารางสอนรายครูจากข้อมูลกลางของโรงเรียน'
+  },
   'directors': {
     title: 'ทำเนียบผู้บริหาร',
     subtitle: 'บุคลากร',

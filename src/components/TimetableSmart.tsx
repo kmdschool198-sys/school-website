@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { Printer, Save, AlertTriangle, X, Users, BookOpen, Calendar as Cal, Coffee, UserPlus, Download, Upload, RotateCcw } from 'lucide-react';
+import { Printer, Save, AlertTriangle, X, Users, BookOpen, Calendar as Cal, Coffee, UserPlus, Download, Upload, RotateCcw, Database, CloudOff } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface Teacher { id: string; prefix?: string; first: string; last: string; dept?: string; rank?: string; subjects?: string[]; }
@@ -35,6 +35,7 @@ const FREE_LABEL = 'คาบว่าง';
 
 // ─── Main component ─────────────────────────────────────────────────────────
 type View = 'class' | 'teacher' | 'overview' | 'sub' | 'data';
+type CloudStatus = 'connecting' | 'ready' | 'missing' | 'saving' | 'error';
 
 export default function TimetableSmart({ readOnly = false }: { readOnly?: boolean }) {
   const [data, setData] = useState<TTData>(() => seedData());
@@ -45,16 +46,44 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
   const [search, setSearch] = useState('');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState<CloudStatus>('connecting');
+  const [cloudError, setCloudError] = useState('');
 
-  // Cloud sync
+  // Firestore is the single source of truth for both Admin and the public website.
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'timetable'), snap => {
       if (snap.exists()) {
         const d = snap.data() as TTData;
-        if (d.rooms?.length) setData(d);
+        if (d.rooms?.length && d.teachers && d.subjects && d.slots && d.days && d.sched) {
+          setData(d);
+          setDirty(false);
+          setCloudStatus('ready');
+          setCloudError('');
+          const updatedAt = (snap.data() as any).updatedAt;
+          if (updatedAt?.toDate) setSavedAt(updatedAt.toDate());
+        } else {
+          setCloudStatus('error');
+          setCloudError('ข้อมูลตารางกลางมีรูปแบบไม่ครบ กรุณานำเข้าไฟล์สำรองในหน้า Admin');
+        }
+      } else {
+        setCloudStatus('missing');
       }
+    }, error => {
+      console.error('Timetable snapshot error:', error);
+      setCloudStatus('error');
+      setCloudError('เชื่อมต่อฐานข้อมูลกลางไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
     });
   }, []);
+
+  useEffect(() => {
+    const warnUnsaved = (event: BeforeUnloadEvent) => {
+      if (!dirty || readOnly) return;
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warnUnsaved);
+    return () => window.removeEventListener('beforeunload', warnUnsaved);
+  }, [dirty, readOnly]);
 
   useEffect(() => {
     if (!activeRoom && data.rooms.length) setActiveRoom(data.rooms[0].id);
@@ -64,10 +93,23 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
   const saveToCloud = async () => {
     if (readOnly) return;
     setLoading(true);
+    setCloudStatus('saving');
+    setCloudError('');
     try {
-      await setDoc(doc(db, 'config', 'timetable'), data);
+      // JSON round-trip strips optional undefined values that Firestore rejects.
+      const cleanData = JSON.parse(JSON.stringify(data)) as TTData;
+      await setDoc(doc(db, 'config', 'timetable'), {
+        ...cleanData,
+        schemaVersion: 1,
+        updatedAt: serverTimestamp(),
+        updatedBy: auth.currentUser?.email || null,
+      });
       setSavedAt(new Date());
+      setDirty(false);
+      setCloudStatus('ready');
     } catch (e: any) {
+      setCloudStatus('error');
+      setCloudError('บันทึกไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ผู้ใช้และอินเทอร์เน็ต');
       alert('❌ บันทึกไม่สำเร็จ: ' + (e?.message || e));
     } finally {
       setLoading(false);
@@ -96,6 +138,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
         if (!d.rooms || !d.teachers) throw new Error('โครงสร้างไฟล์ไม่ถูกต้อง');
         if (!confirm(`โหลดข้อมูลจากไฟล์? (${d.rooms.length} ห้อง, ${d.teachers.length} ครู — ของเดิมจะถูกแทนที่)`)) return;
         setData(d);
+        setDirty(true);
       } catch (e: any) {
         alert('❌ อ่านไฟล์ไม่สำเร็จ: ' + (e?.message || e));
       }
@@ -106,9 +149,11 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
   const resetToSeed = () => {
     if (!confirm('รีเซ็ตเป็นข้อมูลเริ่มต้น? (ของเดิมจะหาย — ควร Export ก่อน)')) return;
     setData(seedData());
+    setDirty(true);
   };
 
   const updateCell = (key: string, val: SchedCell | null) => {
+    setDirty(true);
     setData(d => {
       const sched = { ...d.sched };
       if (!val || (!val.subject && !val.teacher && !val.substitute && !val.free)) delete sched[key];
@@ -543,11 +588,29 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
           <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '1.1rem' }}>{data.school.name}</div>
           <div style={{ fontSize: '0.78rem', color: '#64748B' }}>ปีการศึกษา {data.school.year} · ภาคเรียนที่ {data.school.semester}</div>
         </div>
-        {savedAt && <span style={{ fontSize: '0.78rem', color: '#10B981', fontWeight: 700 }}>✓ บันทึก {savedAt.toLocaleTimeString('th-TH')}</span>}
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 10px', borderRadius: 9,
+          fontSize: '0.76rem', fontWeight: 800,
+          color: cloudStatus === 'error' ? '#B91C1C' : cloudStatus === 'missing' || dirty ? '#92400E' : '#047857',
+          background: cloudStatus === 'error' ? '#FEF2F2' : cloudStatus === 'missing' || dirty ? '#FFFBEB' : '#ECFDF5',
+          border: `1px solid ${cloudStatus === 'error' ? '#FECACA' : cloudStatus === 'missing' || dirty ? '#FDE68A' : '#A7F3D0'}`,
+        }}>
+          {cloudStatus === 'error' ? <CloudOff size={14} /> : <Database size={14} />}
+          {cloudStatus === 'connecting' && 'กำลังเชื่อมต่อข้อมูลกลาง'}
+          {cloudStatus === 'saving' && 'กำลังบันทึกขึ้นระบบกลาง'}
+          {cloudStatus === 'ready' && (dirty ? 'มีการแก้ไขที่ยังไม่บันทึก' : 'เชื่อมข้อมูลกลางแล้ว')}
+          {cloudStatus === 'missing' && 'ยังไม่มีข้อมูลกลาง'}
+          {cloudStatus === 'error' && 'การเชื่อมต่อมีปัญหา'}
+        </span>
+        {savedAt && !dirty && cloudStatus === 'ready' && (
+          <span style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700 }}>
+            อัปเดต {savedAt.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+          </span>
+        )}
         {!readOnly && (
-          <button onClick={saveToCloud} disabled={loading}
-            style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 10, fontWeight: 800, cursor: 'pointer' }}>
-            <Save size={14} style={{ marginRight: 6 }} />{loading ? 'กำลังบันทึก…' : 'บันทึกขึ้นคลาวด์'}
+          <button onClick={saveToCloud} disabled={loading || (!dirty && cloudStatus === 'ready')}
+            style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 10, fontWeight: 800, cursor: loading ? 'wait' : 'pointer', opacity: loading || (!dirty && cloudStatus === 'ready') ? 0.6 : 1 }}>
+            <Save size={14} style={{ marginRight: 6 }} />{loading ? 'กำลังบันทึก…' : dirty ? 'บันทึกการแก้ไข' : 'ข้อมูลเป็นปัจจุบัน'}
           </button>
         )}
         <button onClick={() => window.print()}
@@ -555,6 +618,16 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
           <Printer size={14} style={{ marginRight: 6 }} />พิมพ์
         </button>
       </div>
+
+      {cloudError && (
+        <div className="tt-no-print" role="alert" style={{
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, padding: '10px 12px',
+          borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C',
+          fontSize: '0.82rem', fontWeight: 700,
+        }}>
+          <CloudOff size={16} /> {cloudError}
+        </div>
+      )}
 
       {/* Admin toolbar (export/import/reset) */}
       {!readOnly && (
@@ -573,7 +646,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
             <RotateCcw size={12} />รีเซ็ตเป็นข้อมูลเริ่มต้น
           </button>
           <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#94A3B8', alignSelf: 'center' }}>
-            💡 แนะนำ Export ก่อนแก้ไขทุกครั้ง
+            ข้อมูลที่แก้จะเผยแพร่เมื่อกด “บันทึกการแก้ไข”
           </span>
         </div>
       )}

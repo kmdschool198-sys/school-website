@@ -1,5 +1,5 @@
 // Removed unused React import
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import ContentPage from './pages/ContentPage';
@@ -61,6 +61,7 @@ function App() {
           <Route path="/print-homeroom" element={<HomeroomPrint />} />
           <Route path="/school-stats-report" element={<SchoolStatsReport />} />
           <Route path="/school-calendar" element={<SchoolCalendar />} />
+          <Route path="/timetable" element={<Navigate to="/page/timetable" replace />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />
           <Route path="*" element={<NotFound />} />

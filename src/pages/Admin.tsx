@@ -2084,20 +2084,17 @@ function Admin() {
             <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
               <div>
                 <h5 className="fw-bold mb-1">📅 โปรแกรมจัดการตารางสอน</h5>
-                <p className="text-muted small mb-0">โปรแกรมเต็มรูปแบบ — สร้าง/แก้ไข/พิมพ์ตารางสอน-ตารางเรียน + Backup/Restore JSON</p>
+                <p className="text-muted small mb-0">แก้ไขข้อมูลกลางของโรงเรียน นักเรียนและผู้ปกครองจะเห็นข้อมูลล่าสุดจากหน้าเดียวกัน</p>
               </div>
               <div className="d-flex gap-2">
-                <a href="/timetable.html" target="_blank" rel="noreferrer" className="btn btn-outline-primary fw-bold">
-                  <ExternalLink size={14} className="me-1" /> เปิดเต็มหน้าจอ
-                </a>
-                <a href="/timetable_data.json" download className="btn btn-outline-success fw-bold">
-                  <Save size={14} className="me-1" /> ดาวน์โหลด Backup
+                <a href="/page/timetable" target="_blank" rel="noreferrer" className="btn btn-outline-primary fw-bold">
+                  <ExternalLink size={14} className="me-1" /> ดูหน้าตารางบนเว็บไซต์
                 </a>
               </div>
             </div>
             <TimetableSmart />
-            <div className="alert alert-warning small mt-3 mb-0">
-              💡 <b>หมายเหตุ:</b> โปรแกรมนี้บันทึกข้อมูลใน LocalStorage ของเบราว์เซอร์ — ใช้ปุ่ม "Export JSON" ในตัวโปรแกรมเพื่อสำรองข้อมูลเป็นประจำ และอัปโหลดไฟล์ JSON ไปไว้ใน Google Drive
+            <div className="alert alert-success small mt-3 mb-0">
+              <b>ข้อมูลเชื่อมกันแล้ว:</b> ตารางนี้บันทึกใน Firestore กลาง ไม่ผูกกับคอมพิวเตอร์เครื่องใดเครื่องหนึ่ง กด Export JSON เมื่อต้องการเก็บไฟล์สำรองเพิ่มเติม
             </div>
           </div>
         )}
