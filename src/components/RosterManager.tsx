@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   doc, onSnapshot, getDoc, getDocs, collection, writeBatch, query, where,
   type DocumentData, type QuerySnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { Trash2, UserPlus, Upload, Download, RefreshCw } from 'lucide-react';
+import { buildSeedRosters } from '../utils/useSchoolRoster';
+import { Trash2, UserPlus, Upload, Download, RefreshCw, Save } from 'lucide-react';
 import { PageLoading } from './PageState';
 import type { ResultAnnouncement } from '../data/results';
 import {
@@ -23,15 +23,17 @@ import {
 type Student = RosterStudent;
 type ClassRoster = RosterClass;
 
-const KG_CLASSES: ClassRoster[] = [
-  { classId: 'kg_a2_1', label: 'อ.2/1', students: [] },
-  { classId: 'kg_a3_1', label: 'อ.3/1', students: [] },
-];
-
 const seedClasses = (): ClassRoster[] => {
-  const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-  const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-  return [...KG_CLASSES, ...rooms.map(r => ({ classId: r.id, label: r.label, students: [] }))];
+  return buildSeedRosters().map(r => ({
+    classId: r.classId,
+    label: r.label,
+    students: r.students.map(s => ({
+      id: s.id,
+      code: s.code,
+      name: s.name,
+      emoji: s.emoji,
+    })),
+  }));
 };
 
 export default function RosterManager() {
@@ -39,18 +41,30 @@ export default function RosterManager() {
   const [classId, setClassId] = useState<string>('');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const isDirtyRef = useRef(false);
+
+  useEffect(() => {
+    isDirtyRef.current = isDirty;
+  }, [isDirty]);
 
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
       if (snap.exists()) {
         const d = snap.data() as { classes: ClassRoster[] };
         if (d.classes?.length) {
-          const cloud = new Map(d.classes.map(c => [c.classId, c]));
+          if (isDirtyRef.current) return;
+          const cloudClasses = d.classes;
           setClasses(prev => {
-            const merged = prev.map(c => ({ ...c, students: cloud.get(c.classId)?.students || c.students }));
-            const seen = new Set(merged.map(c => c.classId));
-            d.classes.forEach(c => { if (!seen.has(c.classId)) merged.push(c); });
-            return merged;
+            return prev.map(c => {
+              const cloudCls = cloudClasses.find(
+                cc => cc.classId === c.classId || cc.label === c.label || (c as any).acadId === cc.classId
+              );
+              return {
+                ...c,
+                students: (cloudCls && Array.isArray(cloudCls.students)) ? cloudCls.students : c.students,
+              };
+            });
           });
         }
       }
@@ -61,11 +75,32 @@ export default function RosterManager() {
     if (!classId && classes.length) setClassId(classes[0].classId);
   }, [classes]);
 
+  // Debounced auto-save
+  useEffect(() => {
+    if (!isDirty) return;
+    const timer = setTimeout(() => {
+      save(classes);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [classes, isDirty]);
+
   const current = classes.find(c => c.classId === classId);
 
-  const save = async (next: ClassRoster[], forceSync = false) => {
-    const changes = detectRosterChanges(classes, next);
-    setClasses(next);
+  const save = async (nextToSave?: ClassRoster[], forceSync = false) => {
+    const rawTarget = nextToSave || classes;
+    const cleanClasses: ClassRoster[] = rawTarget.map(cls => ({
+      classId: cls.classId,
+      label: cls.label,
+      students: (cls.students || []).map(s => ({
+        id: String(s.id || '').trim() || `${cls.classId}_s${Date.now()}`,
+        code: String(s.code || '').trim(),
+        name: String(s.name || '').trim(),
+        emoji: String(s.emoji || '🧒').trim(),
+      }))
+    }));
+
+    const changes = detectRosterChanges(classes, cleanClasses);
+    setClasses(cleanClasses);
     setSaving(true);
     try {
       const now = Date.now();
@@ -75,9 +110,9 @@ export default function RosterManager() {
         && Array.isArray(studentCountSnapshot.data().rows)
         ? studentCountSnapshot.data().rows as StudentCountRow[]
         : [];
-      const countRows = buildStudentCountRows(next, existingCountRows);
+      const countRows = buildStudentCountRows(cleanClasses, existingCountRows);
       const configBatch = writeBatch(db);
-      configBatch.set(doc(db, 'config', 'attendance_classes'), { classes: next, updatedAt: now });
+      configBatch.set(doc(db, 'config', 'attendance_classes'), { classes: cleanClasses, updatedAt: now });
       configBatch.set(studentCountRef, { rows: countRows, updatedAt: now }, { merge: true });
       await configBatch.commit();
 
@@ -150,7 +185,7 @@ export default function RosterManager() {
           resultsSnapshot.docs.forEach(resultDoc => {
             const result = { id: resultDoc.id, ...resultDoc.data() } as ResultAnnouncement;
             if (result.visible) return;
-            const rosterClass = next.find(item => item.classId === result.classId);
+            const rosterClass = cleanClasses.find((item: ClassRoster) => item.classId === result.classId);
             if (!rosterClass) return;
             const records = syncDraftResultRows(result.records || [], rosterClass.students);
             resultBatch.update(resultDoc.ref, {
@@ -234,6 +269,8 @@ export default function RosterManager() {
       }
 
       setSavedAt(new Date());
+      setIsDirty(false);
+      isDirtyRef.current = false;
     } catch (e: any) {
       alert('❌ บันทึกไม่สำเร็จ: ' + (e?.message || e));
     } finally {
@@ -242,8 +279,9 @@ export default function RosterManager() {
   };
 
   const updateStudents = (fn: (students: Student[]) => Student[]) => {
-    const next = classes.map(c => c.classId === classId ? { ...c, students: fn(c.students) } : c);
-    save(next);
+    setIsDirty(true);
+    isDirtyRef.current = true;
+    setClasses(prev => prev.map(c => c.classId === classId ? { ...c, students: fn(c.students) } : c));
   };
 
   const addStudent = () => {
@@ -254,8 +292,10 @@ export default function RosterManager() {
   };
 
   const removeStudent = (sid: string) => {
-    if (!confirm('ลบนักเรียนคนนี้?')) return;
-    updateStudents(s => s.filter(x => x.id !== sid));
+    if (typeof window !== 'undefined' && window.confirm && !window.confirm('ยืนยันการลบนักเรียนคนนี้ออกจากฐานข้อมูล?')) return;
+    const next = classes.map(c => c.classId === classId ? { ...c, students: c.students.filter(x => x.id !== sid) } : c);
+    setClasses(next);
+    save(next);
   };
 
   const updateStudent = (sid: string, patch: Partial<Student>) => {
@@ -368,12 +408,28 @@ export default function RosterManager() {
         <span style={{ fontSize: '0.85rem', color: '#64748B' }}>
           📊 รวม <b style={{ color: '#FF6A01' }}>{classes.reduce((s, c) => s + c.students.length, 0)}</b> คน · {classes.length} ชั้นเรียน
         </span>
+        {isDirty && (
+          <button
+            onClick={() => save(classes)}
+            disabled={saving}
+            style={{
+              padding: '7px 14px', borderRadius: 8,
+              border: 'none', background: 'linear-gradient(135deg,#FF6A01,#FB923C)',
+              color: 'white', fontWeight: 800, fontSize: '0.82rem',
+              cursor: saving ? 'wait' : 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              boxShadow: '0 2px 8px rgba(255,106,1,0.3)',
+            }}
+          >
+            <Save size={14} /> บันทึกการแก้ไข
+          </button>
+        )}
         <button
           onClick={() => save(classes, true)}
           disabled={saving}
           title="อัปเดตยอดสรุป ชุมนุม และผลสอบฉบับร่างจากทะเบียนนี้"
           style={{
-            marginLeft: 'auto', padding: '7px 12px', borderRadius: 8,
+            marginLeft: isDirty ? '0' : 'auto', padding: '7px 12px', borderRadius: 8,
             border: '1px solid #FDBA74', background: 'white', color: '#C2410C',
             fontWeight: 800, fontSize: '0.8rem', cursor: saving ? 'wait' : 'pointer',
             display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -382,7 +438,8 @@ export default function RosterManager() {
           <RefreshCw size={14} />ซิงก์ทุกระบบ
         </button>
         {saving && <span style={{ fontSize: '0.78rem', color: '#F59E0B', fontWeight: 700 }}>💾 กำลังบันทึก…</span>}
-        {savedAt && !saving && <span style={{ fontSize: '0.78rem', color: '#10B981', fontWeight: 700 }}>✓ {savedAt.toLocaleTimeString('th-TH')}</span>}
+        {isDirty && !saving && <span style={{ fontSize: '0.78rem', color: '#EA580C', fontWeight: 700 }}>⚠️ แก้ไขแล้ว (รอเซฟ...)</span>}
+        {savedAt && !saving && !isDirty && <span style={{ fontSize: '0.78rem', color: '#10B981', fontWeight: 700 }}>✓ {savedAt.toLocaleTimeString('th-TH')}</span>}
       </div>
 
       {/* CSV toolbar */}

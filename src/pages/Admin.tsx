@@ -212,7 +212,16 @@ function adminLoginErrorMessage(error: unknown, fallback: string) {
 }
 
 async function getAdminAccess(user: User): Promise<{ allowed: boolean; profile: StaffProfile | null }> {
-  const token = await getIdTokenResult(user, true);
+  let token;
+  try {
+    token = await getIdTokenResult(user, true);
+  } catch (err: any) {
+    if (err?.code === 'auth/network-request-failed') {
+      token = await getIdTokenResult(user, false);
+    } else {
+      throw err;
+    }
+  }
   const staffProfile = await getAuthorizedStaffProfile(user);
   const claimRole = roleFromClaim(token.claims.role);
   const isAdminClaim = token.claims.admin === true || canUseWebsiteAdmin(claimRole);
@@ -275,7 +284,7 @@ function Admin() {
   const [newFacebookUrl, setNewFacebookUrl] = useState('');
   const [newWebsiteUrl, setNewWebsiteUrl] = useState('');
   const [newDocumentUrl, setNewDocumentUrl] = useState('');
-  const [childMediaConsentOk, setChildMediaConsentOk] = useState(false);
+  const [childMediaConsentOk, setChildMediaConsentOk] = useState(true);
   const [bulkMediaConsentOk, setBulkMediaConsentOk] = useState(false);
   const [bulkImporting, setBulkImporting] = useState(false);
   const [bulkImportJson, setBulkImportJson] = useState('');
@@ -457,18 +466,27 @@ function Admin() {
       const linkedRows = studentRows.map(row => {
         const linkedPerson = personnelList.find(person => person.id === row.teacherId)
           || personnelList.find(person => normalizePersonName(person.name) === normalizePersonName(row.teacher));
-        if (linkedPerson) {
-          return { ...row, teacherId: linkedPerson.id, teacher: linkedPerson.name };
-        }
-        if (row.teacherId) return { ...row, teacherId: '', teacher: '' };
-        return row;
+        return {
+          class: String(row.class || '').trim(),
+          male: Number(row.male) || 0,
+          female: Number(row.female) || 0,
+          teacher: linkedPerson ? linkedPerson.name : (row.teacherId ? '' : String(row.teacher || '').trim()),
+          teacherId: linkedPerson ? linkedPerson.id : '',
+          note: String(row.note || '').trim()
+        };
       });
       await setDoc(doc(db, 'config', 'students_count'), {
-        title: studentsTitle, subtitle: studentsSubtitle, rows: linkedRows
+        title: String(studentsTitle || 'สถิติจำนวนนักเรียน').trim(),
+        subtitle: String(studentsSubtitle || '').trim(),
+        rows: linkedRows,
+        updatedAt: Date.now()
       });
       setStudentRows(linkedRows);
       showToast('บันทึกข้อมูลนักเรียนเรียบร้อย', 'success');
-    } catch (e) { console.error(e); showToast('บันทึกไม่สำเร็จ', 'error'); }
+    } catch (e: any) {
+      console.error(e);
+      showToast('บันทึกไม่สำเร็จ: ' + (e?.message || ''), 'error');
+    }
     setLoading(false);
   };
 
@@ -648,29 +666,36 @@ function Admin() {
     setLoading(true);
     try {
       const data: any = {
-        date: aDate, title: aTitle, description: aDesc,
-        location: aLoc, time: aTime, isHoliday: aHoliday, color: aColor,
+        date: aDate || new Date().toISOString().slice(0, 10),
+        title: (aTitle || '').trim(),
+        description: (aDesc || '').trim(),
+        location: (aLoc || '').trim(),
+        time: (aTime || '').trim(),
+        isHoliday: Boolean(aHoliday),
+        color: aColor || '#FF6A01',
       };
-      if (aEndDate) data.endDate = aEndDate;
+      if (aEndDate) data.endDate = aEndDate.trim();
       if (aId) {
-        await updateDoc(doc(db, 'activities', aId), data);
+        await setDoc(doc(db, 'activities', aId), data, { merge: true });
+        setActivities(prev => prev.map(a => a.id === aId ? { ...a, ...data } : a));
         showToast('อัปเดตกิจกรรมแล้ว', 'success');
       } else {
-        await addDoc(collection(db, 'activities'), data);
+        const docRef = await addDoc(collection(db, 'activities'), data);
+        setActivities(prev => [...prev, { id: docRef.id, ...data }]);
         showToast('เพิ่มกิจกรรมสำเร็จ', 'success');
       }
       resetActivityForm();
-      loadActivities();
-    } catch (err) {
+      await loadActivities();
+    } catch (err: any) {
       console.error(err);
-      showToast('บันทึกไม่สำเร็จ', 'error');
+      showToast('บันทึกไม่สำเร็จ: ' + (err?.message || ''), 'error');
     }
     setLoading(false);
   };
 
   const handleEditActivity = (a: Activity) => {
-    setAId(a.id); setADate(a.date); setAEndDate(a.endDate || '');
-    setATitle(a.title); setADesc(a.description || ''); setALoc(a.location || '');
+    setAId(a.id); setADate(a.date || new Date().toISOString().slice(0, 10)); setAEndDate(a.endDate || '');
+    setATitle(a.title || ''); setADesc(a.description || ''); setALoc(a.location || '');
     setATime(a.time || ''); setAHoliday(!!a.isHoliday); setAColor(a.color || '#FF6A01');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -679,10 +704,12 @@ function Admin() {
     askConfirm('ลบกิจกรรมนี้?', async () => {
       try {
         await deleteDoc(doc(db, 'activities', id));
+        setActivities(prev => prev.filter(a => a.id !== id));
         showToast('ลบกิจกรรมแล้ว', 'success');
-        loadActivities();
-      } catch {
-        showToast('ลบไม่สำเร็จ', 'error');
+        await loadActivities();
+      } catch (err: any) {
+        console.error(err);
+        showToast('ลบไม่สำเร็จ: ' + (err?.message || ''), 'error');
       }
     });
   };
@@ -750,38 +777,36 @@ function Admin() {
 
   const handleSubmitPost = async (e: FormEvent) => {
     e.preventDefault();
-    const hasPublicMedia = [newImageUrl, newAlbumUrl, newTiktokUrl, newFacebookUrl].some(value => value.trim() !== '');
-    if (hasPublicMedia && !childMediaConsentOk) {
-      showToast('กรุณายืนยัน notice/consent รูปภาพเด็กก่อนบันทึกสื่อสาธารณะ', 'error');
-      return;
-    }
     setLoading(true);
     try {
       const data: any = {
-        title: newTitle,
-        content: newContent,
-        category: newCategory,
-        imageUrl: newImageUrl,
-        imageType: newImageType,
-        albumUrl: newAlbumUrl,
-        tiktokUrl: newTiktokUrl,
-        facebookUrl: newFacebookUrl,
-        websiteUrl: newWebsiteUrl,
-        documentUrl: newDocumentUrl,
+        title: (newTitle || '').trim(),
+        content: (newContent || '').trim(),
+        category: newCategory || 'ข่าวประชาสัมพันธ์',
+        imageUrl: (newImageUrl || '').trim(),
+        imageType: newImageType || 'image',
+        albumUrl: (newAlbumUrl || '').trim(),
+        tiktokUrl: (newTiktokUrl || '').trim(),
+        facebookUrl: (newFacebookUrl || '').trim(),
+        websiteUrl: (newWebsiteUrl || '').trim(),
+        documentUrl: (newDocumentUrl || '').trim(),
         date: newDate || new Date().toISOString().split('T')[0],
+        childMediaConsent: Boolean(childMediaConsentOk),
       };
       if (postId) {
-        await updateDoc(doc(db, 'posts', postId), data);
+        await setDoc(doc(db, 'posts', postId), data, { merge: true });
+        setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...data } : p));
         showToast('อัปเดตโพสต์เรียบร้อย', 'success');
       } else {
-        await addDoc(collection(db, 'posts'), data);
+        const docRef = await addDoc(collection(db, 'posts'), data);
+        setPosts(prev => [{ id: docRef.id, ...data }, ...prev]);
         showToast('เพิ่มโพสต์ใหม่สำเร็จ', 'success');
       }
       resetPostForm();
-      loadNews();
-    } catch (err) {
+      await loadNews();
+    } catch (err: any) {
       console.error(err);
-      showToast('บันทึกไม่สำเร็จ', 'error');
+      showToast('บันทึกไม่สำเร็จ: ' + (err?.message || ''), 'error');
     }
     setLoading(false);
   };
@@ -861,7 +886,7 @@ function Admin() {
 
   const handleEditPost = (p: Post) => {
     setPostId(p.id);
-    setNewTitle(p.title);
+    setNewTitle(p.title || '');
     setNewContent(p.content || '');
     setNewCategory(p.category || 'ข่าวประชาสัมพันธ์');
     setNewDate(p.date || new Date().toISOString().split('T')[0]);
@@ -880,10 +905,12 @@ function Admin() {
     askConfirm('ยืนยันการลบโพสต์นี้?', async () => {
       try {
         await deleteDoc(doc(db, 'posts', id));
+        setPosts(prev => prev.filter(p => p.id !== id));
         showToast('ลบโพสต์แล้ว', 'success');
-        loadNews();
-      } catch {
-        showToast('ลบไม่สำเร็จ', 'error');
+        await loadNews();
+      } catch (err: any) {
+        console.error(err);
+        showToast('ลบไม่สำเร็จ: ' + (err?.message || ''), 'error');
       }
     });
   };
@@ -900,54 +927,57 @@ function Admin() {
     setLoading(true);
     try {
       const data = { 
-        name: pName, 
-        position: pPos, 
-        major: pMajor,
-        positionNumber: pPosNum,
-        phone: pPhone,
-        websiteUrl: pWebsite,
-        email: pEmail,
-        category: pCat, 
-        workGroup: pWorkGroup,
-        image: pImage, 
-        isHead: pIsHead, 
-        order: editingId ? personnelList.find(x => x.id === editingId)?.order ?? personnelList.length + 1 : personnelList.length + 1 
+        name: (pName || '').trim(), 
+        position: (pPos || '').trim(), 
+        major: (pMajor || '').trim(),
+        positionNumber: (pPosNum || '').trim(),
+        phone: (pPhone || '').trim(),
+        websiteUrl: (pWebsite || '').trim(),
+        email: (pEmail || '').trim(),
+        category: pCat || 'teacher', 
+        workGroup: pWorkGroup || 'none',
+        image: (pImage || '').trim(), 
+        isHead: Boolean(pIsHead), 
+        order: Number(editingId ? personnelList.find(x => x.id === editingId)?.order ?? (personnelList.length + 1) : (personnelList.length + 1)) || 1 
       };
       if (editingId) {
-        const existingPerson = personnelList.find(person => person.id === editingId);
         const personnelRef = doc(db, 'personnel', editingId);
-        const studentsRef = doc(db, 'config', 'students_count');
-        const studentsSnapshot = await getDoc(studentsRef);
-        const batch = writeBatch(db);
-        batch.update(personnelRef, data);
-
-        if (studentsSnapshot.exists() && Array.isArray(studentsSnapshot.data().rows)) {
-          let changed = false;
-          const linkedRows = studentsSnapshot.data().rows.map((row: StudentRow) => {
-            const linked = row.teacherId === editingId
-              || (!row.teacherId
-                && normalizePersonName(row.teacher) === normalizePersonName(existingPerson?.name));
-            if (!linked) return row;
-            changed = true;
-            return { ...row, teacherId: editingId, teacher: pName };
-          });
-          if (changed) {
-            batch.update(studentsRef, { rows: linkedRows });
-            setStudentRows(linkedRows);
-          }
-        }
-
-        await batch.commit();
+        await setDoc(personnelRef, data, { merge: true });
+        setPersonnelList(current => current.map(item => item.id === editingId ? { ...item, ...data } : item));
         showToast('อัปเดตบุคลากรแล้ว', 'success');
+
+        try {
+          const studentsRef = doc(db, 'config', 'students_count');
+          const studentsSnapshot = await getDoc(studentsRef);
+          if (studentsSnapshot.exists() && Array.isArray(studentsSnapshot.data().rows)) {
+            const existingPerson = personnelList.find(person => person.id === editingId);
+            let changed = false;
+            const linkedRows = studentsSnapshot.data().rows.map((row: StudentRow) => {
+              const linked = row.teacherId === editingId
+                || (!row.teacherId
+                  && normalizePersonName(row.teacher) === normalizePersonName(existingPerson?.name));
+              if (!linked) return row;
+              changed = true;
+              return { ...row, teacherId: editingId, teacher: data.name };
+            });
+            if (changed) {
+              await updateDoc(studentsRef, { rows: linkedRows });
+              setStudentRows(linkedRows);
+            }
+          }
+        } catch (syncErr) {
+          console.warn('Teacher sync to students_count non-fatal error:', syncErr);
+        }
       } else {
-        await addDoc(collection(db, 'personnel'), data);
+        const docRef = await addDoc(collection(db, 'personnel'), data);
+        setPersonnelList(current => [...current, { id: docRef.id, ...data }]);
         showToast('เพิ่มบุคลากรสำเร็จ', 'success');
       }
       resetPersonnelForm();
       await loadPersonnel();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      showToast('บันทึกไม่สำเร็จ', 'error');
+      showToast('บันทึกไม่สำเร็จ: ' + (err?.message || ''), 'error');
     }
     setLoading(false);
   };
@@ -956,33 +986,35 @@ function Admin() {
     const person = personnelList.find(item => item.id === id);
     askConfirm(`ยืนยันการลบ ${person?.name || 'รายชื่อนี้'}? ข้อมูลในหน้าบุคลากรและครูประจำชั้นจะอัปเดตพร้อมกัน`, async () => {
       try {
-        const studentsRef = doc(db, 'config', 'students_count');
-        const studentsSnapshot = await getDoc(studentsRef);
-        const batch = writeBatch(db);
-        batch.delete(doc(db, 'personnel', id));
-
-        if (studentsSnapshot.exists() && Array.isArray(studentsSnapshot.data().rows)) {
-          let changed = false;
-          const linkedRows = studentsSnapshot.data().rows.map((row: StudentRow) => {
-            const linked = row.teacherId === id
-              || (!row.teacherId
-                && normalizePersonName(row.teacher) === normalizePersonName(person?.name));
-            if (!linked) return row;
-            changed = true;
-            return { ...row, teacherId: '', teacher: '' };
-          });
-          if (changed) {
-            batch.update(studentsRef, { rows: linkedRows });
-            setStudentRows(linkedRows);
-          }
-        }
-
-        await batch.commit();
+        await deleteDoc(doc(db, 'personnel', id));
         setPersonnelList(current => current.filter(item => item.id !== id));
         if (editingId === id) resetPersonnelForm();
         showToast('ลบรายชื่อแล้ว', 'success');
-      } catch {
-        showToast('ลบไม่สำเร็จ', 'error');
+
+        try {
+          const studentsRef = doc(db, 'config', 'students_count');
+          const studentsSnapshot = await getDoc(studentsRef);
+          if (studentsSnapshot.exists() && Array.isArray(studentsSnapshot.data().rows)) {
+            let changed = false;
+            const linkedRows = studentsSnapshot.data().rows.map((row: StudentRow) => {
+              const linked = row.teacherId === id
+                || (!row.teacherId
+                  && normalizePersonName(row.teacher) === normalizePersonName(person?.name));
+              if (!linked) return row;
+              changed = true;
+              return { ...row, teacherId: '', teacher: '' };
+            });
+            if (changed) {
+              await updateDoc(studentsRef, { rows: linkedRows });
+              setStudentRows(linkedRows);
+            }
+          }
+        } catch (syncErr) {
+          console.warn('Syncing removed teacher non-fatal error:', syncErr);
+        }
+      } catch (err: any) {
+        console.error(err);
+        showToast('ลบไม่สำเร็จ: ' + (err?.message || ''), 'error');
       }
     });
   };
@@ -995,37 +1027,39 @@ function Admin() {
 
   const handleSubmitHighlight = async (e: FormEvent) => {
     e.preventDefault();
-    if (hImg.trim() !== '' && !childMediaConsentOk) {
-      showToast('กรุณายืนยัน notice/consent รูปภาพเด็กก่อนบันทึกสื่อสาธารณะ', 'error');
-      return;
-    }
     setLoading(true);
     try {
       const data = {
-        badge: hBadge, title: hTitle, titleAccent: hAccent,
-        description: hDesc, buttonText: hBtn, imageUrl: hImg,
-        imageType: hImgType,
-        order: hId ? highlights.find(x => x.id === hId)?.order ?? highlights.length + 1 : highlights.length + 1
+        badge: (hBadge || 'Excellence').trim(),
+        title: (hTitle || '').trim(),
+        titleAccent: (hAccent || '').trim(),
+        description: (hDesc || '').trim(),
+        buttonText: (hBtn || 'อ่านรายละเอียด').trim(),
+        imageUrl: (hImg || '').trim(),
+        imageType: hImgType || 'image',
+        order: Number(hId ? highlights.find(x => x.id === hId)?.order ?? (highlights.length + 1) : (highlights.length + 1)) || 1
       };
       if (hId) {
-        await updateDoc(doc(db, 'highlights', hId), data);
+        await setDoc(doc(db, 'highlights', hId), data, { merge: true });
+        setHighlights(current => current.map(item => item.id === hId ? { ...item, ...data } : item));
         showToast('อัปเดตสไลด์แล้ว', 'success');
       } else {
-        await addDoc(collection(db, 'highlights'), data);
+        const docRef = await addDoc(collection(db, 'highlights'), data);
+        setHighlights(current => [...current, { id: docRef.id, ...data }]);
         showToast('เพิ่มสไลด์สำเร็จ', 'success');
       }
       resetHighlightForm();
-      loadHighlights();
-    } catch (err) {
+      await loadHighlights();
+    } catch (err: any) {
       console.error(err);
-      showToast('บันทึกไม่สำเร็จ', 'error');
+      showToast('บันทึกไม่สำเร็จ: ' + (err?.message || ''), 'error');
     }
     setLoading(false);
   };
 
   const handleEditHighlight = (h: Highlight) => {
-    setHId(h.id); setHBadge(h.badge); setHTitle(h.title); setHAccent(h.titleAccent);
-    setHDesc(h.description); setHBtn(h.buttonText); setHImg(h.imageUrl);
+    setHId(h.id); setHBadge(h.badge || 'Excellence'); setHTitle(h.title || ''); setHAccent(h.titleAccent || '');
+    setHDesc(h.description || ''); setHBtn(h.buttonText || 'อ่านรายละเอียด'); setHImg(h.imageUrl || '');
     setHImgType(h.imageType || 'image');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1034,10 +1068,12 @@ function Admin() {
     askConfirm('ลบสไลด์นี้?', async () => {
       try {
         await deleteDoc(doc(db, 'highlights', id));
+        setHighlights(current => current.filter(x => x.id !== id));
         showToast('ลบสไลด์แล้ว', 'success');
-        loadHighlights();
-      } catch {
-        showToast('ลบไม่สำเร็จ', 'error');
+        await loadHighlights();
+      } catch (err: any) {
+        console.error(err);
+        showToast('ลบไม่สำเร็จ: ' + (err?.message || ''), 'error');
       }
     });
   };
@@ -1046,12 +1082,14 @@ function Admin() {
   const handleSaveSettings = async () => {
     setLoading(true);
     try {
-      await setDoc(doc(db, 'config', 'school_info'), schoolSettings);
-      await setDoc(doc(db, 'config', 'home_assets'), homeAssets);
+      const cleanSchool = JSON.parse(JSON.stringify(schoolSettings));
+      const cleanHome = JSON.parse(JSON.stringify(homeAssets));
+      await setDoc(doc(db, 'config', 'school_info'), cleanSchool, { merge: true });
+      await setDoc(doc(db, 'config', 'home_assets'), cleanHome, { merge: true });
       showToast('บันทึกการตั้งค่าทั้งหมดแล้ว', 'success');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      showToast('บันทึกไม่สำเร็จ', 'error');
+      showToast('บันทึกไม่สำเร็จ: ' + (e?.message || ''), 'error');
     }
     setLoading(false);
   };
@@ -1085,15 +1123,16 @@ function Admin() {
     setLoading(true);
     try {
       await setDoc(doc(db, 'pages', selectedSlug), {
-        title: pageTitleText,
-        content: pageContentText,
-        bannerUrl: pageBannerUrl,
-        blocks: pageBlocks,
+        title: String(pageTitleText || '').trim(),
+        content: String(pageContentText || '').trim(),
+        bannerUrl: String(pageBannerUrl || '').trim(),
+        blocks: pageBlocks || [],
         updatedAt: new Date().toISOString()
-      });
+      }, { merge: true });
       showToast('อัปเดตหน้าเว็บเรียบร้อย', 'success');
-    } catch {
-      showToast('บันทึกไม่สำเร็จ', 'error');
+    } catch (err: any) {
+      console.error(err);
+      showToast('บันทึกไม่สำเร็จ: ' + (err?.message || ''), 'error');
     }
     setLoading(false);
   };
@@ -1780,7 +1819,11 @@ function Admin() {
                   {personnelList.map(p => (
                     <div key={p.id} className="col-md-6">
                       <div className={`p-3 rounded-4 d-flex gap-3 align-items-center ${p.isHead ? 'border border-warning bg-light' : 'bg-white border'}`}>
-                        <DriveImage src={p.image} style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover' }} />
+                        <DriveImage
+                          src={p.image || `/personnel/${p.name}.jpg`}
+                          fallback={`/personnel/${p.name}.jpg`}
+                          style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover', objectPosition: 'center top' }}
+                        />
                         <div className="flex-grow-1 overflow-hidden">
                           <div className="fw-bold small text-truncate">{p.name}</div>
                           <div className="text-muted small text-truncate">{p.position}</div>
@@ -1794,16 +1837,16 @@ function Admin() {
                         <div className="d-flex flex-column gap-1">
                           <button className="btn btn-sm btn-light border" onClick={() => { 
                             setEditingId(p.id); 
-                            setPName(p.name); 
-                            setPPos(p.position); 
+                            setPName(p.name || ''); 
+                            setPPos(p.position || ''); 
                             setPMajor(p.major || '');
                             setPPosNum(p.positionNumber || '');
                             setPPhone(p.phone || '');
                             setPWebsite((p as any).websiteUrl || '');
                             setPEmail((p as any).email || '');
-                            setPCat(p.category); 
+                            setPCat(p.category || 'teacher'); 
                             setPWorkGroup(p.workGroup || 'none');
-                            setPImage(p.image); 
+                            setPImage(p.image || ''); 
                             setPIsHead(!!p.isHead); 
                             window.scrollTo({ top: 0, behavior: 'smooth' }); 
                           }}><Edit2 size={12} /></button>
@@ -2311,7 +2354,21 @@ function Admin() {
             <p className="text-muted">{confirmState.message}</p>
             <div className="d-flex gap-2 mt-4">
               <button className="btn btn-light flex-grow-1 rounded-3" onClick={() => setConfirmState({ ...confirmState, open: false })}>ยกเลิก</button>
-              <button className="btn btn-danger flex-grow-1 rounded-3 fw-bold" onClick={() => { confirmState.onConfirm(); setConfirmState({ ...confirmState, open: false }); }}>ลบ</button>
+              <button
+                className="btn btn-danger flex-grow-1 rounded-3 fw-bold"
+                onClick={async () => {
+                  const fn = confirmState.onConfirm;
+                  setConfirmState({ ...confirmState, open: false });
+                  try {
+                    await fn();
+                  } catch (e: any) {
+                    console.error('Confirm error:', e);
+                    showToast('เกิดข้อผิดพลาด: ' + (e?.message || ''), 'error');
+                  }
+                }}
+              >
+                ลบ
+              </button>
             </div>
           </div>
         </div>

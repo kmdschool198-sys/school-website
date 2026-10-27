@@ -312,13 +312,28 @@ function Home() {
                 <Target size={28} />
               </div>
               <div>
-                <div style={{ opacity: 0.9, fontSize: '0.85rem', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>วิสัยทัศน์</div>
+                <div style={{ opacity: 0.9, fontSize: '0.85rem', fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase' }}>วิสัยทัศน์ในการบริหารจัดการสถานศึกษา (พ.ศ. 2570)</div>
                 <h3 style={{ margin: 0, fontWeight: 900, fontSize: '1.5rem' }}>โรงเรียนบ้านคลองมดแดง</h3>
               </div>
             </div>
-            <p style={{ fontSize: '1.4rem', fontWeight: 700, lineHeight: 1.6, margin: 0, position: 'relative', maxWidth: 900 }}>
-              "จัดการศึกษาที่มีคุณภาพตามมาตรฐานการศึกษา พัฒนาผู้เรียนให้เป็นคนดี มีความรู้ มีทักษะ และดำรงชีวิตอย่างมีความสุขในสังคม"
+            <p style={{ fontSize: '1.45rem', fontWeight: 800, lineHeight: 1.6, margin: 0, position: 'relative', maxWidth: 960 }}>
+              “โรงเรียนคุณภาพมาตรฐาน บูรณาการหลากวัฒนธรรม ก้าวทันเทคโนโลยี ผู้เรียนมีความรู้คู่คุณธรรม น้อมนำหลักปรัชญา สู่การพัฒนาทักษะอาชีพ”
             </p>
+            <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, position: 'relative' }}>
+              <div style={{ fontSize: '0.95rem', opacity: 0.95, fontWeight: 700 }}>
+                👤 นายปรัชญา ปรางค์ชัยภูมิ · ผู้อำนวยการสถานศึกษา โรงเรียนบ้านคลองมดแดง
+              </div>
+              <Link
+                to="/page/vision"
+                style={{
+                  background: 'white', color: '#C2410C', padding: '8px 20px', borderRadius: 999,
+                  fontWeight: 900, fontSize: '0.86rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.12)',
+                }}
+              >
+                อ่านฉบับเต็ม (พันธกิจ / เป้าประสงค์ / 8 กลยุทธ์) →
+              </Link>
+            </div>
           </div>
 
           {/* 4 Pillars */}

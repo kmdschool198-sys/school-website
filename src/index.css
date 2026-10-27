@@ -115,6 +115,18 @@ body::before {
 /* Never let an un-revealed section print blank (แบบฟอร์มราชการ) */
 @media print {
   .reveal { opacity: 1 !important; transform: none !important; }
+  body::before,
+  .scroll-progress,
+  .back-to-top,
+  .no-print {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════

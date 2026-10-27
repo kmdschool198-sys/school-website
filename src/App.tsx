@@ -1,5 +1,5 @@
 // Removed unused React import
-import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import ContentPage from './pages/ContentPage';
@@ -23,6 +23,14 @@ import Homeroom from './pages/Homeroom';
 import HomeroomPrint from './pages/HomeroomPrint';
 import SchoolStatsReport from './pages/SchoolStatsReport';
 import SchoolCalendar from './pages/SchoolCalendar';
+import PorPor6Page from './pages/PorPor6Page';
+import AcademicSummaryPage from './pages/AcademicSummaryPage';
+import PorPor5Page from './pages/PorPor5Page';
+import PrintHubPage from './pages/PrintHubPage';
+import BehaviorPage from './pages/BehaviorPage';
+import LunchPage from './pages/LunchPage';
+import DutyPage from './pages/DutyPage';
+import TimetablePage from './pages/TimetablePage';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyConsentBanner from './components/PrivacyConsentBanner';
@@ -61,7 +69,15 @@ function App() {
           <Route path="/print-homeroom" element={<HomeroomPrint />} />
           <Route path="/school-stats-report" element={<SchoolStatsReport />} />
           <Route path="/school-calendar" element={<SchoolCalendar />} />
-          <Route path="/timetable" element={<Navigate to="/page/timetable" replace />} />
+          <Route path="/porpor6" element={<PorPor6Page />} />
+          <Route path="/academic-summary" element={<AcademicSummaryPage />} />
+          <Route path="/porpor5" element={<PorPor5Page />} />
+          <Route path="/print-hub" element={<PrintHubPage />} />
+          <Route path="/behavior" element={<BehaviorPage />} />
+          <Route path="/lunch" element={<LunchPage />} />
+          <Route path="/duty" element={<DutyPage />} />
+          <Route path="/lunch-duty" element={<LunchPage />} />
+          <Route path="/timetable" element={<TimetablePage />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />
           <Route path="*" element={<NotFound />} />

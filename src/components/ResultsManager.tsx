@@ -5,13 +5,16 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { Plus, Trash2, Eye, EyeOff, Edit2, X, Save, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, Edit2, X, Save, RefreshCw, ClipboardPaste } from 'lucide-react';
 import type { ResultAnnouncement, ResultRow } from '../data/results';
 import {
   subjectsFromTimetable, totalScore, pctColor,
   normalizeResultCode, publicAnnouncementFromResult, resultLookupDocId,
 } from '../data/results';
 import { syncDraftResultRows } from '../utils/studentRosterSync';
+import { toast } from './GlobalToast';
+import ExcelPasteModal from './ExcelPasteModal';
+import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
 
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
@@ -265,6 +268,94 @@ function Editor({ item, availableClasses, onSave, onCancel }: {
     }));
   };
 
+  const [showPasteModal, setShowPasteModal] = useState(false);
+
+  const handleDirectPaste = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    startStudentIdx: number,
+    startSubjIdx: number,
+  ) => {
+    const text = e.clipboardData.getData('text');
+    if (!isTabularPaste(text)) return;
+    e.preventDefault();
+
+    const rows = parseClipboardTable(text);
+    if (rows.length === 0) return;
+
+    setA(prev => {
+      const nextRecords = [...prev.records];
+      let rowCount = 0;
+
+      for (let r = 0; r < rows.length; r++) {
+        const studentIdx = startStudentIdx + r;
+        if (studentIdx >= nextRecords.length) break;
+
+        const cells = rows[r];
+        const studentRow = { ...nextRecords[studentIdx], scores: { ...nextRecords[studentIdx].scores } };
+
+        for (let c = 0; c < cells.length; c++) {
+          const subjIdx = startSubjIdx + c;
+          if (subjIdx >= prev.subjects.length) break;
+
+          const subject = prev.subjects[subjIdx];
+          const val = cleanNumeric(cells[c]);
+
+          if (val === null) {
+            delete studentRow.scores[subject.name];
+          } else {
+            const max = subject.maxScore || 100;
+            studentRow.scores[subject.name] = Math.max(0, Math.min(max, val));
+          }
+        }
+
+        nextRecords[studentIdx] = studentRow;
+        rowCount++;
+      }
+
+      toast.success(`วางคะแนนจาก Excel สำเร็จ ${rowCount} คน`);
+      return { ...prev, records: nextRecords };
+    });
+  };
+
+  const handleModalApply = (records: Array<{ studentId: string; values: Record<string, number | null> }>) => {
+    setA(prev => {
+      const nextRecords = prev.records.map(row => {
+        const match = records.find(rec => rec.studentId === row.code);
+        if (!match) return row;
+        const nextScores = { ...row.scores };
+        Object.entries(match.values).forEach(([subjName, val]) => {
+          if (val === null || val === undefined) {
+            delete nextScores[subjName];
+          } else {
+            const subject = prev.subjects.find(s => s.name === subjName);
+            const max = subject?.maxScore || 100;
+            nextScores[subjName] = Math.max(0, Math.min(max, val));
+          }
+        });
+        return { ...row, scores: nextScores };
+      });
+      return { ...prev, records: nextRecords };
+    });
+    toast.success(`วางคะแนนสำเร็จ ${records.length} คน เรียบร้อย`);
+  };
+
+  const pasteStudentRows = useMemo(() => {
+    return a.records.map(r => ({
+      id: r.code,
+      code: r.code,
+      name: r.name,
+      currentValues: r.scores,
+    }));
+  }, [a.records]);
+
+  const pasteColumns = useMemo(() => {
+    return a.subjects.map(s => ({
+      key: s.name,
+      label: s.name,
+      unit: `เต็ม ${s.maxScore}`,
+    }));
+  }, [a.subjects]);
+
   return (
     <div onClick={onCancel} style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999,
@@ -309,6 +400,18 @@ function Editor({ item, availableClasses, onSave, onCancel }: {
         }}>
           <button onClick={() => refreshFromSource()} style={{ ...btnSm, background: '#3B82F6', color: 'white' }}>
             <RefreshCw size={12} /> ดึงรายวิชา + นักเรียนใหม่
+          </button>
+          <button
+            onClick={() => setShowPasteModal(true)}
+            disabled={a.records.length === 0 || a.subjects.length === 0}
+            style={{
+              ...btnSm,
+              background: '#0F172A',
+              color: 'white',
+              opacity: (a.records.length === 0 || a.subjects.length === 0) ? 0.4 : 1,
+            }}
+          >
+            <ClipboardPaste size={12} /> วางคะแนนจาก Excel
           </button>
           <span style={{ fontSize: '0.78rem', color: '#7C2D12' }}>
             💡 ดึงจาก<b>ตารางสอนจริง</b> + <b>รายชื่อนักเรียน</b> · ตอนนี้: {a.subjects.length} วิชา · {a.records.length} คน
@@ -371,11 +474,13 @@ function Editor({ item, availableClasses, onSave, onCancel }: {
                       <td style={{ ...td, position: 'sticky', left: 0, background: i % 2 ? 'white' : '#FFFBF5' }}>{i + 1}</td>
                       <td style={{ ...td, position: 'sticky', left: 40, background: i % 2 ? 'white' : '#FFFBF5', fontSize: '0.78rem' }}>{r.code}</td>
                       <td style={{ ...td, position: 'sticky', left: 120, background: i % 2 ? 'white' : '#FFFBF5', textAlign: 'left', fontWeight: 700 }}>{r.name}</td>
-                      {a.subjects.map(s => (
+                      {a.subjects.map((s, sIdx) => (
                         <td key={s.name} style={td}>
                           <input type="number" min={0} max={s.maxScore} step="0.5"
                             value={r.scores[s.name] ?? ''}
+                            onPaste={ev => handleDirectPaste(ev, i, sIdx)}
                             onChange={e => updateScore(r.code, s.name, e.target.value)}
+                            title="สามารถกด Ctrl+V เพื่อวางคะแนนจาก Excel ได้"
                             style={{
                               width: 70, padding: '4px 6px', borderRadius: 6,
                               border: '1px solid #E2E8F0', textAlign: 'center',
@@ -399,9 +504,20 @@ function Editor({ item, availableClasses, onSave, onCancel }: {
           </div>
         )}
 
-        <div style={{ marginTop: 12, fontSize: '0.78rem', color: '#94A3B8' }}>
-          💡 กรอกคะแนนที่ได้ (ไม่เกินคะแนนเต็มของวิชานั้น) · ระบบจะคำนวณ <b>คะแนนรวม</b> และ <b>เปอร์เซ็นต์</b> ให้อัตโนมัติ · จัดอันดับตามคะแนนรวมเมื่อกดบันทึก
+        <div style={{ marginTop: 12, fontSize: '0.78rem', color: '#64748B' }}>
+          💡 กรอกคะแนนที่ได้ (ไม่เกินคะแนนเต็ม) · สามารถกด <b>Ctrl+V</b> ที่ช่องเพื่อวางคะแนนจาก Excel หรือกดปุ่ม <b>วางคะแนนจาก Excel</b> ด้านบน · ระบบจะคำนวณ <b>คะแนนรวม</b> และ <b>เปอร์เซ็นต์</b> ให้อัตโนมัติ · จัดอันดับตามคะแนนรวมเมื่อกดบันทึก
         </div>
+
+        <ExcelPasteModal
+          isOpen={showPasteModal}
+          onClose={() => setShowPasteModal(false)}
+          title={`📋 วางคะแนนสอบจาก Excel (${a.className || 'ห้องเรียน'})`}
+          subtitle="คัดลอกเซลล์คะแนนจาก Excel แล้วนำมาวาง สามารถเลือกนำเข้าทีละวิชา หรือทุกวิชาพร้อมกันได้"
+          themeColor="#FF6A01"
+          students={pasteStudentRows}
+          columns={pasteColumns}
+          onApply={handleModalApply}
+        />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
           <button onClick={onCancel} style={btnSecondary}>ยกเลิก</button>

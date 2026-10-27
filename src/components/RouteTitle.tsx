@@ -25,12 +25,24 @@ const staticTitles: Record<string, string> = {
   '/milk-brush-report': 'รายงานนมและแปรงฟัน',
   '/class-dashboard': 'แดชบอร์ดรายชั้นเรียน',
   '/school-stats-report': 'รายงานสถิติประจำเดือน',
+  '/homeroom': 'บันทึกกิจกรรมโฮมรูม',
+  '/school-calendar': 'ปฏิทินการศึกษา',
+  '/porpor6': 'พิมพ์สมุดพก ปพ.6 (ครูประจำชั้น)',
+  '/academic-summary': 'สรุปผลสัมฤทธิ์ทางการเรียน 8 กลุ่มสาระฯ',
+  '/porpor5': 'บันทึกคะแนนรายวิชา ปพ.5',
+  '/print-hub': 'ศูนย์รวมการพิมพ์ (Print Hub)',
+  '/behavior': 'ระบบคะแนนความประพฤติ (กิจการนักเรียน)',
+  '/lunch': 'โครงการอาหารกลางวันนักเรียน',
+  '/duty': 'ระบบเวรประจำวันและเขตพื้นที่ความสะอาด',
+  '/lunch-duty': 'โครงการอาหารกลางวันนักเรียน',
 };
 
 const printFormTitles: Record<string, string> = {
   attendance: 'พิมพ์ฟอร์มเช็คชื่อ',
   milk: 'พิมพ์ฟอร์มดื่มนม',
   brush: 'พิมพ์ฟอร์มแปรงฟัน',
+  lunch: 'พิมพ์ฟอร์มอาหารกลางวัน',
+  duty: 'พิมพ์ฟอร์มเวรทำความสะอาด',
 };
 
 export default function RouteTitle() {

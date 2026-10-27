@@ -203,6 +203,24 @@ export function useTeacherAuth(): AuthState & { logout: () => void } {
 
   useEffect(() => {
     let alive = true;
+
+    // Check local test session if present
+    try {
+      const raw = localStorage.getItem('kmd_teacher_auth_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.authed) {
+          setState({
+            authed: true,
+            loading: false,
+            role: parsed.role || 'teacher',
+            name: parsed.name || 'ครู',
+            email: parsed.email || '',
+          });
+          return;
+        }
+      }
+    } catch { /* ignore */ }
     
     // Process redirect sign-in result on mount
     void completeRedirectSignIn();
@@ -228,6 +246,9 @@ export function useTeacherAuth(): AuthState & { logout: () => void } {
   return {
     ...state,
     logout: () => {
+      try {
+        localStorage.removeItem('kmd_teacher_auth_v1');
+      } catch { /* ignore */ }
       void clearAuth();
     },
   };

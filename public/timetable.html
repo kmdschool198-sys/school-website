@@ -25165,6 +25165,15 @@ function renderTeacherViewAll(){
 function buildTeacherViewTable(teacherName){
   if(!DB.slots.length||!DB.days.length) return '<div class="alert a-warn">กรุณาตั้งค่าคาบและวัน</div>';
   const dayHds=DB.days.map(d=>`<th>${d}</th>`).join('');
+  const schoolActs = {
+    '6_จันทร์': 'กิจกรรมแนะแนว',
+    '8_พุธ': 'ลูกเสือ / เนตรนารี',
+    '8_พฤหัสบดี': 'กิจกรรมชุมนุม',
+    '6_ศุกร์': 'ตลาดนัดอาชีพ',
+    '7_ศุกร์': 'ตลาดนัดอาชีพ',
+    '8_ศุกร์': 'สวดมนต์ / กิจกรรมคุณธรรม'
+  };
+  const isPhattaraOff = (teacherName.indexOf('ภัทรสุดา') !== -1);
   const rows=DB.slots.map(sl=>{
     const cells=DB.days.map(d=>{
       const matches=DB.rooms.map(r=>{
@@ -25175,7 +25184,15 @@ function buildTeacherViewTable(teacherName){
         }
         return null;
       }).filter(Boolean);
-      return`<td>${matches.join('')}</td>`;
+      if(matches.length>0) return `<td>${matches.join('')}</td>`;
+      const actKey = sl.id+'_'+d;
+      if(schoolActs[actKey] && (!isPhattaraOff || (d==='จันทร์'||d==='อังคาร'||d==='พุธ'))){
+        return `<td style="background:#FFFBEB"><div class="tv-cell" style="background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;text-align:center"><div class="tv-subj" style="color:#92400E">${schoolActs[actKey]}</div><div class="tv-room" style="color:#B45309">${(schoolActs[actKey]==='กิจกรรมแนะแนว'||schoolActs[actKey]==='ตลาดนัดอาชีพ')?'ครูที่ปรึกษา':''}</div></div></td>`;
+      }
+      if(isPhattaraOff && (d==='พฤหัสบดี'||d==='ศุกร์')){
+        return `<td style="background:#EFF6FF;color:#1E40AF;font-size:11px;font-weight:700;text-align:center;padding:6px 2px">🏫 ปฏิบัติราชการ<br>โรงเรียนบ้านคลองไพร</td>`;
+      }
+      return '<td></td>';
     }).join('');
     return`<tr><td class="tc-row"><div>${sl.label}</div><div style="font-size:10px;font-weight:400;color:var(--muted)">${sl.start}–${sl.end}</div></td>${cells}</tr>`;
   }).join('');

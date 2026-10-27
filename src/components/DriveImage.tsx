@@ -12,17 +12,18 @@ interface DriveImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src
  */
 export default function DriveImage({ src, fallback = DEFAULT_PLACEHOLDER, alt = '', ...rest }: DriveImageProps) {
   const buildSources = (input: string | undefined): string[] => {
-    if (!input) return [fallback];
+    const finalFallback = fallback !== DEFAULT_PLACEHOLDER ? [fallback, DEFAULT_PLACEHOLDER] : [DEFAULT_PLACEHOLDER];
+    if (!input) return finalFallback;
     const id = extractDriveId(input);
     if (!id) {
       // Non-Drive URL — just use as-is + fallback
-      return [input, fallback];
+      return [input, ...finalFallback];
     }
     return [
       `https://lh3.googleusercontent.com/d/${id}=w2000`,
       `https://drive.google.com/thumbnail?id=${id}&sz=w2000`,
       `https://drive.google.com/uc?export=view&id=${id}`,
-      fallback,
+      ...finalFallback,
     ];
   };
 
@@ -44,7 +45,12 @@ export default function DriveImage({ src, fallback = DEFAULT_PLACEHOLDER, alt = 
       alt={alt}
       referrerPolicy="no-referrer"
       onError={() => {
-        if (idx < sources.length - 1) setIdx(idx + 1);
+        if (idx < sources.length - 1) {
+          setIdx(idx + 1);
+        } else if (currentSrc !== '/NOPicture.jpg') {
+          setSources(['/NOPicture.jpg']);
+          setIdx(0);
+        }
       }}
     />
   );

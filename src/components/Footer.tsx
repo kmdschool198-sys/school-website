@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  GraduationCap, MapPin, Phone, Mail, ExternalLink,
+  MapPin, Phone, Mail, ExternalLink,
   Calendar as CalendarIcon, ClipboardList, BookOpen, ChevronRight, ShieldCheck,
 } from 'lucide-react';
 
@@ -85,17 +85,11 @@ export default function Footer() {
               display: 'inline-flex', alignItems: 'center', gap: 12,
               textDecoration: 'none', color: 'white', marginBottom: '1rem',
             }}>
-              {info.logoUrl ? (
-                <DriveImage src={info.logoUrl} alt="logo" style={{ height: 48, width: 48, borderRadius: 12, background: 'white', padding: 4 }} />
-              ) : (
-                <div style={{
-                  width: 48, height: 48, borderRadius: 12,
-                  background: 'linear-gradient(135deg,#FF6A01,#FB923C)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <GraduationCap size={26} color="white" />
-                </div>
-              )}
+              <DriveImage
+                src={info.logoUrl || '/school_logo_kmd.png'}
+                alt="logo"
+                style={{ height: 48, width: 48, borderRadius: 12, background: 'white', padding: 4, objectFit: 'contain' }}
+              />
               <div>
                 <div style={{ fontWeight: 900, fontSize: '1.05rem', lineHeight: 1.2 }}>{info.name}</div>
                 <div style={{ fontSize: '0.7rem', color: '#FB923C', fontWeight: 700, letterSpacing: 1 }}>BAN KHLONG MOD DAENG SCHOOL</div>

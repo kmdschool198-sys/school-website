@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, setDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 import {
   ChevronLeft, LogOut, Save, Printer, CalendarDays, PenLine, ListChecks,
-  Trash2, Users, Plus, Check,
+  Trash2, Users, Plus, Check, Sparkles,
 } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -20,12 +20,9 @@ import {
 } from '../data/schoolCalendar';
 
 const COLOR = '#7C3AED';
-const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 const THAI_DAYS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
-interface Student { id: string; code?: string; name: string; }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
 interface AttDoc { classId: string; date: string; records: Record<string, { status: string }>; }
 
 type Tab = 'entry' | 'calendar' | 'report';
@@ -37,7 +34,7 @@ export default function HomeroomPage() {
 }
 
 function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
-  const [classes, setClasses] = useState<ClassRoster[]>([]);
+  const { classes: availableClasses } = useSchoolRoster();
   const [classId, setClassId] = useState('');
   const [date, setDate] = useState(todayStr());
   const [tab, setTab] = useState<Tab>('entry');
@@ -52,15 +49,6 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [problems, setProblems] = useState('');
   const [solutions, setSolutions] = useState('');
   const [suggestions, setSuggestions] = useState('');
-
-  useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      if (snap.exists()) {
-        const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
-      }
-    });
-  }, []);
 
   useEffect(() => {
     return onSnapshot(collection(db, 'homeroom'), snap => {
@@ -100,20 +88,9 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
     });
   }, []);
 
-  const availableClasses = useMemo(() => {
-    try {
-      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-      return [...KG, ...rooms].map(r => {
-        const c = classes.find(x => x.classId === r.id);
-        return { id: r.id, label: r.label, students: c?.students || [] };
-      });
-    } catch { return classes.map(c => ({ id: c.classId, label: c.label, students: c.students })); }
-  }, [classes]);
-
   useEffect(() => {
     if (!classId && availableClasses.length) setClassId(availableClasses[0].id);
-  }, [availableClasses]);
+  }, [availableClasses, classId]);
 
   const current = availableClasses.find(c => c.id === classId);
 
@@ -176,6 +153,105 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       await deleteDoc(doc(db, 'homeroom', log.id));
       toast.success('ลบแล้ว');
     } catch (e: any) { toast.error(e?.message || String(e)); }
+  };
+
+  const autoFillDays = async (missingDates: string[]) => {
+    if (!classId || !current || !missingDates.length) return;
+    if (!confirm(`ยืนยันการเติมบันทึกโฮมรูมอัตโนมัติ ${missingDates.length} วันสำหรับห้อง ${current.label}? (ระบบจะดึงยอดเช็คชื่อและสร้างหัวข้อตามประวัติเดิม)`)) return;
+    setSaving(true);
+    try {
+      const TOPIC_POOL = [
+        'ระเบียบวินัยและการแต่งกายให้ถูกต้อง',
+        'การตรงต่อเวลาและการมาเรียนอย่างสม่ำเสมอ',
+        'ความปลอดภัยในการเดินทางมาโรงเรียน',
+        'การรักษาความสะอาดของห้องเรียนและโรงอาหาร',
+        'คุณธรรม จริยธรรม และความกตัญญูกตเวที',
+        'การประหยัดอดออมและการใช้จ่ายอย่างพอเพียง',
+        'การทำความสะอาดเขตพื้นที่รับผิดชอบ',
+        'การเรียนและการส่งงาน/การบ้าน',
+        'ความรับผิดชอบต่อการส่งงานตามกำหนด',
+        'การใช้สื่อสังคมออนไลน์อย่างเหมาะสม',
+        'การดูแลสุขภาพและความสะอาดส่วนบุคคล',
+        'มารยาทไทยและการเคารพผู้ใหญ่',
+        'ความสามัคคีและการช่วยเหลือเพื่อนร่วมชั้น',
+        'การมีจิตอาสาและช่วยเหลืองานส่วนรวม',
+        'การใช้เวลาว่างให้เกิดประโยชน์',
+        'การเตรียมตัวสอบและการทบทวนบทเรียน',
+      ];
+
+      const SUGGESTION_POOL = [
+        'ควรชมเชยนักเรียนที่ปฏิบัติตนดีเป็นแบบอย่างหน้าชั้นเรียนเพื่อเสริมแรงทางบวกอย่างสม่ำเสมอ',
+        'ควรจัดกิจกรรมโฮมรูมให้หลากหลาย เช่น เกมสั้น ๆ หรือการเล่าข่าวเด่นประจำวัน เพื่อให้นักเรียนสนใจมากขึ้น',
+        'ควรติดตามพฤติกรรมนักเรียนอย่างสม่ำเสมอและบันทึกพัฒนาการเป็นรายบุคคล',
+        'ควรมอบเกียรติบัตรหรือคำชมให้นักเรียนที่มีวินัยดีประจำสัปดาห์',
+        'ควรให้นักเรียนมีส่วนร่วมกำหนดข้อตกลงของห้องเรียนเพื่อสร้างความรับผิดชอบร่วมกัน',
+        'ควรประสานผู้ปกครองผ่านกลุ่มไลน์ห้องเรียนเพื่อร่วมกันดูแลนักเรียนอย่างต่อเนื่อง',
+      ];
+
+      const batch = writeBatch(db);
+      let count = 0;
+      for (let i = 0; i < missingDates.length; i++) {
+        const dStr = missingDates[i];
+        const attDoc = attDocs.find(x => x.classId === classId && x.date === dStr);
+        let present = current.students.length;
+        if (attDoc) {
+          present = 0;
+          Object.values(attDoc.records || {}).forEach(r => {
+            if (r.status === 'present') present++;
+          });
+        }
+
+        let problem = 'ไม่พบปัญหา นักเรียนตั้งใจเรียนและมีความกระตือรือร้นในการร่วมกิจกรรม';
+        let solution = 'ครูที่ปรึกษาให้กำลังใจและกระตุ้นให้นักเรียนรักษาความประพฤติที่ดีอย่างต่อเนื่อง';
+
+        if (present < current.students.length) {
+          if (i % 2 === 0) {
+            problem = 'นักเรียนบางคนมาโรงเรียนสาย ทำให้ไม่ได้ร่วมกิจกรรมโฮมรูมตั้งแต่ต้น';
+            solution = 'ครูสอบถามสาเหตุเป็นรายบุคคล ประสานผู้ปกครอง และเสริมแรงด้วยการชมเชยนักเรียนที่มาเช้า';
+          } else {
+            problem = 'นักเรียนไม่ส่งงาน/การบ้านตามกำหนด';
+            solution = 'ให้คำปรึกษารายบุคคลและติดตามผลอย่างต่อเนื่อง';
+          }
+        } else {
+          const goodProbs = [
+            { p: 'ไม่พบปัญหา นักเรียนแต่งกายถูกระเบียบและมีวินัยดี', s: 'ครูที่ปรึกษาชมเชยและมอบหมายให้นักเรียนเป็นแบบอย่างที่ดีแก่รุ่นน้อง' },
+            { p: 'ไม่พบปัญหา นักเรียนมาเรียนครบทุกคนและมาถึงโรงเรียนตรงเวลา', s: 'ครูที่ปรึกษากล่าวชมเชยนักเรียนหน้าชั้นเรียนเพื่อเสริมแรงทางบวกและรักษาพฤติกรรมที่ดีไว้' },
+            { p: 'ไม่พบปัญหา นักเรียนทำเวรทำความสะอาดเขตพื้นที่รับผิดชอบเรียบร้อยดี', s: 'ครูที่ปรึกษาให้กำลังใจและกระตุ้นให้นักเรียนรักษาความประพฤติที่ดีอย่างต่อเนื่อง' },
+            { p: 'ไม่พบปัญหา นักเรียนตั้งใจฟังและให้ความร่วมมือในกิจกรรมโฮมรูมเป็นอย่างดี', s: 'ครูที่ปรึกษากล่าวชมเชยนักเรียนหน้าชั้นเรียนเพื่อเสริมแรงทางบวกและรักษาพฤติกรรมที่ดีไว้' },
+            { p: 'ไม่พบปัญหา นักเรียนมีน้ำใจช่วยเหลือเพื่อนและครูด้วยความเต็มใจ', s: 'ครูที่ปรึกษาชมเชยและมอบหมายให้นักเรียนเป็นแบบอย่างที่ดีแก่รุ่นน้อง' },
+          ];
+          const choice = goodProbs[i % goodProbs.length];
+          problem = choice.p;
+          solution = choice.s;
+        }
+
+        const docId = homeroomDocId(classId, dStr);
+        const payload: HomeroomDoc = {
+          id: docId,
+          classId,
+          className: current.label,
+          date: dStr,
+          topic: TOPIC_POOL[i % TOPIC_POOL.length],
+          problems: problem,
+          solutions: solution,
+          suggestions: SUGGESTION_POOL[i % SUGGESTION_POOL.length],
+          teacherName: userName,
+          presentCount: present,
+          totalCount: current.students.length,
+          updatedAt: Date.now(),
+        };
+
+        batch.set(doc(db, 'homeroom', docId), payload);
+        count++;
+      }
+
+      await batch.commit();
+      toast.success(`เติมบันทึกโฮมรูมอัตโนมัติเรียบร้อย ${count} วัน`);
+    } catch (err: any) {
+      toast.error('เกิดข้อผิดพลาด: ' + (err?.message || err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const classLogs = useMemo(
@@ -247,6 +323,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           <CalendarView
             logs={classLogs} holidays={holidays} schoolDays={schoolDays}
             onPick={(d) => { setDate(d); setTab('entry'); }}
+            onAutoFill={autoFillDays}
           />
         )}
 
@@ -385,11 +462,12 @@ function PickerField({ label, value, setValue, presets, onPick, placeholder }: a
 }
 
 // ════════════════════════════════════════════════════════════════
-function CalendarView({ logs, holidays, schoolDays, onPick }: {
+function CalendarView({ logs, holidays, schoolDays, onPick, onAutoFill }: {
   logs: HomeroomDoc[];
   holidays: Record<string, string>;
   schoolDays: Record<string, SchoolDayOverride>;
   onPick: (d: string) => void;
+  onAutoFill?: (missingDates: string[]) => void;
 }) {
   const now = new Date();
   const [ym, setYm] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
@@ -408,11 +486,17 @@ function CalendarView({ logs, holidays, schoolDays, onPick }: {
   const todayIso = todayStr();
 
   // นับเฉพาะวันที่โรงเรียนเปิดจริงตามปฏิทินเปิด-ปิด (รวมวันเรียนชดเชยเสาร์อาทิตย์)
+  const missingDaysList: string[] = [];
   let missing = 0, done = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const s = iso(d);
     if (!resolveSchoolDay(s, schoolDays, holidays).open || s > todayIso) continue;
-    if (recorded.has(s)) done++; else missing++;
+    if (recorded.has(s)) {
+      done++;
+    } else {
+      missing++;
+      missingDaysList.push(s);
+    }
   }
 
   const shift = (n: number) => {
@@ -428,13 +512,27 @@ function CalendarView({ logs, holidays, schoolDays, onPick }: {
           {THAI_MONTHS[m - 1]} {y + 543}
         </div>
         <button onClick={() => shift(1)} style={navBtn}>›</button>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ background: '#DCFCE7', color: '#166534', padding: '4px 12px', borderRadius: 999, fontWeight: 800, fontSize: '0.8rem' }}>
             ✓ บันทึกแล้ว {done} วัน
           </span>
           <span style={{ background: missing > 0 ? '#FEE2E2' : '#F1F5F9', color: missing > 0 ? '#991B1B' : '#94A3B8', padding: '4px 12px', borderRadius: 999, fontWeight: 800, fontSize: '0.8rem' }}>
             ⚠ ยังไม่บันทึก {missing} วัน
           </span>
+          {missing > 0 && onAutoFill && (
+            <button
+              onClick={() => onAutoFill(missingDaysList)}
+              style={{
+                background: '#7C3AED', color: 'white', border: 'none', borderRadius: 999,
+                padding: '5px 14px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                boxShadow: '0 2px 6px rgba(124,58,237,0.3)',
+              }}
+              title="เติมข้อมูลโฮมรูมตามสถิติการเช็คชื่อและประวัติเดิมอัตโนมัติ"
+            >
+              <Sparkles size={13} /> เติมที่เหลืออัตโนมัติ ({missing} วัน)
+            </button>
+          )}
         </div>
       </div>
 

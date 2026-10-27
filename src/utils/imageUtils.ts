@@ -1,4 +1,4 @@
-export const DEFAULT_PLACEHOLDER = 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=1000';
+export const DEFAULT_PLACEHOLDER = '/NOPicture.jpg';
 
 /**
  * Extracts Google Drive File ID from various URL formats.

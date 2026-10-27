@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { ChevronLeft, LogOut, Printer, Download, Sparkles, Calendar, Users, CheckCircle } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -10,10 +10,7 @@ import { PageLoading } from '../components/PageState';
 import { downloadCsvReport, makeReportRows } from '../utils/csvReport';
 
 const COLOR = '#FF6A01';
-const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
-interface Student { id: string; code?: string; name: string; }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
 interface AttDoc { classId: string; date: string; records: Record<string, { status: string }>; }
 
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -25,20 +22,10 @@ export default function SchoolStatsReportPage() {
 }
 
 function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
-  const [classes, setClasses] = useState<ClassRoster[]>([]);
+  const { classes: availableClasses } = useSchoolRoster();
   const [month, setMonth] = useState(thisMonthStr());
   const [attendanceDocs, setAttendanceDocs] = useState<AttDoc[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Fetch class rosters
-  useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      if (snap.exists()) {
-        const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
-      }
-    });
-  }, []);
 
   // Fetch attendance docs for the selected month
   useEffect(() => {
@@ -65,21 +52,6 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         setLoading(false);
       });
   }, [month]);
-
-  // Determine available classes from timetable & config
-  const availableClasses = useMemo(() => {
-    try {
-      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-      const all = [...KG, ...rooms];
-      return all.map(r => {
-        const c = classes.find(x => x.classId === r.id);
-        return { id: r.id, label: r.label, students: c?.students || [] };
-      });
-    } catch {
-      return classes.map(c => ({ id: c.classId, label: c.label, students: c.students }));
-    }
-  }, [classes]);
 
   // Calculations per class
   const classStats = useMemo(() => {
@@ -275,11 +247,22 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       </main>
 
       {/* Printable Report Layout (shown only during print) */}
-      <div className="print-area" style={{ display: 'none', background: 'white', fontFamily: 'Sarabun, sans-serif' }}>
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{ fontWeight: 800, fontSize: '20px', lineHeight: 1.5 }}>รายงานสรุปข้อมูลสถิตินักเรียนประจำเดือน</div>
-          <div style={{ fontWeight: 700, fontSize: '16px', lineHeight: 1.5 }}>ประจำเดือน {THAI_MONTHS[monthNum - 1]} พ.ศ. {yearNum + 543}</div>
-          <div style={{ fontSize: '14px', marginTop: 4 }}>โรงเรียนบ้านคลองมดแดง สำนักงานเขตพื้นที่การศึกษาประถมศึกษา</div>
+      <div className="print-area" style={{ display: 'none', background: 'white', fontFamily: 'Sarabun, sans-serif', color: '#000' }}>
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
+          <img
+            src={`${import.meta.env.BASE_URL}images/school-logo.png`}
+            alt="ตราโรงเรียน"
+            style={{ width: 52, height: 52, objectFit: 'contain', marginBottom: 4 }}
+          />
+          <div style={{ fontWeight: 900, fontSize: '18px', lineHeight: 1.4 }}>
+            แบบรายงานสรุปข้อมูลสถิตินักเรียนและการจัดสวัสดิการประจำเดือน
+          </div>
+          <div style={{ fontWeight: 800, fontSize: '15px', lineHeight: 1.4 }}>
+            โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+          </div>
+          <div style={{ fontSize: '14px', marginTop: 4 }}>
+            ประจำเดือน <b>{THAI_MONTHS[monthNum - 1]} พ.ศ. {yearNum + 543}</b>
+          </div>
         </div>
 
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginTop: 15 }}>
@@ -321,16 +304,16 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         </table>
 
         {/* Signatures block */}
-        <div style={{ marginTop: 60, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, textAlign: 'center', fontSize: '13px' }}>
+        <div style={{ marginTop: 50, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, textAlign: 'center', fontSize: '13px' }}>
           <div>
-            <p>ลงชื่อ .............................................................. ผู้รายงาน</p>
-            <p style={{ marginTop: 8 }}>( .............................................................. )</p>
-            <p style={{ marginTop: 8 }}>ครูผู้บันทึกสรุปข้อมูล</p>
+            <p>ลงชื่อ .............................................................. ผู้สรุปรายงาน</p>
+            <p style={{ marginTop: 6 }}>({userName || 'นางสาวนริศรา ทำจิตรเหมาะ'})</p>
+            <p style={{ marginTop: 4 }}>ครูผู้รับผิดชอบข้อมูลสถิตินักเรียน</p>
           </div>
           <div>
-            <p>ลงชื่อ .............................................................. ผู้อนุมัติ</p>
-            <p style={{ marginTop: 8 }}>( .............................................................. )</p>
-            <p style={{ marginTop: 8 }}>ผู้อำนวยการสถานศึกษา โรงเรียนบ้านคลองมดแดง</p>
+            <p>ลงชื่อ .............................................................. ผู้รับรองรายงาน</p>
+            <p style={{ marginTop: 6 }}>(นายปรัชญา ปรางค์ชัยภูมิ)</p>
+            <p style={{ marginTop: 4 }}>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</p>
           </div>
         </div>
       </div>

@@ -1,10 +1,10 @@
 // Print-friendly monthly form (official school form layout)
 // Supports types: attendance / milk / brush — all derived from attendance collection
-import { useState, useEffect, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { collection, doc, onSnapshot, getDocs, query, where } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { collection, onSnapshot, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { ChevronLeft, Printer, Calendar, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -15,19 +15,21 @@ import {
   type SchoolDayOverride,
 } from '../data/schoolCalendar';
 
-const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
+interface AttDoc {
+  classId: string;
+  date: string;
+  records: Record<string, { status: string; noMilk?: boolean; noBrush?: boolean; noLunch?: boolean; noDuty?: boolean }>;
+}
 
-interface Student { id: string; code?: string; name: string; }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
-interface AttDoc { classId: string; date: string; records: Record<string, { status: string; noMilk?: boolean; noBrush?: boolean }>; }
-
-type FormType = 'attendance' | 'milk' | 'brush';
+export type FormType = 'attendance' | 'milk' | 'brush' | 'lunch' | 'duty';
 type CsvPeriod = 'month' | 'year';
 type CsvScope = 'class' | 'all';
-const FORM_INFO: Record<FormType, { title: string; mark: string; missMark: string; legendDesc: string }> = {
+export const FORM_INFO: Record<FormType, { title: string; mark: string; missMark: string; legendDesc: string }> = {
   attendance: { title: 'แบบบันทึกการเข้าเรียน', mark: '✓', missMark: '✗', legendDesc: '✓ = มา · ✗ = ขาด · ล = ลา · / = วันหยุด' },
-  milk: { title: 'แบบบันทึกการดื่มนม', mark: '✓', missMark: '−', legendDesc: '✓ = ดื่มนม · − = ไม่ได้รับ (ขาดเรียน/ลา) · / = วันหยุด' },
-  brush: { title: 'แบบบันทึกการแปรงฟัน', mark: '✓', missMark: '✗', legendDesc: '✓ = แปรงฟัน · ✗ = ไม่ได้แปรง (ขาดเรียน/ลา) · / = วันหยุด' },
+  milk: { title: 'แบบบันทึกการดื่มนมโรงเรียน', mark: '✓', missMark: '−', legendDesc: '✓ = ดื่มนม · − = ไม่ได้รับ (ขาดเรียน/ลา) · / = วันหยุด' },
+  brush: { title: 'แบบบันทึกการแปรงฟันหลังอาหารกลางวัน', mark: '✓', missMark: '✗', legendDesc: '✓ = แปรงฟัน · ✗ = ไม่ได้แปรง (ขาดเรียน/ลา) · / = วันหยุด' },
+  lunch: { title: 'แบบบันทึกการรับประทานอาหารกลางวัน', mark: '✓', missMark: '−', legendDesc: '✓ = รับประทานอาหารกลางวัน · − = ไม่ได้รับ (ขาดเรียน/ลา) · / = วันหยุด' },
+  duty: { title: 'แบบบันทึกการปฏิบัติเวรทำความสะอาดประจำวัน', mark: '✓', missMark: '✗', legendDesc: '✓ = ปฏิบัติเวรทำความสะอาด · ✗ = ไม่ได้ทำเวร (ขาดเรียน/ลา) · / = วันหยุด' },
 };
 
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -40,12 +42,15 @@ export default function MonthlyFormPrintPage() {
 
 function App() {
   const { type = 'attendance' } = useParams<{ type: FormType }>();
-  const formType = (type === 'milk' || type === 'brush' || type === 'attendance') ? type : 'attendance';
+  const [searchParams] = useSearchParams();
+  const formType: FormType = (
+    type === 'milk' || type === 'brush' || type === 'attendance' || type === 'lunch' || type === 'duty'
+  ) ? type : 'attendance';
   const info = FORM_INFO[formType];
 
-  const [classes, setClasses] = useState<ClassRoster[]>([]);
-  const [classId, setClassId] = useState('');
-  const [month, setMonth] = useState(thisMonth());
+  const { classes: availableClasses } = useSchoolRoster();
+  const [classId, setClassId] = useState(searchParams.get('classId') || '');
+  const [month, setMonth] = useState(searchParams.get('month') || thisMonth());
   const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
   const [csvScope, setCsvScope] = useState<CsvScope>('class');
   const [docs, setDocs] = useState<AttDoc[]>([]);
@@ -53,29 +58,8 @@ function App() {
   const [schoolDays, setSchoolDays] = useState<Record<string, SchoolDayOverride>>({}); // date → name
 
   useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      if (snap.exists()) {
-        const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
-      }
-    });
-  }, []);
-
-  const availableClasses = useMemo(() => {
-    try {
-      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-      const all = [...KG, ...rooms];
-      return all.map(r => {
-        const c = classes.find(x => x.classId === r.id);
-        return { id: r.id, label: r.label, students: c?.students || [] };
-      });
-    } catch { return classes.map(c => ({ id: c.classId, label: c.label, students: c.students })); }
-  }, [classes]);
-
-  useEffect(() => {
     if (!classId && availableClasses.length) setClassId(availableClasses[0].id);
-  }, [availableClasses]);
+  }, [availableClasses, classId]);
 
   useEffect(() => {
     if (!classId) return;
@@ -119,10 +103,12 @@ function App() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   // For each student × day → status
-  const didTarget = (rec: { status: string; noMilk?: boolean; noBrush?: boolean }) => {
+  const didTarget = (rec: { status: string; noMilk?: boolean; noBrush?: boolean; noLunch?: boolean; noDuty?: boolean }) => {
     if (rec.status !== 'present') return false;
     if (formType === 'milk') return !rec.noMilk;
     if (formType === 'brush') return !rec.noBrush;
+    if (formType === 'lunch') return !rec.noLunch;
+    if (formType === 'duty') return !rec.noDuty;
     return true;
   };
 
@@ -289,11 +275,17 @@ function App() {
       <div className="print-area" style={{ background: 'white', maxWidth: '297mm', margin: '14px auto', padding: '10mm 12mm', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
         {/* Form header */}
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
-          <div style={{ fontWeight: 900, fontSize: '1.1rem' }}>{info.title}</div>
-          <div style={{ fontSize: '0.95rem' }}>โรงเรียนบ้านคลองมดแดง</div>
-          <div style={{ fontSize: '0.9rem' }}>
-            ชั้น <b>{current?.label || '-'}</b> ·
-            ประจำเดือน <b>{THAI_MONTHS[monthNum - 1]} พ.ศ. {year + 543}</b>
+          <img
+            src={`${import.meta.env.BASE_URL}images/school-logo.png`}
+            alt="ตราโรงเรียน"
+            style={{ width: 44, height: 44, objectFit: 'contain', marginBottom: 2 }}
+          />
+          <div style={{ fontWeight: 900, fontSize: '1.15rem' }}>{info.title}</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2</div>
+          <div style={{ fontSize: '0.9rem', marginTop: 2 }}>
+            ระดับชั้น <b>{current?.fullClassName || current?.label || '-'}</b> ·
+            ประจำเดือน <b>{THAI_MONTHS[monthNum - 1]} พ.ศ. {year + 543}</b> ·
+            จำนวนนักเรียน <b>{students.length}</b> คน (ชาย {current?.maleCount || 0} / หญิง {current?.femaleCount || 0})
           </div>
         </div>
 
@@ -389,16 +381,24 @@ function App() {
         </div>
 
         {/* Signature */}
-        <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, textAlign: 'center', fontSize: '11px' }}>
+        <div style={{ marginTop: 22, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, textAlign: 'center', fontSize: '11px' }}>
           <div>
-            <div style={{ borderTop: '1px dashed #94A3B8', marginTop: 30, paddingTop: 4 }}>
-              ลงชื่อ ........................................ ครูประจำชั้น
+            <div style={{ marginTop: 18 }}>
+              ลงชื่อ ....................................................... ครูประจำชั้น/ผู้บันทึก
             </div>
+            <div style={{ marginTop: 4 }}>
+              ({current?.homeroomTeacher || '.......................................................'})
+            </div>
+            <div style={{ marginTop: 2 }}>ครูประจำชั้น {current?.label}</div>
           </div>
           <div>
-            <div style={{ borderTop: '1px dashed #94A3B8', marginTop: 30, paddingTop: 4 }}>
-              ลงชื่อ ........................................ ผู้อำนวยการสถานศึกษา
+            <div style={{ marginTop: 18 }}>
+              ลงชื่อ ....................................................... ผู้อำนวยการสถานศึกษา
             </div>
+            <div style={{ marginTop: 4 }}>
+              (นายปรัชญา ปรางค์ชัยภูมิ)
+            </div>
+            <div style={{ marginTop: 2 }}>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
           </div>
         </div>
       </div>

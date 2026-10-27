@@ -19,11 +19,16 @@ import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
 import FacebookPostCard from '../components/FacebookPostCard';
 import { DEFAULT_STUDENTS } from '../data/defaultStudents';
+import { OFFICIAL_PERSONNEL, toPersonnelDoc } from '../data/personnelRoster';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { BUILDINGS, STATUS_COLOR, CATEGORY_ICON } from '../data/buildings';
 import Building3D from '../components/Building3D';
 import CampusMap from '../components/CampusMap';
 import TimetableSmart from '../components/TimetableSmart';
-import { FileText, ExternalLink, Video, Globe } from 'lucide-react';
+import {
+  FileText, ExternalLink, Video, Globe,
+  Target, Award, BookOpen, Users, Cpu, Sparkles, ShieldCheck, Quote, Printer
+} from 'lucide-react';
 
 const thStyle: React.CSSProperties = { padding: '12px 14px', textAlign: 'left', fontWeight: 800, fontSize: '0.85rem', borderBottom: '2px solid #FFEDD5' };
 const tdStyle: React.CSSProperties = { padding: '12px 14px', color: '#334155' };
@@ -111,8 +116,11 @@ function LoadingState({ text }: { text: string }) {
 function ContentPage() {
   const { slug } = useParams<{ slug: string }>();
   const activeSlug = slug || '';
-  const [firePersonnel, setFirePersonnel] = useState<any[]>([]);
-  const [personnelLoading, setPersonnelLoading] = useState(true);
+  const { classes: unifiedRosters } = useSchoolRoster();
+  const [firePersonnel, setFirePersonnel] = useState<any[]>(() =>
+    OFFICIAL_PERSONNEL.map((p, i) => ({ id: `off_${i}`, ...toPersonnelDoc(p, i + 1) }))
+  );
+  const [personnelLoading, setPersonnelLoading] = useState(false);
   const [firebasePosts, setFirebasePosts] = useState<any[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [studentsData, setStudentsData] = useState<{ title?: string; subtitle?: string; rows: any[] } | null>(null);
@@ -189,16 +197,16 @@ function ContentPage() {
     }
 
     // One master personnel source is shared by personnel, work-group and student pages.
-    setPersonnelLoading(true);
     const personnelQuery = query(collection(db, 'personnel'), orderBy('order', 'asc'));
     unsubPers = onSnapshot(personnelQuery, (snapshot) => {
       const results: any[] = [];
       snapshot.forEach(personnelDoc => results.push({ id: personnelDoc.id, ...personnelDoc.data() }));
-      setFirePersonnel(results);
+      if (results.length > 0) {
+        setFirePersonnel(results);
+      }
       setPersonnelLoading(false);
     }, (error) => {
-      console.error('Personnel snapshot error:', error);
-      setFirePersonnel([]);
+      console.warn('Personnel snapshot fallback:', error);
       setPersonnelLoading(false);
     });
 
@@ -483,14 +491,24 @@ function ContentPage() {
   };
 
   const renderStudentsPage = () => {
-    const sd = (studentsData && studentsData.rows && studentsData.rows.length > 0) ? studentsData : DEFAULT_STUDENTS;
-    const rows = sd.rows.map((r: any) => ({
-      ...r,
-      teacher: (r.teacherId && personnelById.get(r.teacherId)?.name) || r.teacher || '',
-      male: Number(r.male) || 0,
-      female: Number(r.female) || 0,
-      total: (Number(r.male) || 0) + (Number(r.female) || 0),
-    }));
+    const sd = DEFAULT_STUDENTS;
+    const rows = unifiedRosters.map(cls => {
+      const configuredRow = studentsData?.rows?.find(
+        (r: any) => r.class === cls.fullClassName || r.class === cls.label
+      );
+      return {
+        class: cls.fullClassName,
+        shortLabel: cls.label,
+        teacher:
+          (configuredRow?.teacherId && personnelById.get(configuredRow.teacherId)?.name) ||
+          configuredRow?.teacher ||
+          cls.homeroomTeacher,
+        male: cls.maleCount,
+        female: cls.femaleCount,
+        total: cls.totalCount,
+        note: configuredRow?.note || '',
+      };
+    });
     const totalMale = rows.reduce((s, r) => s + r.male, 0);
     const totalFemale = rows.reduce((s, r) => s + r.female, 0);
     const grandTotal = totalMale + totalFemale;
@@ -730,7 +748,454 @@ function ContentPage() {
     );
   };
 
+    const renderVisionPage = () => {
+    const missions = [
+      {
+        num: 1,
+        title: 'พัฒนาคุณภาพและสมรรถนะผู้เรียน',
+        desc: 'พัฒนาคุณภาพผู้เรียนให้มีความรู้ ความสามารถ และสมรรถนะตามมาตรฐานการศึกษาและหลักสูตร ส่งเสริมการเรียนรู้ตามศักยภาพและความถนัดของผู้เรียน ตลอดจนพัฒนาทักษะที่จำเป็นต่อการดำรงชีวิตและการเรียนรู้ในศตวรรษที่ 21',
+        icon: Award,
+        badge: 'คุณภาพ & ศตวรรษที่ 21',
+        color: '#FF6A01',
+        bg: '#FFF7ED',
+      },
+      {
+        num: 2,
+        title: 'คุณค่าความหลากหลายทางวัฒนธรรม',
+        desc: 'ส่งเสริมและพัฒนาผู้เรียน ครู และบุคลากรทางการศึกษาให้มีความรู้ ความเข้าใจ และสามารถจัดการเรียนรู้ที่เคารพและเห็นคุณค่าความหลากหลายทางวัฒนธรรม ที่เชื่อมโยงวิถีชีวิต ครอบครัว ชุมชน และบริบทท้องถิ่น',
+        icon: Users,
+        badge: 'พหุวัฒนธรรม & ชุมชน',
+        color: '#8B5CF6',
+        bg: '#F5F3FF',
+      },
+      {
+        num: 3,
+        title: 'เทคโนโลยีและนวัตกรรมการเรียนรู้',
+        desc: 'พัฒนาครูและบุคลากรทางการศึกษาให้มีความรู้ ความสามารถและทักษะในการประยุกต์ใช้เทคโนโลยีและนวัตกรรมเพื่อการจัดการเรียนรู้ พัฒนาระบบสารสนเทศและแหล่งเรียนรู้ให้เอื้อต่อการเรียนรู้ของผู้เรียนอย่างมีประสิทธิภาพและปลอดภัย',
+        icon: Cpu,
+        badge: 'เทคโนโลยี & นวัตกรรม',
+        color: '#0284C7',
+        bg: '#F0F9FF',
+      },
+      {
+        num: 4,
+        title: 'ยกระดับผลสัมฤทธิ์คู่คุณธรรมและความเสมอภาค',
+        desc: 'ยกระดับผลสัมฤทธิ์ทางการศึกษาให้เป็นไปตามค่าเป้าหมายของสถานศึกษา ควบคู่กับการปลูกฝังคุณธรรม จริยธรรม คุณลักษณะอันพึงประสงค์ และค่านิยมที่ดีงาม เสริมสร้างโอกาส ความเสมอภาค ลดความเหลื่อมล้ำ และให้ผู้เรียนทุกคนสามารถเข้าถึงบริการทางการศึกษาอย่างทั่วถึงและเท่าเทียม',
+        icon: Sparkles,
+        badge: 'ผลสัมฤทธิ์คู่คุณธรรม',
+        color: '#10B981',
+        bg: '#ECFDF5',
+      },
+      {
+        num: 5,
+        title: 'น้อมนำหลักปรัชญาของเศรษฐกิจพอเพียงสู่ทักษะอาชีพ',
+        desc: 'น้อมนำหลักปรัชญาของเศรษฐกิจพอเพียงมาบูรณาการในการจัดการเรียนรู้และการบริหารจัดการสถานศึกษา ส่งเสริมทักษะอาชีพที่สอดคล้องกับวิถีชีวิต ความถนัด ความสนใจ และบริบทของครอบครัวและชุมชน เพื่อให้ผู้เรียนสามารถดำรงชีวิตและการประกอบอาชีพได้อย่างเหมาะสม',
+        icon: BookOpen,
+        badge: 'พอเพียง & ทักษะอาชีพ',
+        color: '#D97706',
+        bg: '#FFFBEB',
+      },
+      {
+        num: 6,
+        title: 'ระบบบริหารโปร่งใส ปลอดภัย สู่ความยั่งยืน',
+        desc: 'พัฒนาระบบบริหารและการปฏิบัติงานของสถานศึกษาให้มีประสิทธิภาพ โปร่งใส และเหมาะสมกับบริบทท้องถิ่น จัดสภาพแวดล้อมและระบบดูแลช่วยเหลือนักเรียนให้มีความปลอดภัยอย่างรอบด้าน และส่งเสริมการพัฒนาสถานศึกษาสู่ความยั่งยืน',
+        icon: ShieldCheck,
+        badge: 'ธรรมาภิบาล & ปลอดภัย',
+        color: '#E11D48',
+        bg: '#FFF1F2',
+      },
+    ];
+
+    const goals = [
+      'ผู้เรียนมีความรู้ ความสามารถ และสมรรถนะตามมาตรฐานการศึกษาและหลักสูตร สามารถเรียนรู้และพัฒนาตนเองได้ตามศักยภาพ ตลอดจนมีทักษะที่จำเป็นต่อการดำรงชีวิตและการเรียนรู้ในศตวรรษที่ 21',
+      'ผู้เรียน ครู และบุคลากรทางการศึกษามีความรู้ ความเข้าใจ ยอมรับ และเห็นคุณค่าของความหลากหลายทางวัฒนธรรม สามารถอยู่ร่วมกันบนพื้นฐานของความเคารพ ความเข้าใจ และยอมรับความแตกต่างทางวัฒนธรรม',
+      'ครูและบุคลากรทางการศึกษาสามารถประยุกต์ใช้เทคโนโลยีและนวัตกรรมในการจัดการเรียนรู้ได้อย่างเหมาะสม มีระบบสารสนเทศและแหล่งเรียนรู้ที่สนับสนุนการเรียนรู้ของผู้เรียนอย่างมีประสิทธิภาพ',
+      'ผู้เรียนมีผลสัมฤทธิ์ทางการศึกษาตามค่าเป้าหมายของสถานศึกษา มีคุณธรรม จริยธรรม และคุณลักษณะอันพึงประสงค์ พร้อมทั้งได้รับโอกาสทางการศึกษาอย่างทั่วถึง เท่าเทียม และเป็นธรรม',
+      'ผู้เรียนสามารถประยุกต์ใช้หลักปรัชญาของเศรษฐกิจพอเพียงในการดำเนินชีวิต มีทักษะอาชีพที่สอดคล้องกับความถนัด ความสนใจ วิถีชีวิต และบริบทของครอบครัวและชุมชน สามารถนำความรู้และทักษะไปใช้ในการดำรงชีวิตและประกอบอาชีพได้อย่างเหมาะสม',
+      'สถานศึกษามีระบบบริหารจัดการและการปฏิบัติงานที่มีประสิทธิภาพ โปร่งใส สอดคล้องกับบริบทท้องถิ่น มีระบบดูแลช่วยเหลือนักเรียนและสภาพแวดล้อมที่ปลอดภัย เอื้อต่อการเรียนรู้ และสนับสนุนการพัฒนาสถานศึกษาอย่างยั่งยืน',
+    ];
+
+    const strategies = [
+      { no: '1', title: 'ส่งเสริมและพัฒนาคุณภาพผู้เรียนให้มีความรู้ ความสามารถ และสมรรถนะตามมาตรฐานการศึกษาและหลักสูตร', focus: 'คุณภาพผู้เรียน & สมรรถนะ' },
+      { no: '2', title: 'ส่งเสริมการจัดการเรียนรู้เพื่อพัฒนาศักยภาพผู้เรียนสู่ความเป็นเลิศ และเสริมสร้างทักษะที่จำเป็นในศตวรรษที่ 21', focus: 'สู่ความเป็นเลิศ & ศตวรรษที่ 21' },
+      { no: '3', title: 'พัฒนาครูและบุคลากรทางการศึกษาให้มีความเชี่ยวชาญในการจัดการเรียนรู้ที่หลากหลาย สามารถประยุกต์ใช้เทคโนโลยีและนวัตกรรมได้อย่างเหมาะสม', focus: 'ครูมืออาชีพ & นวัตกรรม' },
+      { no: '4', title: 'ส่งเสริมการเรียนรู้และการอยู่ร่วมกันบนพื้นฐานของความหลากหลายทางวัฒนธรรม เชื่อมโยงวิถีชีวิต ครอบครัว และชุมชน', focus: 'พหุวัฒนธรรม & ชุมชนสัมพันธ์' },
+      { no: '5', title: 'ยกระดับผลสัมฤทธิ์ทางการศึกษา ควบคู่กับการส่งเสริมคุณธรรม จริยธรรม คุณลักษณะอันพึงประสงค์ และค่านิยมที่ดีงามของผู้เรียน', focus: 'ผลสัมฤทธิ์ & คุณธรรมนำความรู้' },
+      { no: '6', title: 'ส่งเสริมการน้อมนำหลักปรัชญาของเศรษฐกิจพอเพียงสู่การจัดการเรียนรู้และการพัฒนาทักษะอาชีพที่สอดคล้องกับความถนัด ความสนใจ วิถีชีวิตและบริบทของชุมชน', focus: 'เศรษฐกิจพอเพียง & อาชีพ' },
+      { no: '7', title: 'พัฒนาแหล่งเรียนรู้ ระบบเทคโนโลยีสารสนเทศ และสภาพแวดล้อมที่เอื้อต่อการเรียนรู้และการพัฒนาผู้เรียนอย่างรอบด้าน', focus: 'แหล่งเรียนรู้ & เทคโนโลยี' },
+      { no: '8', title: 'พัฒนาระบบบริหารจัดการสถานศึกษาให้มีประสิทธิภาพ โปร่งใส ปลอดภัย และสอดคล้องกับบริบทท้องถิ่นและเป้าหมายการพัฒนาที่ยั่งยืน', focus: 'ธรรมาภิบาล ปลอดภัย ยั่งยืน' },
+    ];
+
+    return (
+      <div className="animate-fade-in vision-page" style={{ paddingBottom: '3rem' }}>
+        {/* Banner ผู้อำนวยการและกรอบวิสัยทัศน์ */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #FF6A01 100%)',
+          borderRadius: 24,
+          padding: '2.4rem 2rem',
+          color: 'white',
+          boxShadow: '0 20px 45px rgba(15,23,42,0.22)',
+          position: 'relative',
+          overflow: 'hidden',
+          marginBottom: '2rem',
+        }}>
+          <div style={{
+            position: 'absolute', top: -30, right: -30, width: 220, height: 220,
+            background: 'radial-gradient(circle, rgba(255,106,1,0.3) 0%, rgba(255,255,255,0) 70%)',
+            borderRadius: '50%', pointerEvents: 'none',
+          }} />
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+            <span style={{
+              background: 'rgba(255,106,1,0.25)', color: '#FFD4B2',
+              padding: '6px 14px', borderRadius: 99, fontSize: '0.85rem', fontWeight: 800,
+              border: '1px solid rgba(255,106,1,0.4)', display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}>
+              <Award size={15} /> 4. วิสัยทัศน์ในการบริหารจัดการสถานศึกษา
+            </span>
+            <span style={{
+              background: 'rgba(255,255,255,0.12)', color: '#F1F5F9',
+              padding: '6px 14px', borderRadius: 99, fontSize: '0.85rem', fontWeight: 700,
+            }}>
+              ระยะเวลา 1 ปี (พ.ศ. 2570)
+            </span>
+            <button
+              onClick={() => window.print()}
+              style={{
+                marginLeft: 'auto', background: 'white', color: '#0F172A',
+                border: 'none', padding: '8px 16px', borderRadius: 12,
+                fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+            >
+              <Printer size={15} /> พิมพ์เอกสารราชการ
+            </button>
+          </div>
+
+          <h1 style={{ fontSize: '2rem', fontWeight: 900, margin: '8px 0 16px', lineHeight: 1.3 }}>
+            วิสัยทัศน์ พันธกิจ เป้าประสงค์ และกลยุทธ์
+          </h1>
+
+          <div style={{
+            background: 'rgba(255,255,255,0.07)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: 16,
+            padding: '1.4rem 1.6rem',
+            border: '1px solid rgba(255,255,255,0.15)',
+            marginBottom: '1.5rem',
+            lineHeight: 1.8,
+            fontSize: '1rem',
+            color: '#F8FAFC',
+          }}>
+            <p style={{ margin: 0, textIndent: '2.5rem' }}>
+              การจัดการศึกษาขั้นพื้นฐาน เป็นการศึกษาเพื่อเป็นรากฐานในการพัฒนาประเทศ โดยมีเป้าหมายให้ผู้เรียนได้รับการศึกษาที่มีคุณภาพตามมาตรฐาน เป็นผู้เรียนรู้ ผู้ร่วมสร้างสรรค์นวัตกรรม และเป็นพลเมืองที่เข้มแข็งของประเทศ ข้าพเจ้านายปรัชญา ปรางค์ชัยภูมิ ตำแหน่งผู้อำนวยการสถานศึกษา จึงได้กำหนดวิสัยทัศน์ พันธกิจ เป้าประสงค์ และกลยุทธ์ ในระยะเวลา 1 ปี (พ.ศ. 2570) ดังนี้
+            </p>
+          </div>
+
+          {/* ผู้อำนวยการผู้กำหนดวิสัยทัศน์ */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.15)',
+          }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: '50%',
+              background: '#FF6A01', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', color: 'white', fontWeight: 900,
+              fontSize: '1.3rem', boxShadow: '0 6px 16px rgba(255,106,1,0.4)',
+              border: '2px solid white',
+            }}>
+              ป
+            </div>
+            <div>
+              <div style={{ fontWeight: 900, fontSize: '1.05rem', color: '#FFF' }}>
+                นายปรัชญา ปรางค์ชัยภูมิ
+              </div>
+              <div style={{ fontSize: '0.85rem', color: '#CBD5E1', marginTop: 2 }}>
+                ผู้อำนวยการสถานศึกษา · โรงเรียนบ้านคลองมดแดง
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* จุดเน้นวิสัยทัศน์ (Vision Statement) */}
+        <div style={{
+          background: 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
+          borderRadius: 24,
+          padding: '2.2rem',
+          border: '2px solid #FFEDD5',
+          boxShadow: '0 10px 30px rgba(255,106,1,0.08)',
+          marginBottom: '2.5rem',
+          position: 'relative',
+        }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            color: '#EA580C', fontWeight: 800, fontSize: '0.9rem',
+            background: 'white', padding: '6px 14px', borderRadius: 99,
+            boxShadow: '0 2px 8px rgba(234,88,12,0.1)', marginBottom: 16,
+          }}>
+            <Target size={18} /> วิสัยทัศน์ (Vision)
+          </div>
+
+          <div style={{
+            position: 'relative', padding: '1rem 0 1rem 1.5rem',
+            borderLeft: '5px solid #FF6A01',
+          }}>
+            <Quote size={32} style={{ color: '#FF6A01', opacity: 0.35, position: 'absolute', top: -5, left: 10 }} />
+            <h2 style={{
+              fontSize: '1.65rem', fontWeight: 900, color: '#0F172A',
+              lineHeight: 1.6, margin: 0,
+            }}>
+              “โรงเรียนคุณภาพมาตรฐาน บูรณาการหลากวัฒนธรรม ก้าวทันเทคโนโลยี ผู้เรียนมีความรู้คู่คุณธรรม น้อมนำหลักปรัชญา สู่การพัฒนาทักษะอาชีพ”
+            </h2>
+          </div>
+
+          {/* เสาหลัก 6 ประการในวิสัยทัศน์ */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 12,
+            marginTop: '1.8rem',
+            paddingTop: '1.5rem',
+            borderTop: '1px dashed #FED7AA',
+          }}>
+            {[
+              { label: 'โรงเรียนคุณภาพมาตรฐาน', icon: '🏫', color: '#EA580C' },
+              { label: 'บูรณาการหลากวัฒนธรรม', icon: '🤝', color: '#7C3AED' },
+              { label: 'ก้าวทันเทคโนโลยี', icon: '💻', color: '#0284C7' },
+              { label: 'ผู้เรียนมีความรู้คู่คุณธรรม', icon: '⭐', color: '#059669' },
+              { label: 'น้อมนำหลักปรัชญาพอเพียง', icon: '🌱', color: '#D97706' },
+              { label: 'สู่การพัฒนาทักษะอาชีพ', icon: '🛠️', color: '#DC2626' },
+            ].map((pillar, idx) => (
+              <div key={idx} style={{
+                background: 'white', borderRadius: 14, padding: '12px 14px',
+                border: '1px solid #FFEDD5', display: 'flex', alignItems: 'center', gap: 10,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+              }}>
+                <span style={{ fontSize: '1.3rem' }}>{pillar.icon}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1E293B' }}>{pillar.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ส่วนที่ 1: พันธกิจ (Mission) 6 ข้อ */}
+        <div style={{ marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1.5rem' }}>
+            <span style={{ width: 6, height: 28, borderRadius: 4, background: 'linear-gradient(180deg,#FF6A01,#FB923C)' }} />
+            <div>
+              <h3 style={{ margin: 0, fontWeight: 900, color: '#0F172A', fontSize: '1.5rem' }}>
+                พันธกิจ (Mission)
+              </h3>
+              <p style={{ margin: '4px 0 0', color: '#64748B', fontSize: '0.9rem' }}>
+                ภารกิจหลัก 6 ด้านเพื่อขับเคลื่อนคุณภาพการศึกษาให้บรรลุตามวิสัยทัศน์
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.2rem' }}>
+            {missions.map(m => {
+              const IconComponent = m.icon;
+              return (
+                <div
+                  key={m.num}
+                  style={{
+                    background: 'white',
+                    borderRadius: 20,
+                    padding: '1.6rem',
+                    border: '1px solid #E2E8F0',
+                    boxShadow: '0 4px 16px rgba(15,23,42,0.04)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'all 0.25s ease',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 14px 30px rgba(0,0,0,0.08)';
+                    (e.currentTarget as HTMLElement).style.borderColor = m.color;
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.transform = '';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(15,23,42,0.04)';
+                    (e.currentTarget as HTMLElement).style.borderColor = '#E2E8F0';
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: 4,
+                    background: m.color,
+                  }} />
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 14,
+                      background: m.bg, color: m.color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: 900, fontSize: '1.1rem',
+                    }}>
+                      <IconComponent size={22} />
+                    </div>
+                    <span style={{
+                      background: m.bg, color: m.color,
+                      padding: '4px 12px', borderRadius: 99,
+                      fontSize: '0.78rem', fontWeight: 800,
+                    }}>
+                      พันธกิจที่ {m.num}
+                    </span>
+                  </div>
+
+                  <h4 style={{ margin: '4px 0 0', fontSize: '1.08rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>
+                    {m.title}
+                  </h4>
+
+                  <p style={{
+                    margin: 0, fontSize: '0.92rem', color: '#475569',
+                    lineHeight: 1.7, flex: 1,
+                  }}>
+                    {m.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ส่วนที่ 2: เป้าประสงค์ (Goals) 6 ข้อ */}
+        <div style={{ marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1.5rem' }}>
+            <span style={{ width: 6, height: 28, borderRadius: 4, background: 'linear-gradient(180deg,#0284C7,#38BDF8)' }} />
+            <div>
+              <h3 style={{ margin: 0, fontWeight: 900, color: '#0F172A', fontSize: '1.5rem' }}>
+                เป้าประสงค์ (Goals)
+              </h3>
+              <p style={{ margin: '4px 0 0', color: '#64748B', fontSize: '0.9rem' }}>
+                ผลสัมฤทธิ์และเป้าหมายความสำเร็จ 6 ประการที่สถานศึกษาตั้งไว้
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.2rem' }}>
+            {goals.map((goal, idx) => (
+              <div
+                key={idx}
+                style={{
+                  background: '#F8FAFC',
+                  borderRadius: 18,
+                  padding: '1.4rem 1.6rem',
+                  border: '1px solid #E2E8F0',
+                  display: 'flex',
+                  gap: 14,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div style={{
+                  minWidth: 32, height: 32, borderRadius: 10,
+                  background: '#0284C7', color: 'white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 900, fontSize: '0.9rem', marginTop: 2,
+                }}>
+                  {idx + 1}
+                </div>
+                <div style={{ fontSize: '0.93rem', color: '#334155', lineHeight: 1.7, fontWeight: 600 }}>
+                  {goal}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ส่วนที่ 3: กลยุทธ์ (Strategies) 8 ข้อ */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1.5rem' }}>
+            <span style={{ width: 6, height: 28, borderRadius: 4, background: 'linear-gradient(180deg,#10B981,#34D399)' }} />
+            <div>
+              <h3 style={{ margin: 0, fontWeight: 900, color: '#0F172A', fontSize: '1.5rem' }}>
+                กลยุทธ์การพัฒนาสถานศึกษา (Strategies)
+              </h3>
+              <p style={{ margin: '4px 0 0', color: '#64748B', fontSize: '0.9rem' }}>
+                แนวทางการดำเนินงาน 8 กลยุทธ์เพื่อขับเคลื่อนการจัดการศึกษาอย่างเป็นรูปธรรม
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.2rem' }}>
+            {strategies.map((st) => (
+              <div
+                key={st.no}
+                style={{
+                  background: 'white',
+                  borderRadius: 18,
+                  padding: '1.4rem 1.5rem',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 4px 14px rgba(15,23,42,0.03)',
+                  display: 'flex',
+                  gap: 14,
+                  alignItems: 'flex-start',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#10B981';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 10px 24px rgba(16,185,129,0.12)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = '#E2E8F0';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(15,23,42,0.03)';
+                }}
+              >
+                <div style={{
+                  minWidth: 42, height: 42, borderRadius: 12,
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 900, fontSize: '1rem', boxShadow: '0 4px 10px rgba(16,185,129,0.3)',
+                  flexShrink: 0,
+                }}>
+                  {st.no}
+                </div>
+                <div>
+                  <div style={{
+                    fontSize: '0.75rem', fontWeight: 800, color: '#059669',
+                    letterSpacing: 0.5, marginBottom: 4, textTransform: 'uppercase',
+                  }}>
+                    กลยุทธ์ที่ {st.no} · {st.focus}
+                  </div>
+                  <div style={{ fontSize: '0.92rem', color: '#1E293B', lineHeight: 1.65, fontWeight: 700 }}>
+                    {st.title}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ท้ายเอกสารราชการ */}
+        <div style={{
+          marginTop: '3rem',
+          padding: '1.8rem',
+          borderRadius: 20,
+          background: '#F8FAFC',
+          border: '1px dashed #CBD5E1',
+          textAlign: 'center',
+          color: '#64748B',
+          fontSize: '0.88rem',
+        }}>
+          <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '1rem', marginBottom: 4 }}>
+            โรงเรียนบ้านคลองมดแดง
+          </div>
+          <div>สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 1 · กระทรวงศึกษาธิการ</div>
+          <div style={{ marginTop: 8, fontSize: '0.8rem', color: '#94A3B8' }}>
+            เอกสารวิสัยทัศน์ในการบริหารจัดการสถานศึกษา (ระยะเวลา 1 ปี พ.ศ. 2570)
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = () => {
+    if (activeSlug === 'vision') {
+      return renderVisionPage();
+    }
     if (activeSlug === 'students') {
       return renderStudentsPage();
     }
@@ -744,13 +1209,47 @@ function ContentPage() {
       return (
         <div className="animate-fade-in">
           <div style={{
-            background: 'linear-gradient(135deg,#0F172A,#1E3A8A,#FF6A01)',
-            color: 'white', borderRadius: 24, padding: '1.8rem',
-            marginBottom: '1.5rem', boxShadow: '0 20px 50px rgba(15,23,42,0.2)',
+            background: 'linear-gradient(135deg,#0F172A 0%,#1E3A8A 55%,#FF6A01 100%)',
+            color: 'white', borderRadius: 24, padding: '1.8rem 2rem',
+            marginBottom: '1.5rem', boxShadow: '0 20px 50px rgba(15,23,42,0.18)',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14,
           }}>
-            <div style={{ fontSize: '0.85rem', opacity: 0.85, fontWeight: 700, letterSpacing: 2 }}>E-SERVICE</div>
-            <h2 style={{ margin: '6px 0 4px', fontSize: '1.8rem', fontWeight: 900 }}>📅 ระบบตารางสอน</h2>
-            <p style={{ opacity: 0.9, margin: 0 }}>ตารางสอน-ตารางเรียน · โรงเรียนบ้านคลองมดแดง</p>
+            <div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: '0.8rem', fontWeight: 800, letterSpacing: 1.5,
+                background: 'rgba(255,255,255,0.15)', padding: '4px 12px', borderRadius: 99, marginBottom: 8,
+              }}>
+                🎒 E-SERVICE สำหรับนักเรียน & ผู้ปกครอง
+              </div>
+              <h2 style={{ margin: '4px 0 6px', fontSize: '1.85rem', fontWeight: 900 }}>
+                📅 ตารางเรียนประจำห้องเรียน (ป.1 – ม.3)
+              </h2>
+              <p style={{ opacity: 0.9, margin: 0, fontSize: '0.92rem' }}>
+                ภาคเรียนที่ 2 ปีการศึกษา 2569 · เลือกระดับชั้นของนักเรียนเพื่อดูตารางเรียนรายสัปดาห์ (โหมดดูข้อมูล)
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{
+                background: 'rgba(255,255,255,0.12)', color: '#F1F5F9',
+                padding: '8px 14px', borderRadius: 12, fontWeight: 700, fontSize: '0.82rem',
+                border: '1px solid rgba(255,255,255,0.2)', display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                🔒 โหมดนักเรียน (ดูอย่างเดียว)
+              </span>
+              <button
+                onClick={() => window.print()}
+                style={{
+                  background: 'white', color: '#0F172A', border: 'none',
+                  padding: '9px 18px', borderRadius: 12, fontWeight: 900, fontSize: '0.86rem',
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.18)', display: 'inline-flex', alignItems: 'center', gap: 8,
+                  cursor: 'pointer',
+                }}
+              >
+                <Printer size={15} /> พิมพ์ตารางเรียน (A4)
+              </button>
+            </div>
           </div>
           <TimetableSmart readOnly />
         </div>
@@ -776,8 +1275,13 @@ function ContentPage() {
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 18px 40px rgba(255,106,1,0.18)'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.04)'; }}
         >
-          <div style={{ height: isBig ? '450px' : '320px', background: '#f8fafc', overflow: 'hidden' }}>
-            <DriveImage src={person.image || person.imageUrl} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div style={{ width: '100%', aspectRatio: '3 / 4', maxHeight: isBig ? '520px' : '420px', background: '#f8fafc', overflow: 'hidden' }}>
+            <DriveImage
+              src={person.image || person.imageUrl || `/personnel/${person.name}.jpg`}
+              fallback={`/personnel/${person.name}.jpg`}
+              alt={person.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
+            />
           </div>
           <div style={{ padding: '1.5rem' }}>
             <h4 style={{ fontSize: isBig ? '1.4rem' : '1.1rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.4rem' }}>{person.name}</h4>
@@ -814,20 +1318,15 @@ function ContentPage() {
           {heads.length > 0 && (
             <div style={{ marginBottom: '4rem' }}>
               <SectionHeading text="หัวหน้างาน" />
-              <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                gap: '3rem',
-                maxWidth: '1000px',
-                margin: '0 auto'
-              }}>
-                {heads.map(h => (
-                  <div key={h.id || h.name} style={{ width: heads.length === 1 ? '400px' : '350px' }}>
-                    {renderPersonCard(h, heads.length === 1)}
-                  </div>
-                ))}
-              </div>
+              {heads.length === 1 ? (
+                <div style={{ maxWidth: '360px', margin: '0 auto' }}>
+                  {renderPersonCard(heads[0], true)}
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '2rem' }}>
+                  {heads.map(h => renderPersonCard(h))}
+                </div>
+              )}
             </div>
           )}
           {others.length > 0 && (
@@ -1099,9 +1598,10 @@ function ContentPage() {
             {/* Image side */}
             <div style={{ background: '#0F172A', minHeight: 360, position: 'relative' }}>
               <DriveImage
-                src={activePerson.image || activePerson.imageUrl}
+                src={activePerson.image || activePerson.imageUrl || `/personnel/${activePerson.name}.jpg`}
+                fallback={`/personnel/${activePerson.name}.jpg`}
                 alt={activePerson.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', minHeight: 360 }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', minHeight: 360 }}
               />
               {activePerson.isHead && (
                 <div style={{

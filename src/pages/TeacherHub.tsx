@@ -1,227 +1,581 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, LogOut, Pin, PinOff } from 'lucide-react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
+import {
+  User, Layers, CheckSquare, BarChart3, Users, Search, Pin, PinOff, ShieldCheck,
+} from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import SmartSchoolLayout from '../components/SmartSchoolLayout';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 
-interface AppCard {
+interface SmartAppIcon {
   id: string;
   to: string;
-  title: string;
-  icon: string;
-  search: string;
-  bg: string;
+  label: string;
+  subtitle: string;
+  category: 'daily' | 'academic' | 'student' | 'print_admin';
+  emoji: string;
+  gradient: string;
+  badge?: string;
 }
 
 const PIN_STORAGE_KEY = 'kmd_teacher_hub_pinned_apps_v1';
 
-const STUDENT_APPS: AppCard[] = [
-  { id: 'class-dashboard', to: '/class-dashboard', title: 'แดชบอร์ดรายชั้นเรียน', icon: '📊', search: 'ภาพรวมทั้งชั้น', bg: '#FFEDD5' },
-  { id: 'attendance', to: '/attendance', title: 'ระบบเช็คชื่อนักเรียน', icon: '✅', search: 'เช็คนักเรียน', bg: '#FCE7F3' },
-  { id: 'homeroom', to: '/homeroom', title: 'บันทึกกิจกรรมโฮมรูม', icon: '🏫', search: 'โฮมรูม', bg: '#EDE9FE' },
-  { id: 'school-calendar', to: '/school-calendar', title: 'ปฏิทินเปิด-ปิดโรงเรียน', icon: '🗓️', search: 'วันหยุด-เรียนชดเชย', bg: '#E0F2FE' },
-  { id: 'manage-roster', to: '/manage-roster', title: 'จัดการรายชื่อนักเรียน', icon: '👥', search: 'รายชื่อ-CSV', bg: '#E9D5FF' },
-  { id: 'club-attendance', to: '/club-attendance', title: 'เช็คชื่อชุมนุม-ลูกเสือ', icon: '🎯', search: 'ชุมนุม-ลูกเสือ', bg: '#DCFCE7' },
-  { id: 'manage-clubs', to: '/manage-clubs', title: 'จัดการชุมนุม-สมาชิก', icon: '⚙️', search: 'สร้างชุมนุม', bg: '#D1FAE5' },
-  { id: 'milk-report', to: '/milk-report', title: 'รายงานการดื่มนม', icon: '🥛', search: 'ดื่มนม', bg: '#DBEAFE' },
-  { id: 'brush-log', to: '/brush-log', title: 'บันทึกการแปรงฟัน', icon: '🪥', search: 'แปรงฟัน', bg: '#CFFAFE' },
-  { id: 'saving', to: '/saving', title: 'ระบบออมเงิน', icon: '💰', search: 'ออมเงิน', bg: '#FCE7F3' },
-  { id: 'body-metrics', to: '/body-metrics', title: 'น้ำหนัก-ส่วนสูง-BMI', icon: '⚖️', search: 'น้ำหนักส่วนสูง', bg: '#FCE7F3' },
-  { id: 'school-stats-report', to: '/school-stats-report', title: 'รายงานสรุปสถิติประจำเดือน', icon: '📈', search: 'สถิติประจำเดือน', bg: '#FFF7ED' },
+const SMART_APPS: SmartAppIcon[] = [
+  { id: 'attendance', to: '/attendance', label: 'เช็คชื่อรายวัน', subtitle: 'เช็คชื่อ นม แปรงฟัน', category: 'daily', emoji: '✅', gradient: 'linear-gradient(135deg,#10B981,#059669)' },
+  { id: 'porpor6', to: '/porpor6', label: 'พิมพ์ ปพ.6', subtitle: 'สมุดพกรายคน/ทั้งห้อง', category: 'academic', emoji: '📄', gradient: 'linear-gradient(135deg,#EF4444,#DC2626)', badge: 'A4' },
+  { id: 'porpor5', to: '/porpor5', label: 'บันทึก ปพ.5', subtitle: 'กรอกคะแนน 70/30', category: 'academic', emoji: '📝', gradient: 'linear-gradient(135deg,#0284C7,#0369A1)', badge: 'A4' },
+  { id: 'academic-summary', to: '/academic-summary', label: 'สรุปผลสัมฤทธิ์', subtitle: 'แยก 8 กลุ่มสาระฯ', category: 'academic', emoji: '📊', gradient: 'linear-gradient(135deg,#F59E0B,#D97706)' },
+  { id: 'print-hub', to: '/print-hub', label: 'ศูนย์รวมการพิมพ์', subtitle: 'One-Stop Print Hub', category: 'print_admin', emoji: '🖨️', gradient: 'linear-gradient(135deg,#BE123C,#9F1239)', badge: 'HOT' },
+  { id: 'behavior', to: '/behavior', label: 'ความประพฤติ', subtitle: 'ตัด-เพิ่มแต้ม/ใบเตือน', category: 'student', emoji: '🛡️', gradient: 'linear-gradient(135deg,#DC2626,#991B1B)', badge: 'ใหม่' },
+  { id: 'lunch', to: '/lunch', label: 'อาหารกลางวัน', subtitle: 'เมนูมื้อเที่ยง & งบ 22 บ.', category: 'daily', emoji: '🍱', gradient: 'linear-gradient(135deg,#EA580C,#C2410C)', badge: 'ใหม่' },
+  { id: 'duty', to: '/duty', label: 'เวรประจำวัน', subtitle: 'ตรวจ 11 เขต & เวรครู', category: 'daily', emoji: '🧹', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
+  { id: 'homeroom', to: '/homeroom', label: 'กิจกรรมโฮมรูม', subtitle: 'อบรมหน้าเสาธง/เช้า', category: 'daily', emoji: '🏫', gradient: 'linear-gradient(135deg,#38BDF8,#0284C7)' },
+  { id: 'milk-report', to: '/milk-report', label: 'รายงานดื่มนม', subtitle: 'ดึงจากเช็คชื่ออัตโนมัติ', category: 'daily', emoji: '🥛', gradient: 'linear-gradient(135deg,#60A5FA,#3B82F6)' },
+  { id: 'brush-log', to: '/brush-log', label: 'บันทึกแปรงฟัน', subtitle: 'หลังอาหารกลางวัน', category: 'daily', emoji: '🪥', gradient: 'linear-gradient(135deg,#06B6D4,#0891B2)' },
+  { id: 'saving', to: '/saving', label: 'ระบบออมทรัพย์', subtitle: 'ฝาก-ถอนรายวัน', category: 'daily', emoji: '🐷', gradient: 'linear-gradient(135deg,#34D399,#10B981)' },
+  { id: 'body-metrics', to: '/body-metrics', label: 'น้ำหนัก-ส่วนสูง', subtitle: 'คำนวณเกณฑ์ BMI', category: 'student', emoji: '⚖️', gradient: 'linear-gradient(135deg,#14B8A6,#0D9488)' },
+  { id: 'club-attendance', to: '/club-attendance', label: 'เช็คชื่อชุมนุม', subtitle: 'ชุมนุม & ลูกเสือ', category: 'student', emoji: '🎯', gradient: 'linear-gradient(135deg,#0D9488,#115E59)' },
+  { id: 'manage-clubs', to: '/manage-clubs', label: 'จัดการชุมนุม', subtitle: 'จัดสมาชิกชุมนุม', category: 'student', emoji: '⚙️', gradient: 'linear-gradient(135deg,#8B5CF6,#7C3AED)' },
+  { id: 'class-dashboard', to: '/class-dashboard', label: 'แดชบอร์ดชั้น', subtitle: 'ภาพรวมประจำห้อง', category: 'student', emoji: '📈', gradient: 'linear-gradient(135deg,#F97316,#EA580C)' },
+  { id: 'manage-roster', to: '/manage-roster', label: 'รายชื่อนักเรียน', subtitle: 'ตรวจสอบทะเบียนชั้น', category: 'student', emoji: '👥', gradient: 'linear-gradient(135deg,#EC4899,#DB2777)' },
+  { id: 'timetable', to: '/timetable', label: 'ตารางสอน & สอนแทน', subtitle: 'จัดตาราง/จัดสอนแทน 1 คลิก', category: 'academic', emoji: '📅', gradient: 'linear-gradient(135deg,#6366F1,#4F46E5)', badge: 'อัปเกรด' },
+  { id: 'school-stats-report', to: '/school-stats-report', label: 'สถิติประจำเดือน', subtitle: 'สรุปการมาเรียนทั้ง ร.ร.', category: 'print_admin', emoji: '📋', gradient: 'linear-gradient(135deg,#A855F7,#9333EA)' },
+  { id: 'school-calendar', to: '/school-calendar', label: 'ปฏิทิน ร.ร.', subtitle: 'วันหยุด-เรียนชดเชย', category: 'print_admin', emoji: '🗓️', gradient: 'linear-gradient(135deg,#F43F5E,#E11D48)' },
+  { id: 'admin', to: '/admin', label: 'ตั้งค่าระบบ', subtitle: 'จัดการข่าวสารเว็บไซต์', category: 'print_admin', emoji: '🔧', gradient: 'linear-gradient(135deg,#64748B,#475569)' },
 ];
+
+function readPinnedIds(): string[] {
+  try {
+    const raw = localStorage.getItem(PIN_STORAGE_KEY);
+    if (!raw) return ['attendance', 'porpor6', 'print-hub', 'lunch', 'duty', 'behavior'];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const replaced = parsed
+        .flatMap(item => (item === 'lunch-duty' ? ['lunch', 'duty'] : [item]))
+        .filter(item => typeof item === 'string');
+      return replaced;
+    }
+    return ['attendance', 'porpor6', 'print-hub', 'lunch', 'duty', 'behavior'];
+  } catch {
+    return ['attendance', 'porpor6', 'print-hub', 'lunch', 'duty', 'behavior'];
+  }
+}
+
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export default function TeacherHubPage() {
   const auth = useTeacherAuth();
   if (!auth.authed) {
-    return <TeacherLoginGate title="🏫 ศูนย์รวมระบบครู" subtitle="เข้าสู่ระบบครั้งเดียว ใช้ได้ทุกระบบ" />;
+    return <TeacherLoginGate title="🏫 ศูนย์รวมระบบครู (Smart School OS)" subtitle="เข้าสู่ระบบครั้งเดียว ใช้ได้ทุกระบบ" />;
   }
-  return <Hub userName={auth.name} onLogout={auth.logout} />;
+  return <DashboardView userName={auth.name} role={auth.role} />;
 }
 
-function Hub({ userName, onLogout }: { userName: string; onLogout: () => void }) {
+function DashboardView({ userName, role }: { userName: string; role: string }) {
+  const { classes: unifiedRosters, summary: rosterSummary } = useSchoolRoster();
   const [pinnedIds, setPinnedIds] = useState<string[]>(readPinnedIds);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'pinned' | 'daily' | 'academic' | 'student' | 'print_admin'>('all');
+
+  // Read-only Firestore subscriptions for live attendance dashboard
+  const [todayAttDocs, setTodayAttDocs] = useState<Array<{ classId: string; date: string; records: Record<string, { status: string }> }>>([]);
 
   useEffect(() => {
     localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedIds));
   }, [pinnedIds]);
 
-  const apps = useMemo(() => {
-    return STUDENT_APPS
-      .map((app, index) => ({ app, index }))
+  useEffect(() => {
+    const today = todayStr();
+    (async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'attendance'), where('date', '==', today)));
+        const docs: Array<{ classId: string; date: string; records: Record<string, { status: string }> }> = [];
+        snap.forEach(d => docs.push(d.data() as any));
+        setTodayAttDocs(docs);
+      } catch {
+        // Ignore offline errors cleanly
+      }
+    })();
+  }, []);
+
+  const togglePin = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPinnedIds(curr => (curr.includes(id) ? curr.filter(x => x !== id) : [id, ...curr]));
+  };
+
+  const filteredApps = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return SMART_APPS
+      .filter(app => {
+        if (activeCategory === 'pinned' && !pinnedIds.includes(app.id)) return false;
+        if (activeCategory !== 'all' && activeCategory !== 'pinned' && app.category !== activeCategory) return false;
+        if (q && !app.label.toLowerCase().includes(q) && !app.subtitle.toLowerCase().includes(q)) return false;
+        return true;
+      })
       .sort((a, b) => {
-        const pinA = pinnedIds.indexOf(a.app.id);
-        const pinB = pinnedIds.indexOf(b.app.id);
+        const pinA = pinnedIds.indexOf(a.id);
+        const pinB = pinnedIds.indexOf(b.id);
         const aPinned = pinA !== -1;
         const bPinned = pinB !== -1;
         if (aPinned && bPinned) return pinA - pinB;
         if (aPinned) return -1;
         if (bPinned) return 1;
-        return a.index - b.index;
-      })
-      .map(item => item.app);
-  }, [pinnedIds]);
+        return 0;
+      });
+  }, [pinnedIds, searchQuery, activeCategory]);
 
-  const togglePin = (id: string) => {
-    setPinnedIds(current => current.includes(id)
-      ? current.filter(item => item !== id)
-      : [id, ...current]);
-  };
+  // Compute live student counts & today's attendance per room (Unified Single Source of Truth)
+  const stats = useMemo(() => {
+    let checkedRoomsCount = 0;
+
+    const roomBars = unifiedRosters.map(rm => {
+      const total = rm.totalCount;
+      const attDoc = todayAttDocs.find(d => d.classId === rm.classId);
+      const isChecked = !!(attDoc && attDoc.records && Object.keys(attDoc.records).length > 0);
+      if (isChecked) checkedRoomsCount += 1;
+
+      let presentCount = total;
+      if (isChecked && attDoc) {
+        presentCount = Object.values(attDoc.records).filter(r => r.status === 'present').length;
+      }
+      const pct = total > 0 ? Math.round((presentCount / total) * 100) : 100;
+
+      return {
+        roomId: rm.classId,
+        label: rm.label,
+        total,
+        presentCount,
+        pct,
+        isChecked,
+      };
+    });
+
+    return {
+      male: rosterSummary.totalMale,
+      female: rosterSummary.totalFemale,
+      total: rosterSummary.totalStudents,
+      roomBars,
+      totalRooms: roomBars.length,
+      checkedRooms: checkedRoomsCount,
+    };
+  }, [unifiedRosters, rosterSummary, todayAttDocs]);
+
+  const roleLabel =
+    role === 'owner' || role === 'admin' || role === 'super'
+      ? 'ผู้ดูแลระบบ (Admin)'
+      : 'ครูผู้สอน (Teacher)';
+
+  const donutPct = stats.checkedRooms > 0
+    ? Math.round((stats.checkedRooms / stats.totalRooms) * 100)
+    : 100;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg,#FFF7ED 0%,#FFFFFF 100%)' }}>
-      <header style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', color: 'white', padding: '1.5rem 1.25rem 2rem', boxShadow: '0 8px 24px rgba(255,106,1,0.25)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-            <Link to="/" style={lnk}><ChevronLeft size={16} />หน้าหลัก</Link>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontSize: '0.78rem', opacity: 0.9, fontWeight: 700, letterSpacing: 2 }}>TEACHER HUB</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 900 }}>🏫 ศูนย์รวมระบบครู</div>
-              <div style={{ fontSize: '0.85rem', opacity: 0.95 }}>โรงเรียนบ้านคลองมดแดง · ยินดีต้อนรับ <b>{userName}</b></div>
+    <SmartSchoolLayout pageTitle="ระบบบริหารจัดการโรงเรียน">
+      {/* Top Section Title */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 10, marginBottom: 14,
+      }}>
+        <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: '#FF6A01' }}>🏫</span> ภาพรวมระบบบริหารจัดการโรงเรียนบ้านคลองมดแดง (Smart School OS)
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{
+            background: '#DCFCE7', color: '#166534', padding: '5px 12px',
+            borderRadius: 999, fontSize: '0.75rem', fontWeight: 800,
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+          }}>
+            <ShieldCheck size={14} /> ข้อมูลในฐานข้อมูลปลอดภัย 100%
+          </span>
+          <span style={{
+            background: '#1E293B', color: '#FFFFFF', padding: '5px 14px',
+            borderRadius: 999, fontSize: '0.76rem', fontWeight: 800,
+          }}>
+            📅 ปีการศึกษา 2569 · สพป.กำแพงเพชร เขต 2
+          </span>
+        </div>
+      </div>
+
+      {/* Welcome Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #EA580C 0%, #D97706 50%, #4F46E5 100%)',
+        borderRadius: 18,
+        padding: '20px 24px',
+        color: '#FFFFFF',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 16,
+        marginBottom: 20,
+        boxShadow: '0 10px 26px rgba(234,88,12,0.22)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{
+            width: 58, height: 58, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.22)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            border: '2px solid rgba(255,255,255,0.4)',
+          }}>
+            <User size={30} color="#FFFFFF" />
+          </div>
+          <div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: 0.2 }}>
+              ยินดีต้อนรับ, คุณ{userName}
             </div>
-            <button onClick={onLogout} style={btnLogout}><LogOut size={12} />ออกจากระบบ</button>
+            <div style={{ fontSize: '0.84rem', opacity: 0.95, marginTop: 3, fontWeight: 600 }}>
+              🪪 สิทธิ์การใช้งาน: {roleLabel} · นักเรียนทั้งหมด {stats.total} คน ({stats.totalRooms} ห้องเรียน อ.2 – ม.3)
+            </div>
           </div>
         </div>
-      </header>
 
-      <main style={{ maxWidth: 1200, margin: '-1.5rem auto 3rem', padding: '0 1.25rem' }}>
-        <SectionHeader
-          icon="👨‍🎓"
-          title="ระบบที่ทำงานกับนักเรียน"
-          subtitle="เช็คชื่อ / ชุมนุม / นม-แปรงฟัน / น้ำหนัก / ออมเงิน / รายงานสถิติ"
-          color="#0EA5E9"
-        />
-        <div style={grid}>
-          {apps.map(app => (
-            <AppCardView
-              key={app.id}
-              app={app}
-              pinned={pinnedIds.includes(app.id)}
-              onTogglePin={togglePin}
-            />
-          ))}
-        </div>
-
-        <div style={{ marginTop: 30, padding: '14px 18px', background: '#FFF7ED', borderLeft: '4px solid #FF6A01', borderRadius: 10, color: '#7C2D12', fontSize: '0.85rem' }}>
-          💡 <b>เคล็ดลับ:</b> กดหมุดเพื่อพินงานที่ใช้บ่อยขึ้นด้านหน้า และเข้าแต่ละระบบเพื่อดาวน์โหลด CSV รายเดือน/รายปี
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function SectionHeader({ icon, title, subtitle, color }: { icon: string; title: string; subtitle: string; color: string }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', marginBottom: 12, marginTop: 18,
-      background: 'white', borderRadius: 14, borderLeft: `5px solid ${color}`,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-    }}>
-      <span style={{ fontSize: '2rem' }}>{icon}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '1.05rem' }}>{title}</div>
-        <div style={{ fontSize: '0.78rem', color: '#64748B' }}>{subtitle}</div>
-      </div>
-    </div>
-  );
-}
-
-function AppCardView({
-  app,
-  pinned,
-  onTogglePin,
-}: {
-  app: AppCard;
-  pinned: boolean;
-  onTogglePin: (id: string) => void;
-}) {
-  return (
-    <div
-      style={{
-        background: 'white',
-        borderRadius: 18,
-        overflow: 'hidden',
-        boxShadow: pinned ? '0 12px 30px rgba(255,106,1,0.18)' : '0 4px 14px rgba(0,0,0,0.06)',
-        border: pinned ? '2px solid #FF6A01' : '1px solid rgba(0,0,0,0.02)',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-      onMouseOver={e => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 14px 28px rgba(0,0,0,0.12)';
-      }}
-      onMouseOut={e => {
-        e.currentTarget.style.transform = '';
-        e.currentTarget.style.boxShadow = pinned ? '0 12px 30px rgba(255,106,1,0.18)' : '0 4px 14px rgba(0,0,0,0.06)';
-      }}
-    >
-      <div style={{
-        background: app.bg,
-        padding: '1.25rem 1rem 1rem',
-        minHeight: 150,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-      }}>
-        <span style={{ position: 'absolute', top: 8, left: 8, fontSize: '0.85rem' }}>✨</span>
-        <div style={cardActions}>
-          <button
-            type="button"
-            onClick={() => onTogglePin(app.id)}
-            title={pinned ? 'เลิกพินงานนี้' : 'พินงานนี้'}
-            aria-label={pinned ? 'เลิกพินงานนี้' : 'พินงานนี้'}
-            style={{ ...iconButton, background: pinned ? '#FF6A01' : 'rgba(255,255,255,0.92)', color: pinned ? 'white' : '#0F172A' }}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Link
+            to="/porpor6"
+            style={{
+              background: '#FFFFFF', color: '#DC2626', textDecoration: 'none',
+              padding: '9px 16px', borderRadius: 999, fontWeight: 900, fontSize: '0.82rem',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            }}
           >
-            {pinned ? <PinOff size={14} /> : <Pin size={14} />}
-          </button>
+            📄 พิมพ์สมุดพก ปพ.6
+          </Link>
+          <Link
+            to="/print-hub"
+            style={{
+              background: 'rgba(15,23,42,0.85)', color: '#FFFFFF', textDecoration: 'none',
+              padding: '9px 16px', borderRadius: 999, fontWeight: 800, fontSize: '0.82rem',
+            }}
+          >
+            🖨️ ศูนย์รวมการพิมพ์ (One-Stop)
+          </Link>
         </div>
-        <Link to={app.to} style={cardLink}>
-          <div style={{ fontSize: '3.5rem', lineHeight: 1 }}>{app.icon}</div>
-        </Link>
       </div>
-      <Link to={app.to} style={titleLink}>
-        <div style={{ fontWeight: 900, color: '#0F172A', textAlign: 'center', fontSize: '0.92rem', lineHeight: 1.3 }}>
-          {app.title}
+
+      {/* Smart Apps Grid Card with Search, Category Filter & Pinning */}
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: 18,
+        padding: '20px 22px 24px',
+        marginBottom: 20,
+        border: '1px solid #E2E8F0',
+        boxShadow: '0 4px 16px rgba(15,23,42,0.04)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 12, marginBottom: 14,
+        }}>
+          <div style={{ fontSize: '0.98rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Layers size={18} color="#EA580C" /> แอปพลิเคชันระบบงานครู (กด 📌 เพื่อปักหมุดระบบที่ใช้บ่อยไว้ด้านหน้า)
+          </div>
+
+          <div style={{ position: 'relative', minWidth: 230 }}>
+            <Search size={15} color="#94A3B8" style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="ค้นหาชื่อระบบงาน..."
+              style={{
+                width: '100%', padding: '7px 12px 7px 32px',
+                borderRadius: 999, border: '1px solid #CBD5E1', fontSize: '0.8rem',
+              }}
+            />
+          </div>
         </div>
-      </Link>
-    </div>
+
+        {/* Category Filter Pills */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
+          {([
+            ['all', '🌐 ทั้งหมด (18 ระบบ)'],
+            ['pinned', `📌 ปักหมุด (${pinnedIds.length})`],
+            ['daily', '✅ งานประจำวัน (เช็คชื่อ/นม/อาหาร)'],
+            ['academic', '📘 งานวัดผล (ปพ.5 / ปพ.6 / ตารางสอน)'],
+            ['student', '🛡️ กิจการนักเรียน (ความประพฤติ/สุขภาพ/ชุมนุม)'],
+            ['print_admin', '🖨️ ศูนย์การพิมพ์ & บริหาร'],
+          ] as const).map(([key, label]) => {
+            const active = activeCategory === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveCategory(key)}
+                style={{
+                  padding: '6px 13px',
+                  borderRadius: 999,
+                  border: active ? '1.5px solid #EA580C' : '1px solid #E2E8F0',
+                  background: active ? '#FFF7ED' : '#F8FAFC',
+                  color: active ? '#C2410C' : '#475569',
+                  fontWeight: 800,
+                  fontSize: '0.76rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Apps Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(125px, 1fr))',
+          gap: 14,
+        }}>
+          {filteredApps.map(app => {
+            const isPinned = pinnedIds.includes(app.id);
+            return (
+              <Link
+                key={app.id}
+                to={app.to}
+                style={{
+                  textDecoration: 'none',
+                  color: '#1E293B',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '14px 10px 12px',
+                  borderRadius: 16,
+                  background: isPinned ? '#FFFBEB' : '#F8FAFC',
+                  border: isPinned ? '1.5px solid #FDBA74' : '1px solid #E2E8F0',
+                  position: 'relative',
+                  transition: 'transform 0.16s ease, box-shadow 0.16s ease',
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 10px 22px rgba(15,23,42,0.08)';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.transform = '';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                {/* Pin toggle button */}
+                <button
+                  type="button"
+                  onClick={e => togglePin(app.id, e)}
+                  title={isPinned ? 'เลิกปักหมุด' : 'ปักหมุดไว้ด้านหน้า'}
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: isPinned ? '#FFEDD5' : 'transparent',
+                    color: isPinned ? '#EA580C' : '#94A3B8',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {isPinned ? <Pin size={12} /> : <PinOff size={12} />}
+                </button>
+
+                {app.badge && (
+                  <span style={{
+                    position: 'absolute', top: 6, right: 6,
+                    background: '#EF4444', color: 'white',
+                    fontSize: '0.6rem', fontWeight: 900,
+                    padding: '1px 6px', borderRadius: 999,
+                  }}>
+                    {app.badge}
+                  </span>
+                )}
+
+                <div style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: app.gradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.65rem',
+                  boxShadow: '0 6px 14px rgba(15,23,42,0.12)',
+                  marginBottom: 8,
+                }}>
+                  {app.emoji}
+                </div>
+                <div style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 900,
+                  textAlign: 'center',
+                  color: '#0F172A',
+                  lineHeight: 1.2,
+                }}>
+                  {app.label}
+                </div>
+                <div style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  color: '#64748B',
+                  marginTop: 2,
+                }}>
+                  {app.subtitle}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom 3 Statistical Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))',
+        gap: 18,
+      }}>
+        {/* Card 1: นักเรียนที่มาเรียน (ชาย/หญิง) */}
+        <div style={cardBox}>
+          <div style={cardHead}>
+            <Users size={16} color="#2563EB" /> สัดส่วนนักเรียนชาย / หญิง ทั้งโรงเรียน
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14, padding: '10px 0' }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 800, marginBottom: 6 }}>
+                <span style={{ color: '#2563EB' }}>👦 นักเรียนชาย</span>
+                <span>{stats.male} คน ({((stats.male / stats.total) * 100).toFixed(1)}%)</span>
+              </div>
+              <div style={{ height: 14, background: '#E2E8F0', borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ width: `${(stats.male / stats.total) * 100}%`, height: '100%', background: '#3B82F6', borderRadius: 999 }} />
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 800, marginBottom: 6 }}>
+                <span style={{ color: '#DB2777' }}>👧 นักเรียนหญิง</span>
+                <span>{stats.female} คน ({((stats.female / stats.total) * 100).toFixed(1)}%)</span>
+              </div>
+              <div style={{ height: 14, background: '#E2E8F0', borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ width: `${(stats.female / stats.total) * 100}%`, height: '100%', background: '#EC4899', borderRadius: 999 }} />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 18, fontSize: '0.76rem', fontWeight: 800, color: '#475569', marginTop: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 12, height: 12, background: '#3B82F6', display: 'inline-block', borderRadius: 3 }} /> ชาย ({stats.male})
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 12, height: 12, background: '#EC4899', display: 'inline-block', borderRadius: 3 }} /> หญิง ({stats.female})
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: ความคืบหน้าการเช็คชื่อวันนี้ (Donut Chart) */}
+        <div style={cardBox}>
+          <div style={cardHead}>
+            <CheckSquare size={16} color="#16A34A" /> ความคืบหน้าการเช็คชื่อวันนี้
+          </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
+            <svg width="160" height="160" viewBox="0 0 42 42">
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#E2E8F0" strokeWidth="5" />
+              <circle
+                cx="21"
+                cy="21"
+                r="15.915"
+                fill="transparent"
+                stroke="#15803D"
+                strokeWidth="5"
+                strokeDasharray={`${donutPct} ${100 - donutPct}`}
+                strokeDashoffset="25"
+              />
+              <text x="21" y="20" textAnchor="middle" fontSize="6" fontWeight="900" fill="#0F172A">
+                {stats.checkedRooms > 0 ? `${stats.checkedRooms}/${stats.totalRooms}` : `${stats.totalRooms} ห้อง`}
+              </text>
+              <text x="21" y="25.5" textAnchor="middle" fontSize="3.1" fontWeight="700" fill="#64748B">
+                {stats.checkedRooms > 0 ? 'เช็คชื่อแล้ววันนี้' : 'พร้อมเช็คชื่อรายวัน'}
+              </text>
+            </svg>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: '0.75rem', fontWeight: 800, color: '#475569' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 12, height: 12, background: '#15803D', display: 'inline-block', borderRadius: 3 }} /> เช็คแล้ว ({stats.checkedRooms})
+            </span>
+            <Link to="/attendance" style={{ color: '#EA580C', textDecoration: 'none' }}>
+              ไปหน้าเช็คชื่อ →
+            </Link>
+          </div>
+        </div>
+
+        {/* Card 3: จำนวนนักเรียนและร้อยละการมาเรียนแยกตามห้อง (Bar Chart) */}
+        <div style={cardBox}>
+          <div style={cardHead}>
+            <BarChart3 size={16} color="#F59E0B" /> จำนวนนักเรียนแยกตามห้องเรียน (อ.2 – ม.3)
+          </div>
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            gap: 6,
+            padding: '18px 4px 6px',
+            borderBottom: '1px solid #E2E8F0',
+            minHeight: 150,
+          }}>
+            {stats.roomBars.map(b => (
+              <div key={b.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#15803D' }}>{b.presentCount}</div>
+                <div style={{
+                  width: '100%', maxWidth: 22, height: 95,
+                  background: '#F1F5F9', borderRadius: '6px 6px 0 0',
+                  display: 'flex', alignItems: 'flex-end', overflow: 'hidden',
+                }}>
+                  <div style={{
+                    width: '100%',
+                    height: `${b.pct}%`,
+                    background: b.isChecked
+                      ? 'linear-gradient(180deg,#22C55E,#15803D)'
+                      : 'linear-gradient(180deg,#38BDF8,#0284C7)',
+                    borderRadius: '6px 6px 0 0',
+                  }} />
+                </div>
+                <div style={{ fontSize: '0.64rem', fontWeight: 800, color: '#475569', transform: 'rotate(-28deg)', marginTop: 4 }}>
+                  {b.label}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', fontSize: '0.74rem', color: '#64748B', fontWeight: 700, marginTop: 10 }}>
+            รวมนักเรียนทั้งสิ้น {stats.total} คน (11 ชั้นเรียน)
+          </div>
+        </div>
+      </div>
+    </SmartSchoolLayout>
   );
 }
 
-function readPinnedIds() {
-  try {
-    const raw = localStorage.getItem(PIN_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-const grid: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-  gap: 14,
+const cardBox: React.CSSProperties = {
+  background: '#FFFFFF',
+  borderRadius: 18,
+  padding: '18px 20px',
+  border: '1px solid #E2E8F0',
+  boxShadow: '0 4px 16px rgba(15,23,42,0.04)',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
 };
 
-const lnk: CSSProperties = { color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 };
-const btnLogout: CSSProperties = { background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 12px', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 };
-const cardLink: CSSProperties = { color: 'inherit', textDecoration: 'none', width: '100%', minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' };
-const titleLink: CSSProperties = { background: 'white', padding: '12px 14px', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' };
-const cardActions: CSSProperties = { position: 'absolute', top: 8, right: 8, zIndex: 2, display: 'flex', gap: 6 };
-const iconButton: CSSProperties = {
-  width: 30,
-  height: 30,
-  borderRadius: 999,
-  border: '1px solid rgba(0,0,0,0.08)',
-  background: 'rgba(255,255,255,0.92)',
-  color: '#0F172A',
-  display: 'inline-flex',
+const cardHead: React.CSSProperties = {
+  fontSize: '0.9rem',
+  fontWeight: 900,
+  color: '#1E293B',
+  display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  cursor: 'pointer',
-  boxShadow: '0 3px 10px rgba(15,23,42,0.08)',
+  gap: 6,
+  marginBottom: 8,
 };

@@ -1,0 +1,159 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import SmartSchoolLayout from '../components/SmartSchoolLayout';
+import TimetableSmart from '../components/TimetableSmart';
+import { useTeacherAuth } from '../utils/teacherAuth';
+import { Calendar, Eye, Edit3, Printer, Lock, ExternalLink } from 'lucide-react';
+
+export default function TimetablePage() {
+  const teacherAuth = useTeacherAuth();
+  const [editMode, setEditMode] = useState(false);
+
+  // If not logged in as teacher/admin, force readOnly = true
+  const isReadOnly = !teacherAuth.authed || !editMode;
+
+  return (
+    <SmartSchoolLayout pageTitle="ระบบตารางเรียน & ตารางสอน">
+      <div style={{ maxWidth: 1440, margin: '0 auto', paddingBottom: '2rem' }}>
+        {/* Page Header Banner */}
+        <div
+          className="tt-no-print"
+          style={{
+            background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #312E81 100%)',
+            borderRadius: 18,
+            padding: '1.25rem 1.5rem',
+            color: 'white',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 14,
+            boxShadow: '0 12px 28px rgba(15, 23, 42, 0.16)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                background: 'rgba(255,255,255,0.14)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Calendar size={26} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#93C5FD', letterSpacing: '0.04em' }}>
+                {teacherAuth.authed
+                  ? `SMART TIMETABLE & SUBSTITUTE STUDIO (ครู: ${teacherAuth.name})`
+                  : 'E-SERVICE นักเรียนและผู้ปกครอง · ภาคเรียนที่ 2/2569'}
+              </div>
+              <h2 style={{ margin: '2px 0 0', fontSize: '1.3rem', fontWeight: 900 }}>
+                {teacherAuth.authed && editMode
+                  ? 'ระบบจัดตารางสอน & จัดครูสอนแทนอัจฉริยะ'
+                  : 'ตารางเรียนและตารางสอน · โรงเรียนบ้านคลองมดแดง'}
+              </h2>
+              <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
+                {teacherAuth.authed
+                  ? (editMode
+                    ? 'คลิกช่องคาบเรียนเพื่อแก้ไข · สลับคาบเรียน 2 คลิก · จัดครูสอนแทนอัตโนมัติ'
+                    : 'โหมดแสดงผลสำหรับนักเรียนและบุคคลทั่วไป (ดูอย่างเดียว)')
+                  : 'โหมดสำหรับนักเรียนและผู้ปกครอง (ดูอย่างเดียว — การแก้ไขตารางจัดทำในระบบผู้ดูแล)'}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* If logged-in staff/admin */}
+            {teacherAuth.authed ? (
+              <>
+                <button
+                  onClick={() => setEditMode(!editMode)}
+                  style={{
+                    background: editMode ? '#10B981' : 'rgba(255,255,255,0.16)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  {editMode ? <Edit3 size={15} /> : <Eye size={15} />}
+                  {editMode ? 'โหมดแก้ไขเปิดอยู่ (คลิกเพื่อสลับดูอย่างเดียว)' : 'เปิดโหมดแก้ไข & จัดสอนแทน'}
+                </button>
+                <Link
+                  to="/admin?tab=timetable"
+                  style={{
+                    background: 'rgba(255,255,255,0.12)',
+                    color: 'white',
+                    textDecoration: 'none',
+                    border: '1px solid rgba(255,255,255,0.22)',
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <ExternalLink size={15} /> จัดการในหน้าแอดมิน
+                </Link>
+              </>
+            ) : (
+              <Link
+                to="/admin?tab=timetable"
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  color: '#FED7AA',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  fontWeight: 800,
+                  fontSize: '0.8rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Lock size={14} /> เข้าสู่ระบบแอดมินเพื่อแก้ไข
+              </Link>
+            )}
+
+            <button
+              onClick={() => window.print()}
+              style={{
+                background: 'white',
+                color: '#0F172A',
+                border: 'none',
+                padding: '8px 14px',
+                borderRadius: 10,
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Printer size={15} /> พิมพ์ A4
+            </button>
+          </div>
+        </div>
+
+        {/* Main Interactive Timetable Component */}
+        <TimetableSmart readOnly={isReadOnly} />
+      </div>
+    </SmartSchoolLayout>
+  );
+}

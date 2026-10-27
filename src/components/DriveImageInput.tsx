@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Link as LinkIcon, CheckCircle, AlertTriangle, FileText, Image as ImageIcon } from 'lucide-react';
+import { Eye, EyeOff, Link as LinkIcon, CheckCircle, AlertTriangle, FileText, Image as ImageIcon, FolderOpen, ExternalLink } from 'lucide-react';
 import { isValidDriveUrl, extractDriveId, getDrivePreviewUrl } from '../utils/imageUtils';
 import DriveImage from './DriveImage';
 
@@ -132,12 +132,42 @@ export default function DriveImageInput({
         )}
       </div>
 
-      {/* Parsed Drive ID indicator */}
-      {value && driveId && (
-        <div style={{ marginTop: '6px', fontSize: '0.75rem', color: '#22C55E', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <CheckCircle size={12} /> Google Drive {fileType.toUpperCase()} Detected
-        </div>
-      )}
+      {/* Helper text & Folder shortcut */}
+      <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        {value && driveId ? (
+          <div style={{ fontSize: '0.75rem', color: '#22C55E', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CheckCircle size={12} /> Google Drive {fileType.toUpperCase()} เชื่อมต่อสำเร็จ
+          </div>
+        ) : (
+          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+            ฝากไฟล์ใน Drive ตั้งค่าแชร์ <em>"ทุกคนที่มีลิงก์มีสิทธิ์ดู"</em> แล้วคัดลอกลิงก์มาวาง
+          </div>
+        )}
+        <a
+          href="https://drive.google.com/drive/folders/1aRRX7vJ8ix2WrD_tP8QxV9HRUKgyeK9f"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: '#EA580C',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '4px 10px',
+            background: '#FFF7ED',
+            borderRadius: '8px',
+            border: '1px solid #FFEDD5',
+            transition: 'all 0.2s ease',
+          }}
+          title="เปิดโฟลเดอร์ Google Drive เก็บรูปภาพข่าวสารของโรงเรียน"
+        >
+          <FolderOpen size={13} />
+          โฟลเดอร์ Drive รูปข่าวโรงเรียน
+          <ExternalLink size={11} style={{ opacity: 0.7 }} />
+        </a>
+      </div>
 
       {/* Preview Section */}
       {showPreview && value && (

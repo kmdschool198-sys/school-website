@@ -1,20 +1,21 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
-import { ChevronLeft, LogOut, Printer, Download } from 'lucide-react';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
+import { findDmcStudent } from '../data/dmcStudentMaster';
+import { ChevronLeft, LogOut, Printer, Download, ClipboardPaste, Sparkles } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
-import PdpaNotice from '../components/PdpaNotice';
 import { THAI_MONTHS_FULL, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
+import { toast } from '../components/GlobalToast';
+import ExcelPasteModal from '../components/ExcelPasteModal';
+import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
 
 const COLOR = '#EC4899';
-const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 
-interface Student { id: string; code?: string; name: string; emoji?: string; }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
+interface Student { id: string; code?: string; name: string; emoji?: string; weight?: number; height?: number; bmi?: number; }
 interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; weight?: number; height?: number; bmi?: number; date?: string; }
 type CsvPeriod = 'month' | 'year';
 type CsvScope = 'class' | 'all';
@@ -26,23 +27,15 @@ export default function BodyMetricsGridPage() {
 }
 
 function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
-  const [classes, setClasses] = useState<ClassRoster[]>([]);
+  const { classes: availableClasses } = useSchoolRoster();
   const [classId, setClassId] = useState('');
   const [month, setMonth] = useState(thisMonth());
   const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
   const [csvScope, setCsvScope] = useState<CsvScope>('class');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
-  const [healthConsentOk, setHealthConsentOk] = useState(false);
-
-  useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      if (snap.exists()) {
-        const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
-      }
-    });
-  }, []);
+  const [healthConsentOk] = useState(true);
+  const [showPasteModal, setShowPasteModal] = useState(false);
 
   useEffect(() => {
     return onSnapshot(collection(db, 'log_body_metrics'), snap => {
@@ -52,42 +45,49 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
     });
   }, []);
 
-  const availableClasses = useMemo(() => {
-    try {
-      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-      const all = [...KG, ...rooms];
-      return all.map(r => {
-        const c = classes.find(x => x.classId === r.id);
-        return { id: r.id, label: r.label, students: c?.students || [] };
-      });
-    } catch { return classes.map(c => ({ id: c.classId, label: c.label, students: c.students })); }
-  }, [classes]);
-
   useEffect(() => {
     if (!classId && availableClasses.length) setClassId(availableClasses[0].id);
-  }, [availableClasses]);
+  }, [availableClasses, classId]);
 
   const current = availableClasses.find(c => c.id === classId);
   const students = current?.students || [];
 
-  // Find existing log entry for a student in this month (match by id OR name as fallback)
+  // Find existing log entry for a student in this month (or fallback to DMC 1/2569 baseline weight/height)
   const matchesInClass = (l: LogEntry, s: Student, classLabel?: string) =>
     (l.classLabel === classLabel || !l.classLabel) &&
     (l.studentId === s.id || (l.studentName && l.studentName.trim() === s.name.trim()));
 
+  const dmcFallbackEntry = (s: Student, classLabel?: string): LogEntry | undefined => {
+    const dmc = findDmcStudent(s.code || s.id, s.name);
+    const w = s.weight ?? dmc?.weight;
+    const h = s.height ?? dmc?.height;
+    if (!w && !h) return undefined;
+    const bmi = (w && h && h > 0) ? Math.round((w / Math.pow(h / 100, 2)) * 10) / 10 : undefined;
+    return {
+      id: `dmc_${s.id}`,
+      classLabel,
+      studentId: s.id,
+      studentName: s.name,
+      weight: w,
+      height: h,
+      bmi,
+    };
+  };
+
   const findEntry = (s: Student): LogEntry | undefined => {
-    return logs.find(l =>
+    const cloud = logs.find(l =>
       l.date?.startsWith(month) &&
       matchesInClass(l, s, current?.label)
     );
+    return cloud || dmcFallbackEntry(s, current?.label);
   };
 
   const findEntryForMonth = (s: Student, targetMonth: string, classLabel?: string): LogEntry | undefined => {
-    return logs.find(l =>
+    const cloud = logs.find(l =>
       l.date?.startsWith(targetMonth) &&
       matchesInClass(l, s, classLabel)
     );
+    return cloud || dmcFallbackEntry(s, classLabel);
   };
 
   const updateMetric = async (s: Student, patch: { weight?: number; height?: number }) => {
@@ -120,6 +120,137 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       }
     } catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };
+
+  const handleDirectPaste = async (e: React.ClipboardEvent<HTMLInputElement>, startIdx: number, field: 'weight' | 'height') => {
+    const text = e.clipboardData.getData('text');
+    if (!isTabularPaste(text)) return;
+    e.preventDefault();
+
+    if (!healthConsentOk) {
+      alert('กรุณารับทราบ notice ข้อมูลสุขภาพก่อนบันทึกน้ำหนัก-ส่วนสูง');
+      return;
+    }
+    if (!current) return;
+
+    const rows = parseClipboardTable(text);
+    if (rows.length === 0) return;
+
+    const batch = writeBatch(db);
+    let updatedCount = 0;
+
+    for (let r = 0; r < rows.length; r++) {
+      const sIdx = startIdx + r;
+      if (sIdx >= students.length) break;
+      const s = students[sIdx];
+      const existing = findEntry(s);
+      const id = existing?.id || `bm_${classId}_${month}_${s.id}`;
+
+      let weight = existing?.weight;
+      let height = existing?.height;
+
+      const cells = rows[r];
+      if (field === 'weight') {
+        if (cells.length >= 2) {
+          const w = cleanNumeric(cells[0]);
+          const h = cleanNumeric(cells[1]);
+          if (w !== null) weight = w;
+          if (h !== null) height = h;
+        } else {
+          const w = cleanNumeric(cells[0]);
+          if (w !== null) weight = w;
+        }
+      } else {
+        const h = cleanNumeric(cells[0]);
+        if (h !== null) height = h;
+      }
+
+      const bmi = (weight && height && height > 0) ? Math.round((weight / Math.pow(height / 100, 2)) * 10) / 10 : undefined;
+      const docData: any = {
+        id, classLabel: current.label, studentId: s.id, studentCode: s.code || s.id,
+        studentName: s.name, date: `${month}-15`, teacherName: userName,
+        createdAt: existing ? (existing as any).createdAt || Date.now() : Date.now(),
+      };
+      if (weight !== undefined && weight !== null) docData.weight = weight;
+      if (height !== undefined && height !== null) docData.height = height;
+      if (bmi !== undefined) docData.bmi = bmi;
+
+      if (weight == null && height == null) {
+        if (existing) batch.delete(doc(db, 'log_body_metrics', existing.id));
+      } else {
+        batch.set(doc(db, 'log_body_metrics', id), docData);
+      }
+      updatedCount++;
+    }
+
+    try {
+      await batch.commit();
+      setSavedAt(new Date());
+      toast.success(`วางข้อมูลจาก Excel สำเร็จ ${updatedCount} คน`);
+    } catch (err: any) {
+      toast.error('วางข้อมูลไม่สำเร็จ: ' + (err?.message || err));
+    }
+  };
+
+  const handleModalApply = async (records: Array<{ studentId: string; values: Record<string, number | null> }>) => {
+    if (!healthConsentOk) {
+      alert('กรุณารับทราบ notice ข้อมูลสุขภาพก่อนบันทึกน้ำหนัก-ส่วนสูง');
+      return;
+    }
+    if (!current) return;
+
+    const batch = writeBatch(db);
+    let count = 0;
+
+    for (const rec of records) {
+      const s = students.find(st => st.id === rec.studentId);
+      if (!s) continue;
+      const existing = findEntry(s);
+      const id = existing?.id || `bm_${classId}_${month}_${s.id}`;
+
+      let weight = rec.values.weight !== undefined ? (rec.values.weight ?? undefined) : existing?.weight;
+      let height = rec.values.height !== undefined ? (rec.values.height ?? undefined) : existing?.height;
+      const bmi = (weight && height && height > 0) ? Math.round((weight / Math.pow(height / 100, 2)) * 10) / 10 : undefined;
+
+      const docData: any = {
+        id, classLabel: current.label, studentId: s.id, studentCode: s.code || s.id,
+        studentName: s.name, date: `${month}-15`, teacherName: userName,
+        createdAt: existing ? (existing as any).createdAt || Date.now() : Date.now(),
+      };
+      if (weight !== undefined && weight !== null) docData.weight = weight;
+      if (height !== undefined && height !== null) docData.height = height;
+      if (bmi !== undefined) docData.bmi = bmi;
+
+      if (weight == null && height == null) {
+        if (existing) batch.delete(doc(db, 'log_body_metrics', existing.id));
+      } else {
+        batch.set(doc(db, 'log_body_metrics', id), docData);
+      }
+      count++;
+    }
+
+    try {
+      await batch.commit();
+      setSavedAt(new Date());
+      toast.success(`บันทึกข้อมูลน้ำหนัก-ส่วนสูง ${count} คน เรียบร้อย`);
+    } catch (err: any) {
+      toast.error('บันทึกไม่สำเร็จ: ' + (err?.message || err));
+    }
+  };
+
+  const pasteStudentRows = useMemo(() => {
+    return students.map(s => {
+      const e = findEntry(s);
+      return {
+        id: s.id,
+        code: s.code,
+        name: s.name,
+        currentValues: {
+          weight: e?.weight ?? null,
+          height: e?.height ?? null,
+        },
+      };
+    });
+  }, [students, logs, month, current]);
 
   const filledCount = students.filter(s => findEntry(s)).length;
   const [yr, mn] = month.split('-').map(Number);
@@ -198,15 +329,23 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       </header>
 
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '1.25rem' }}>
-        <div style={{ marginBottom: 14 }}>
-          <PdpaNotice
-            title="ข้อมูลสุขภาพของนักเรียน"
-            consentKey="kmd_health_metrics_consent_v1"
-            checkboxLabel="ยืนยันว่าได้รับทราบ notice และมีฐานกฎหมาย/ความยินยอมที่เหมาะสมก่อนบันทึกข้อมูลสุขภาพ"
-            onAcceptedChange={setHealthConsentOk}
+        <div style={{
+          marginBottom: 14, background: '#FDF2F8', border: '1px solid #FBCFE8', borderRadius: 12,
+          padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.84rem', fontWeight: 800, color: '#9D174D' }}>
+            <Sparkles size={16} /> ⚡ ระบบดึงข้อมูลน้ำหนัก-ส่วนสูงตั้งต้นจากทะเบียน DMC 1/2569 ให้อัตโนมัติ (แก้ไขหรือวางจาก Excel ทับได้ทันที)
+          </div>
+          <Link
+            to="/print-body-metrics"
+            style={{
+              background: '#BE185D', color: 'white', textDecoration: 'none',
+              padding: '6px 14px', borderRadius: 8, fontWeight: 800, fontSize: '0.78rem',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}
           >
-            น้ำหนัก ส่วนสูง และ BMI ใช้เพื่อดูแลสุขภาพนักเรียนและรายงานภายในโรงเรียนเท่านั้น ระบบจำกัดสิทธิด้วย Firebase Auth และ Firestore Rules และควรบันทึกเฉพาะเท่าที่จำเป็น
-          </PdpaNotice>
+            <Printer size={14} /> พิมพ์ฟอร์มราชการ (A4)
+          </Link>
         </div>
 
         {/* Filters */}
@@ -244,8 +383,51 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
               {savedAt && <span style={{ color: '#10B981', marginLeft: 8 }}>✓ บันทึก {savedAt.toLocaleTimeString('th-TH')}</span>}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <button onClick={exportCsv} style={{ width: '100%', background: COLOR, color: 'white', border: 'none', borderRadius: 8, padding: '10px 14px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => {
+                if (!healthConsentOk) {
+                  alert('กรุณารับทราบ notice ข้อมูลสุขภาพก่อนใช้งาน');
+                  return;
+                }
+                setShowPasteModal(true);
+              }}
+              style={{
+                flex: 1,
+                background: '#0F172A',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 14px',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
+              <ClipboardPaste size={14} /> วางจาก Excel
+            </button>
+            <button
+              onClick={exportCsv}
+              style={{
+                flex: 1,
+                background: COLOR,
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 14px',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}
+            >
               <Download size={14} /> โหลด CSV
             </button>
           </div>
@@ -281,22 +463,28 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
                         <td style={{ ...td, textAlign: 'left', fontWeight: 700 }}>{s.emoji} {s.name}</td>
                         <td style={td}>
                           <input type="number" min={0} max={200} step="0.1"
+                            key={`w_${s.id}_${e?.weight ?? ''}`}
                             defaultValue={e?.weight ?? ''}
                             disabled={!healthConsentOk}
+                            onPaste={ev => handleDirectPaste(ev, i, 'weight')}
                             onBlur={ev => {
                               const v = ev.target.value;
                               updateMetric(s, { weight: v === '' ? undefined : Number(v) });
                             }}
+                            title="สามารถกด Ctrl+V เพื่อวางคอลัมน์จาก Excel ได้"
                             style={{ ...inpNum, opacity: healthConsentOk ? 1 : 0.55 }} />
                         </td>
                         <td style={td}>
                           <input type="number" min={0} max={250} step="0.1"
+                            key={`h_${s.id}_${e?.height ?? ''}`}
                             defaultValue={e?.height ?? ''}
                             disabled={!healthConsentOk}
+                            onPaste={ev => handleDirectPaste(ev, i, 'height')}
                             onBlur={ev => {
                               const v = ev.target.value;
                               updateMetric(s, { height: v === '' ? undefined : Number(v) });
                             }}
+                            title="สามารถกด Ctrl+V เพื่อวางคอลัมน์จาก Excel ได้"
                             style={{ ...inpNum, opacity: healthConsentOk ? 1 : 0.55 }} />
                         </td>
                         <td style={{ ...td, fontWeight: 800, color: bmi ? bmiColor(bmi) : '#94A3B8' }}>
@@ -312,10 +500,24 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
               </table>
             </div>
             <div style={{ padding: '10px 14px', background: '#FFF7ED', fontSize: '0.78rem', color: '#7C2D12' }}>
-              💡 กรอกตัวเลข → กดออกจากช่อง = <b>บันทึกอัตโนมัติ</b> · BMI คำนวณให้เอง · ลบค่าทั้งสอง = ลบรายการ
+              💡 กรอกตัวเลข → กดออกจากช่อง = <b>บันทึกอัตโนมัติ</b> · สามารถกด <b>Ctrl+V</b> ที่ช่องเพื่อวางรวดเดียว หรือกดปุ่ม <b>วางจาก Excel</b> ด้านบน · BMI คำนวณให้เอง
             </div>
           </div>
         )}
+
+        <ExcelPasteModal
+          isOpen={showPasteModal}
+          onClose={() => setShowPasteModal(false)}
+          title={`📋 วางน้ำหนัก-ส่วนสูงจาก Excel (ห้อง ${current?.label || ''})`}
+          subtitle="คัดลอกเซลล์จาก Excel (1 หรือ 2 คอลัมน์) แล้ววางเพื่ออัปเดตทั้งตารางพร้อมกัน"
+          themeColor={COLOR}
+          students={pasteStudentRows}
+          columns={[
+            { key: 'weight', label: 'น้ำหนัก', unit: 'กก.' },
+            { key: 'height', label: 'ส่วนสูง', unit: 'ซม.' },
+          ]}
+          onApply={handleModalApply}
+        />
       </main>
     </div>
   );

@@ -1,19 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { Plus, Trash2, Edit2, Save, X, Users, UserPlus, List, Grid } from 'lucide-react';
 import type { Club, ClubType, ClubMember } from '../data/clubs';
 
-const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 const TYPES: ClubType[] = ['ชุมนุม', 'ลูกเสือ-เนตรนารี', 'กิจกรรมพัฒนาผู้เรียน', 'อื่น ๆ'];
 
 interface Student { id: string; code?: string; name: string; emoji?: string; }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
 
 export default function ClubsManager() {
+  const { classes: allRooms } = useSchoolRoster();
   const [clubs, setClubs] = useState<Club[]>([]);
-  const [classes, setClasses] = useState<ClassRoster[]>([]);
   const [editing, setEditing] = useState<Club | null>(null);
   const [view, setView] = useState<'cards' | 'roster'>('cards');
 
@@ -26,27 +24,6 @@ export default function ClubsManager() {
     });
   }, []);
 
-  useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      if (snap.exists()) {
-        const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
-      }
-    });
-  }, []);
-
-  const allRooms = useMemo(() => {
-    try {
-      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-      const all = [...KG, ...rooms];
-      return all.map(r => {
-        const fromCloud = classes.find(c => c.classId === r.id);
-        return { id: r.id, label: r.label, students: fromCloud?.students || [] };
-      });
-    } catch { return []; }
-  }, [classes]);
-
   const create = () => setEditing({
     id: `club_${Date.now()}`, name: '', type: 'ชุมนุม', advisor: '',
     description: '', members: [], createdAt: Date.now(),
@@ -54,17 +31,42 @@ export default function ClubsManager() {
 
   const save = async (c: Club) => {
     try {
-      const clean: any = { ...c };
-      if (!clean.description) delete clean.description;
-      await setDoc(doc(db, 'clubs', c.id), clean);
+      const clean = {
+        id: c.id,
+        name: (c.name || '').trim(),
+        type: c.type || 'ชุมนุม',
+        advisor: (c.advisor || '').trim(),
+        description: (c.description || '').trim(),
+        members: (c.members || []).map(m => ({
+          studentId: m.studentId || '',
+          code: m.code || '',
+          name: m.name || '',
+          classLabel: m.classLabel || '',
+        })),
+        createdAt: c.createdAt || Date.now(),
+        updatedAt: Date.now(),
+      };
+      await setDoc(doc(db, 'clubs', c.id), clean, { merge: true });
+      setClubs(prev => {
+        const idx = prev.findIndex(x => x.id === c.id);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = clean as Club;
+          return next;
+        }
+        return [...prev, clean as Club];
+      });
       setEditing(null);
-    } catch (e: any) { alert('❌ ' + (e?.message || e)); }
+    } catch (e: any) { alert('❌ บันทึกไม่สำเร็จ: ' + (e?.message || e)); }
   };
 
   const del = async (c: Club) => {
     if (!confirm(`ลบ "${c.name}"?`)) return;
-    try { await deleteDoc(doc(db, 'clubs', c.id)); }
-    catch (e: any) { alert('❌ ' + (e?.message || e)); }
+    try {
+      await deleteDoc(doc(db, 'clubs', c.id));
+      setClubs(prev => prev.filter(x => x.id !== c.id));
+    }
+    catch (e: any) { alert('❌ ลบไม่สำเร็จ: ' + (e?.message || e)); }
   };
 
   return (

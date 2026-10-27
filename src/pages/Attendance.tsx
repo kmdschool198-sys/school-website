@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { doc, onSnapshot, setDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { buildSeedRosters, mergeWithFirestoreClasses } from '../utils/useSchoolRoster';
 import {
   Check, X as XIcon, Clock, Save, Download,
   Users, BarChart3, Calendar, ChevronLeft, AlertCircle, LogOut, Plus, Trash2, Edit2,
@@ -56,15 +56,12 @@ async function loadAttendanceDocsForPeriod(period: CsvPeriod, month: string, yea
   return docs;
 }
 
-const KG_ROOMS = [
-  { id: 'kg_a2_1', label: 'อ.2/1' },
-  { id: 'kg_a3_1', label: 'อ.3/1' },
-];
-
 const seedClasses = (): ClassRoster[] => {
-  const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-  const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-  return [...KG_ROOMS, ...rooms].map(r => ({ classId: r.id, label: r.label, students: [] }));
+  return buildSeedRosters().map(r => ({
+    classId: r.classId,
+    label: r.label,
+    students: r.students.map(s => ({ id: s.id, code: s.code, name: s.name, emoji: s.emoji })),
+  }));
 };
 
 type Tab = 'check' | 'summary' | 'stats' | 'history' | 'school';
@@ -95,12 +92,19 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
   const [holidays, setHolidays] = useState<Record<string, string>>({}); // date -> holiday name
   const [recentDocs, setRecentDocs] = useState<AttDoc[]>([]);
 
-  // Load class roster from Firestore (subscribe)
+  // Load class roster from Firestore (subscribe) and merge with DMC master fallback
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
       if (snap.exists()) {
         const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
+        if (d.classes?.length) {
+          const merged = mergeWithFirestoreClasses(d.classes);
+          setClasses(merged.map(r => ({
+            classId: r.classId,
+            label: r.label,
+            students: r.students.map(s => ({ id: s.id, code: s.code, name: s.name, emoji: s.emoji })),
+          })));
+        }
       }
     });
   }, []);

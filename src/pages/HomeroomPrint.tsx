@@ -1,17 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { ChevronLeft, Printer } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import type { HomeroomDoc } from '../data/homeroom';
 import { termOfDate, academicYearOfDate } from '../data/homeroom';
-
-const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
-
-interface ClassRoster { classId: string; label: string; students: any[] }
 
 export default function HomeroomPrintPage() {
   const auth = useTeacherAuth();
@@ -23,21 +19,12 @@ function App() {
   const now = new Date();
   const nowIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-  const [classes, setClasses] = useState<ClassRoster[]>([]);
+  const { classes: availableClasses } = useSchoolRoster();
   const [classId, setClassId] = useState('');
   const [term, setTerm] = useState<1 | 2>(termOfDate(nowIso));
   const [year, setYear] = useState(academicYearOfDate(nowIso));
   const [logs, setLogs] = useState<HomeroomDoc[]>([]);
   const [extra, setExtra] = useState('');
-
-  useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      if (snap.exists()) {
-        const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
-      }
-    });
-  }, []);
 
   useEffect(() => {
     return onSnapshot(collection(db, 'homeroom'), snap => {
@@ -47,20 +34,9 @@ function App() {
     });
   }, []);
 
-  const availableClasses = useMemo(() => {
-    try {
-      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-      return [...KG, ...rooms].map(r => {
-        const c = classes.find(x => x.classId === r.id);
-        return { id: r.id, label: r.label, students: c?.students || [] };
-      });
-    } catch { return classes.map(c => ({ id: c.classId, label: c.label, students: c.students })); }
-  }, [classes]);
-
   useEffect(() => {
     if (!classId && availableClasses.length) setClassId(availableClasses[0].id);
-  }, [availableClasses]);
+  }, [availableClasses, classId]);
 
   const current = availableClasses.find(c => c.id === classId);
 
@@ -140,17 +116,20 @@ function App() {
         padding: '18mm 20mm', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minHeight: '297mm',
       }}>
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <div style={{
-            display: 'inline-block', background: '#B2DFDB', color: '#0F172A',
-            padding: '6px 18px', borderRadius: 6, fontWeight: 800, fontSize: '1rem',
-          }}>
-            สรุปปัญหาของนักเรียน และข้อเสนอแนะในการจัดกิจกรรมโฮมรูม
+          <img
+            src={`${import.meta.env.BASE_URL}images/school-logo.png`}
+            alt="ตราโรงเรียน"
+            style={{ width: 52, height: 52, objectFit: 'contain', marginBottom: 6 }}
+          />
+          <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#000' }}>
+            แบบสรุปผลการดำเนินงานกิจกรรมโฮมรูม (Homeroom) และการดูแลช่วยเหลือนักเรียน
           </div>
-          <div style={{ marginTop: 10, fontSize: '1rem' }}>ภาคเรียนที่ {term} ปีการศึกษา {year}</div>
-          <div style={{ fontSize: '1rem' }}>
-            {levelWord} {gradeNum || '.........'}{roomLabel ? `/${roomLabel}` : '/.........'}
+          <div style={{ marginTop: 4, fontSize: '1rem', fontWeight: 800 }}>
+            โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
           </div>
-          <div style={{ fontSize: '1rem' }}>โรงเรียนบ้านคลองมดแดง</div>
+          <div style={{ marginTop: 4, fontSize: '0.98rem' }}>
+            {levelWord} {gradeNum || '.........'}{roomLabel ? `/${roomLabel}` : '/.........'} &nbsp;·&nbsp; ภาคเรียนที่ {term} ปีการศึกษา {year}
+          </div>
         </div>
 
         <Section title="1. ปัญหาของนักเรียนในการจัดกิจกรรมโฮมรูม" items={problems} prefix="1" />
@@ -168,10 +147,18 @@ function App() {
           )}
         </div>
 
-        {/* signature — ครูที่ปรึกษาเท่านั้น */}
-        <div style={{ marginTop: 70, textAlign: 'center', fontSize: '0.95rem' }}>
-          <div>ลงชื่อ ................................................ ครูที่ปรึกษา</div>
-          <div style={{ marginTop: 6 }}>(………………………………………………….)</div>
+        {/* signature — ครูประจำชั้น & ผู้อำนวยการโรงเรียน */}
+        <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 36, textAlign: 'center', fontSize: '0.95rem' }}>
+          <div>
+            <div>ลงชื่อ ....................................................... ครูที่ปรึกษา/ครูประจำชั้น</div>
+            <div style={{ marginTop: 6 }}>({current?.homeroomTeacher || '.......................................................'})</div>
+            <div style={{ marginTop: 2 }}>ครูประจำชั้น {current?.label}</div>
+          </div>
+          <div>
+            <div>ลงชื่อ ....................................................... ผู้รับรองข้อมูล</div>
+            <div style={{ marginTop: 6 }}>(นายปรัชญา ปรางค์ชัยภูมิ)</div>
+            <div style={{ marginTop: 2 }}>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+          </div>
         </div>
 
         {termLogs.length === 0 && (

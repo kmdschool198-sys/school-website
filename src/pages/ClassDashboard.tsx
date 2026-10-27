@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, getDocs, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 import {
   ChevronLeft, LogOut, Users, Calendar, Target,
   DollarSign, Activity, Sparkles,
@@ -11,10 +11,8 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 
 const BRAND = '#FF6A01';
-const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
 interface Student { id: string; code?: string; name: string; emoji?: string; }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
 
 export default function ClassDashboardPage() {
   const auth = useTeacherAuth();
@@ -23,33 +21,12 @@ export default function ClassDashboardPage() {
 }
 
 function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
-  const [classes, setClasses] = useState<ClassRoster[]>([]);
+  const { classes: availableClasses } = useSchoolRoster();
   const [classId, setClassId] = useState('');
 
   useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      if (snap.exists()) {
-        const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
-      }
-    });
-  }, []);
-
-  const availableClasses = useMemo(() => {
-    try {
-      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-      const all = [...KG, ...rooms];
-      return all.map(r => {
-        const c = classes.find(x => x.classId === r.id);
-        return { id: r.id, label: r.label, students: c?.students || [] };
-      });
-    } catch { return classes.map(c => ({ id: c.classId, label: c.label, students: c.students })); }
-  }, [classes]);
-
-  useEffect(() => {
     if (!classId && availableClasses.length) setClassId(availableClasses[0].id);
-  }, [availableClasses]);
+  }, [availableClasses, classId]);
 
   const cls = availableClasses.find(c => c.id === classId);
 

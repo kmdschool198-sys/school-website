@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TIMETABLE_BACKUP } from '../data/timetableData';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { ChevronLeft, LogOut, Download, Sparkles } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -10,10 +10,7 @@ import QuickDate from '../components/QuickDate';
 import { daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel, THAI_MONTHS_FULL } from '../utils/csvReport';
 
 const COLOR = '#3B82F6';
-const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
-interface Student { id: string; code?: string; name: string; }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
 interface AttDoc { classId: string; date: string; records: Record<string, { status: string; noMilk?: boolean }>; }
 type CsvPeriod = 'month' | 'year';
 type CsvScope = 'all' | string;
@@ -25,20 +22,11 @@ export default function MilkReportPage() {
 }
 
 function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
-  const [classes, setClasses] = useState<ClassRoster[]>([]);
+  const { classes: availableClasses } = useSchoolRoster();
   const [date, setDate] = useState(todayStr());
   const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
   const [csvScope, setCsvScope] = useState<CsvScope>('all');
   const [allDocs, setAllDocs] = useState<AttDoc[]>([]);
-
-  useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      if (snap.exists()) {
-        const d = snap.data() as { classes: ClassRoster[] };
-        if (d.classes?.length) setClasses(d.classes);
-      }
-    });
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -50,18 +38,6 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       } catch (e) { console.error(e); }
     })();
   }, []);
-
-  const availableClasses = useMemo(() => {
-    try {
-      const profile = (TIMETABLE_BACKUP as any).profiles[Object.keys((TIMETABLE_BACKUP as any).profiles)[0]];
-      const rooms = profile.data.rooms as Array<{ id: string; label: string }>;
-      const all = [...KG, ...rooms];
-      return all.map(r => {
-        const c = classes.find(x => x.classId === r.id);
-        return { id: r.id, label: r.label, students: c?.students || [] };
-      });
-    } catch { return classes.map(c => ({ id: c.classId, label: c.label, students: c.students })); }
-  }, [classes]);
 
   const totalStudents = availableClasses.reduce((s, c) => s + c.students.length, 0);
   const month = date.slice(0, 7);
