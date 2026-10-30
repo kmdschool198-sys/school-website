@@ -9,6 +9,7 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import QuickDate from '../components/QuickDate';
 import { downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel, daysInMonth, THAI_MONTHS_FULL } from '../utils/csvReport';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 const COLOR = '#06B6D4';
 
@@ -134,7 +135,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       };
     });
     const reportRows = makeSectionedReportRows({
-      title: 'รายงานการแปรงฟัน โรงเรียนบ้านคลองมดแดง',
+      title: `รายงานการแปรงฟัน ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${targetClasses[0]?.label || '-'}`], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
       sections,

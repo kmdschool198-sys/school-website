@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BUILDINGS, STATUS_COLOR, CATEGORY_ICON } from '../data/buildings';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 // ─── Isometric campus map (3D look, fully drawn in SVG) ──────────
 const COS30 = 0.866;
@@ -334,7 +335,7 @@ export default function CampusMap() {
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
       }}>
         <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.92rem' }}>
-          🗺️ แผนผังโรงเรียนบ้านคลองมดแดง
+          🗺️ แผนผัง{SCHOOL_NAME}
         </div>
         <div style={{ fontSize: '0.7rem', color: '#64748B' }}>
           มุมมองอิโซเมตริก 3 มิติ · {BUILDINGS.length} อาคาร

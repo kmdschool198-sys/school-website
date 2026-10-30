@@ -31,6 +31,8 @@ import BehaviorPage from './pages/BehaviorPage';
 import LunchPage from './pages/LunchPage';
 import DutyPage from './pages/DutyPage';
 import TimetablePage from './pages/TimetablePage';
+import JanitorTaskPage from './pages/JanitorTaskPage';
+import HomeVisitPage from './pages/HomeVisitPage';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyConsentBanner from './components/PrivacyConsentBanner';
@@ -80,6 +82,8 @@ function App() {
           <Route path="/duty" element={<DutyPage />} />
           <Route path="/lunch-duty" element={<LunchPage />} />
           <Route path="/timetable" element={<TimetablePage />} />
+          <Route path="/janitor-tasks" element={<JanitorTaskPage />} />
+          <Route path="/home-visit" element={<HomeVisitPage />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />
           <Route path="*" element={<NotFound />} />

@@ -17,7 +17,7 @@ import DriveImage from '../components/DriveImage';
 import NewsModal, { type NewsItem } from '../components/NewsModal';
 import FacebookPostCard from '../components/FacebookPostCard';
 import CountUp from '../components/CountUp';
-import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION, SCHOOL_ADDRESS, SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 import { DEFAULT_ACTIVITIES, COLOR_ACTIVITY } from '../data/defaultActivities';
 
 
@@ -211,11 +211,11 @@ function Home() {
               <span style={{ color: '#FFD400' }}>Inspire.</span>
             </h1>
             <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'rgba(255,255,255,0.95)', marginBottom: '1rem', letterSpacing: '0.5px' }}>
-              โรงเรียนบ้านคลองมดแดง <span style={{ opacity: 0.6, fontWeight: 600 }}>· Ban Klong Mod Daeng School</span>
+              {SCHOOL_NAME} <span style={{ opacity: 0.6, fontWeight: 600 }}>· Ban Mae Daed Noi School</span>
             </div>
 
             <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.85)', marginBottom: '2.5rem', maxWidth: '600px', lineHeight: 1.7 }}>
-              สังกัด สพป.กำแพงเพชร เขต 2 — "สะอาด มีวินัย มุ่งมั่นเรียนรู้ เชิดชูคุณธรรม"
+              {SCHOOL_AFFILIATION} — "สะอาด มีวินัย มุ่งมั่นเรียนรู้ เชิดชูคุณธรรม"
             </p>
 
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
@@ -313,7 +313,7 @@ function Home() {
               </div>
               <div>
                 <div style={{ opacity: 0.9, fontSize: '0.85rem', fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase' }}>วิสัยทัศน์ในการบริหารจัดการสถานศึกษา (พ.ศ. 2570)</div>
-                <h3 style={{ margin: 0, fontWeight: 900, fontSize: '1.5rem' }}>โรงเรียนบ้านคลองมดแดง</h3>
+                <h3 style={{ margin: 0, fontWeight: 900, fontSize: '1.5rem' }}>{SCHOOL_NAME}</h3>
               </div>
             </div>
             <p style={{ fontSize: '1.45rem', fontWeight: 800, lineHeight: 1.6, margin: 0, position: 'relative', maxWidth: 960 }}>
@@ -321,7 +321,7 @@ function Home() {
             </p>
             <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, position: 'relative' }}>
               <div style={{ fontSize: '0.95rem', opacity: 0.95, fontWeight: 700 }}>
-                👤 นายปรัชญา ปรางค์ชัยภูมิ · ผู้อำนวยการสถานศึกษา โรงเรียนบ้านคลองมดแดง
+                👤 นายปรัชญา ปรางค์ชัยภูมิ · ผู้อำนวยการสถานศึกษา {SCHOOL_NAME}
               </div>
               <Link
                 to="/page/vision"
@@ -523,7 +523,7 @@ function Home() {
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #FF6A01, #FB923C)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>ผ</div>
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '0.92rem' }}>ผู้อำนวยการโรงเรียน</div>
-                    <div style={{ fontSize: '0.78rem', opacity: 0.7 }}>โรงเรียนบ้านคลองมดแดง</div>
+                    <div style={{ fontSize: '0.78rem', opacity: 0.7 }}>{SCHOOL_NAME}</div>
                   </div>
                 </div>
               </div>
@@ -532,9 +532,9 @@ function Home() {
               <div style={{ marginTop: '1.25rem', background: '#FFF7ED', borderRadius: '24px', padding: '1.5rem', border: '1px solid #FFEDD5' }}>
                 <h6 style={{ fontWeight: 900, color: '#0F172A', marginBottom: '1rem', fontSize: '1rem' }}>ข้อมูลโรงเรียน</h6>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <InfoRow icon={<MapPin size={16} />} label="ตำบลโป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร" />
+                  <InfoRow icon={<MapPin size={16} />} label={SCHOOL_ADDRESS} />
                   <InfoRow icon={<Users size={16} />} label="เปิดสอนระดับอนุบาล - มัธยมศึกษาปีที่ 3" />
-                  <InfoRow icon={<ShieldCheck size={16} />} label="สังกัด สพป.กำแพงเพชร เขต 2" />
+                  <InfoRow icon={<ShieldCheck size={16} />} label={SCHOOL_AFFILIATION} />
                   <InfoRow icon={<Award size={16} />} label="ก่อตั้ง พ.ศ. 2525 (44+ ปี)" />
                 </div>
               </div>

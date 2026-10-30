@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { matchPath, useLocation } from 'react-router-dom';
 import { pageContent } from '../data/pageContent';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
-const SCHOOL_NAME = 'โรงเรียนบ้านคลองมดแดง';
-const DEFAULT_DESCRIPTION = 'เว็บไซต์โรงเรียนบ้านคลองมดแดง ข่าวสาร ตารางเรียน ระบบครู และบริการออนไลน์ของโรงเรียน';
+const DEFAULT_DESCRIPTION = `เว็บไซต์${SCHOOL_NAME} ข่าวสาร ตารางเรียน ระบบครู และบริการออนไลน์ของโรงเรียน`;
 
 const staticTitles: Record<string, string> = {
   '/': 'หน้าแรก',

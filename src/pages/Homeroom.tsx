@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, setDoc, deleteDoc, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, query, where, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import {
@@ -59,15 +59,14 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const snap = await getDocs(collection(db, 'attendance'));
-        const arr: AttDoc[] = [];
-        snap.forEach(d => arr.push(d.data() as AttDoc));
-        setAttDocs(arr);
-      } catch (e) { console.error(e); }
-    })();
-  }, []);
+    if (!classId) return;
+    const q = query(collection(db, 'attendance'), where('classId', '==', classId));
+    return onSnapshot(q, { includeMetadataChanges: true }, snap => {
+      const arr: AttDoc[] = [];
+      snap.forEach(d => arr.push(d.data() as AttDoc));
+      setAttDocs(arr);
+    });
+  }, [classId]);
 
   useEffect(() => {
     return onSnapshot(collection(db, 'activities'), snap => {
@@ -139,8 +138,14 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         payload.presentCount = attForDay.present;
         payload.totalCount = current.students.length;
       }
-      await setDoc(doc(db, 'homeroom', payload.id), payload);
-      toast.success('บันทึกโฮมรูมเรียบร้อย');
+      const writePromise = setDoc(doc(db, 'homeroom', payload.id), payload, { merge: true });
+      const timeoutPromise = new Promise<'offline_cached'>(resolve => setTimeout(() => resolve('offline_cached'), 1500));
+      const res = await Promise.race([writePromise.then(() => 'synced' as const), timeoutPromise]);
+      if (res === 'offline_cached') {
+        toast.info('บันทึกโฮมรูมลงเครื่องแล้ว (ระบบจะซิงค์ขึ้น Cloud อัตโนมัติเมื่อมีสัญญาณอินเทอร์เน็ต)');
+      } else {
+        toast.success('บันทึกโฮมรูมเรียบร้อย');
+      }
     } catch (e: any) {
       toast.error('บันทึกไม่สำเร็จ: ' + (e?.message || e));
     }
@@ -245,8 +250,14 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         count++;
       }
 
-      await batch.commit();
-      toast.success(`เติมบันทึกโฮมรูมอัตโนมัติเรียบร้อย ${count} วัน`);
+      const writePromise = batch.commit();
+      const timeoutPromise = new Promise<'offline_cached'>(resolve => setTimeout(() => resolve('offline_cached'), 2000));
+      const res = await Promise.race([writePromise.then(() => 'synced' as const), timeoutPromise]);
+      if (res === 'offline_cached') {
+        toast.info(`เติมบันทึกโฮมรูม ${count} วันลงเครื่องแล้ว (ระบบจะซิงค์ขึ้น Cloud เมื่อมีสัญญาณเน็ต)`);
+      } else {
+        toast.success(`เติมบันทึกโฮมรูมอัตโนมัติเรียบร้อย ${count} วัน`);
+      }
     } catch (err: any) {
       toast.error('เกิดข้อผิดพลาด: ' + (err?.message || err));
     } finally {

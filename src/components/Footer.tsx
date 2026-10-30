@@ -19,7 +19,7 @@ const YoutubeIcon = ({ size = 18 }: { size?: number }) => (
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import DriveImage from './DriveImage';
-import { GOOGLE_SITE_URL, VERCEL_APP_URL, SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
+import { GOOGLE_SITE_URL, VERCEL_APP_URL, SCHOOL_EMAIL, SCHOOL_PHONE, SCHOOL_NAME, SCHOOL_ADDRESS } from '../config/siteLinks';
 
 // TikTok icon (lucide doesn't have one)
 const TikTokIcon = ({ size = 18 }: { size?: number }) => (
@@ -30,12 +30,12 @@ const TikTokIcon = ({ size = 18 }: { size?: number }) => (
 
 export default function Footer() {
   const [info, setInfo] = useState({
-    name: 'โรงเรียนบ้านคลองมดแดง',
+    name: SCHOOL_NAME,
     motto: 'การศึกษาปฐมวัย และ ขั้นพื้นฐานที่มุ่งเน้นการพัฒนาทักษะชีวิตคู่ความรู้',
-    address: '198 ม.3 ต.โป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร 62180',
+    address: SCHOOL_ADDRESS,
     phone: SCHOOL_PHONE,
     email: SCHOOL_EMAIL,
-    facebook: 'โรงเรียนบ้านคลองมดแดง',
+    facebook: SCHOOL_NAME,
     logoUrl: '',
   });
 

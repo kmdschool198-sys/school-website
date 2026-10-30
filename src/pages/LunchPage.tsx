@@ -19,6 +19,7 @@ import {
   yearLabel,
   THAI_MONTHS_FULL,
 } from '../utils/csvReport';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const LUNCH_RATE_PER_HEAD = 22; // งบประมาณอาหารกลางวัน สพฐ. / อปท. 22 บาท/คน/วัน
@@ -169,7 +170,7 @@ function LunchContent({ userName }: { userName: string }) {
       dessertOrFruit: p.dessertOrFruit,
       caloriesKcal: p.caloriesKcal,
       inspectTeacher: userName || 'ครูเวรโภชนาการ',
-      cookName: 'แม่ครัวโรงเรียนบ้านคลองมดแดง',
+      cookName: `แม่ครัว${SCHOOL_NAME}`,
       tasteRating: 'ดีมาก',
       hygieneRating: 'ดีมาก',
       quantityRating: 'เพียงพอ',
@@ -186,7 +187,7 @@ function LunchContent({ userName }: { userName: string }) {
       dessertOrFruit: next.dessertOrFruit || '',
       caloriesKcal: Number(next.caloriesKcal) || 550,
       inspectTeacher: next.inspectTeacher || userName || 'ครูเวรโภชนาการ',
-      cookName: next.cookName || 'แม่ครัวโรงเรียนบ้านคลองมดแดง',
+      cookName: next.cookName || `แม่ครัว${SCHOOL_NAME}`,
       tasteRating: next.tasteRating || 'ดีมาก',
       hygieneRating: next.hygieneRating || 'ดีมาก',
       quantityRating: next.quantityRating || 'เพียงพอ',
@@ -396,7 +397,7 @@ function LunchContent({ userName }: { userName: string }) {
     });
 
     const reportRows = makeSectionedReportRows({
-      title: `${titleLabel} โรงเรียนบ้านคลองมดแดง`,
+      title: `${titleLabel} ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [
         ['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${targetClasses[0]?.label || '-'}`],
@@ -943,7 +944,7 @@ function LunchContent({ userName }: { userName: string }) {
               แบบรายงานการตรวจสอบคุณภาพและควบคุมอาหารกลางวันนักเรียนประจำวัน
             </div>
             <div style={{ fontSize: '12pt', fontWeight: 700 }}>
-              โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+              {SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}
             </div>
             <div style={{ fontSize: '11pt', fontWeight: 700, marginTop: 3 }}>
               ประจำวันที่ {fmtThai(date)} &nbsp;|&nbsp; อัตราอุดหนุน {LUNCH_RATE_PER_HEAD} บาท/คน/วัน
@@ -1029,7 +1030,7 @@ function LunchContent({ userName }: { userName: string }) {
             <div>
               <div>ลงชื่อ....................................................</div>
               <div style={{ fontWeight: 800 }}>({DIRECTOR_NAME})</div>
-              <div>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+              <div>ผู้อำนวยการ{SCHOOL_NAME}</div>
             </div>
           </div>
         </div>

@@ -6,13 +6,14 @@ import { db } from '../firebase';
 import { sidebarMenus } from '../data/pageContent';
 
 import DriveImage from './DriveImage';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [schoolInfo, setSchoolInfo] = useState({
-    name: 'โรงเรียนบ้านคลองมดแดง',
+    name: SCHOOL_NAME,
     logoUrl: ''
   });
 
@@ -26,7 +27,7 @@ export default function Header() {
       if (snap.exists()) {
         const data = snap.data();
         setSchoolInfo({
-          name: data.name || 'โรงเรียนบ้านคลองมดแดง',
+          name: data.name || SCHOOL_NAME,
           logoUrl: data.logoUrl || ''
         });
       }
@@ -200,7 +201,7 @@ export default function Header() {
             </div>
 
             <div style={{ padding: '14px 18px', background: '#F8FAFC', fontSize: '0.72rem', color: '#94A3B8', textAlign: 'center' }}>
-              © {new Date().getFullYear() + 543} โรงเรียนบ้านคลองมดแดง
+              © {new Date().getFullYear() + 543} {SCHOOL_NAME}
             </div>
           </aside>
         </>

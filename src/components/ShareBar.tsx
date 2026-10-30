@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link2, QrCode, Check, Share2, X, Download } from 'lucide-react';
 import QRCode from 'qrcode';
 import { toast } from './GlobalToast';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 type Props = {
   /** Absolute or relative URL to share. Defaults to current page URL. */
@@ -33,7 +34,7 @@ export default function ShareBar({ url, title = '', compact = false }: Props) {
     ? (url.startsWith('http') ? url : `${window.location.origin}${url}`)
     : window.location.href;
 
-  const shareText = title ? `${title} — โรงเรียนบ้านคลองมดแดง` : 'โรงเรียนบ้านคลองมดแดง';
+  const shareText = title ? `${title} — ${SCHOOL_NAME}` : SCHOOL_NAME;
 
   useEffect(() => {
     if (!showQr) return;

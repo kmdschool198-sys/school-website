@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test": "node --test scripts/test_school_suite.mjs",
+    "test:db": "node scripts/test_all_ops.mjs && node scripts/verify_all_crud.mjs",
     "setup:staff-auth": "node scripts/setup_staff_auth.mjs",
     "pdpa:retention-review": "node scripts/pdpa_retention_review.mjs"
   },

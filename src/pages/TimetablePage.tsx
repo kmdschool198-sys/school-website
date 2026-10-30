@@ -1,13 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TimetableSmart from '../components/TimetableSmart';
 import { useTeacherAuth } from '../utils/teacherAuth';
-import { Calendar, Eye, Edit3, Printer, Lock, ExternalLink } from 'lucide-react';
+import { Calendar, Eye, Edit3, Printer, Lock, ExternalLink, AlertCircle } from 'lucide-react';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 export default function TimetablePage() {
   const teacherAuth = useTeacherAuth();
   const [editMode, setEditMode] = useState(false);
+  const [activeLeaves, setActiveLeaves] = useState<Array<{ id: string; teacherName: string; type: string; startDate: string; endDate: string; substitute?: string }>>([]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return onSnapshot(query(collection(db, 'teacher_leaves'), where('status', '==', 'อนุมัติ')), snap => {
+      const list: typeof activeLeaves = [];
+      snap.forEach(d => {
+        const data = d.data() as any;
+        if (data.startDate <= today && data.endDate >= today) {
+          list.push({ id: d.id, ...data });
+        }
+      });
+      setActiveLeaves(list);
+    });
+  }, []);
 
   // If not logged in as teacher/admin, force readOnly = true
   const isReadOnly = !teacherAuth.authed || !editMode;
@@ -15,6 +33,37 @@ export default function TimetablePage() {
   return (
     <SmartSchoolLayout pageTitle="ระบบตารางเรียน & ตารางสอน">
       <div style={{ maxWidth: 1440, margin: '0 auto', paddingBottom: '2rem' }}>
+        {/* Banner แจ้งเตือนครูที่ได้รับอนุมัติลาในวันนี้ */}
+        {activeLeaves.length > 0 && (
+          <div
+            className="tt-no-print"
+            style={{
+              background: '#FEF3C7', border: '1.5px solid #F59E0B', borderRadius: 14,
+              padding: '12px 18px', marginBottom: 14, display: 'flex', alignItems: 'center',
+              justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, color: '#92400E',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: '0.86rem' }}>
+              <AlertCircle size={20} color="#D97706" />
+              <span>
+                📢 แจ้งเตือนการจัดสอนแทนวันนี้ ({activeLeaves.length} ท่าน):{' '}
+                {activeLeaves.map(l => `${l.teacherName} (${l.type} · ผู้สอนแทน: ${l.substitute || 'ระบุในตาราง'})`).join(' | ')}
+              </span>
+            </div>
+            {teacherAuth.authed && !editMode && (
+              <button
+                onClick={() => setEditMode(true)}
+                style={{
+                  background: '#D97706', color: 'white', border: 'none', borderRadius: 8,
+                  padding: '6px 12px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
+                }}
+              >
+                คลิกเพื่อจัดคาบสอนแทน
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Page Header Banner */}
         <div
           className="tt-no-print"
@@ -55,7 +104,7 @@ export default function TimetablePage() {
               <h2 style={{ margin: '2px 0 0', fontSize: '1.3rem', fontWeight: 900 }}>
                 {teacherAuth.authed && editMode
                   ? 'ระบบจัดตารางสอน & จัดครูสอนแทนอัจฉริยะ'
-                  : 'ตารางเรียนและตารางสอน · โรงเรียนบ้านคลองมดแดง'}
+                  : `ตารางเรียนและตารางสอน · ${SCHOOL_NAME}`}
               </h2>
               <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
                 {teacherAuth.authed

@@ -19,6 +19,7 @@ import {
   yearLabel,
   THAI_MONTHS_FULL,
 } from '../utils/csvReport';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const DEPUTY_NAME = 'นางสาวเจนจีรา บุญเกตุ';
@@ -333,7 +334,7 @@ function DutyContent({ userName }: { userName: string }) {
     });
 
     const reportRows = makeSectionedReportRows({
-      title: `${titleLabel} โรงเรียนบ้านคลองมดแดง`,
+      title: `${titleLabel} ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [
         ['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${targetClasses[0]?.label || '-'}`],
@@ -819,7 +820,7 @@ function DutyContent({ userName }: { userName: string }) {
               แบบบันทึกการปฏิบัติหน้าที่ครูเวรประจำวันและตรวจเขตพื้นที่ความสะอาด
             </div>
             <div style={{ fontSize: '12pt', fontWeight: 700 }}>
-              โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+              {SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}
             </div>
             <div style={{ fontSize: '11pt', fontWeight: 700, marginTop: 3 }}>
               ประจำวันที่ {fmtThai(date)} &nbsp;|&nbsp; ครูเวรผู้รับผิดชอบ: {currentMeta.dutyLeader}
@@ -891,12 +892,12 @@ function DutyContent({ userName }: { userName: string }) {
             <div>
               <div>ลงชื่อ....................................................</div>
               <div>({DEPUTY_NAME})</div>
-              <div>รองผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+              <div>รองผู้อำนวยการ{SCHOOL_NAME}</div>
             </div>
             <div>
               <div>ลงชื่อ....................................................</div>
               <div style={{ fontWeight: 800 }}>({DIRECTOR_NAME})</div>
-              <div>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+              <div>ผู้อำนวยการ{SCHOOL_NAME}</div>
             </div>
           </div>
         </div>

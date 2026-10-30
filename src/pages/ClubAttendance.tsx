@@ -8,6 +8,7 @@ import { EVAL_LABELS } from '../data/clubs';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 const BRAND = '#FF6A01';
 const STATUS_COLORS: Record<AttStatus, string> = { present: BRAND, absent: '#EF4444', leave: '#F59E0B' };
@@ -212,7 +213,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       };
     });
     const reportRows = makeSectionedReportRows({
-      title: 'รายงานเช็คชื่อชุมนุม/กิจกรรม/ลูกเสือ โรงเรียนบ้านคลองมดแดง',
+      title: `รายงานเช็คชื่อชุมนุม/กิจกรรม/ลูกเสือ ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [['กิจกรรม', `${currentClub.type} · ${currentClub.name}`], ['ครูที่ปรึกษา', currentClub.advisor], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
       sections,
@@ -228,7 +229,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           <Link to="/" style={lnk}><ChevronLeft size={16} />หน้าหลัก</Link>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: '1.3rem', fontWeight: 900 }}>🎯 เช็คชื่อชุมนุม / กิจกรรม / ลูกเสือ</div>
-            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>โรงเรียนบ้านคลองมดแดง · {userName}</div>
+            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>{SCHOOL_NAME} · {userName}</div>
           </div>
           <button onClick={onLogout} style={btnLogout}><LogOut size={12} />ออกจากระบบ</button>
         </div>

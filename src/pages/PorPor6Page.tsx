@@ -1,4 +1,8 @@
 import { useState, useMemo } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+import { toast } from '../components/GlobalToast';
+import { SCHOOL_NAME } from '../config/siteLinks';
 import { Printer, Search, Eye, FileText, ArrowLeft, Edit3, Check, RotateCcw } from 'lucide-react';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -126,7 +130,7 @@ function PorPor6Content() {
                 color: 'white',
               }}
             >
-              📋 ฟอร์ม ปพ.6 โรงเรียนบ้านคลองมดแดง (ตามไฟล์ Excel)
+              📋 ฟอร์ม ปพ.6 {SCHOOL_NAME} (ตามไฟล์ Excel)
             </button>
             <button
               type="button"
@@ -206,21 +210,66 @@ function PorPor6Content() {
               สำหรับครูประจำชั้น ใช้ตรวจสอบผลการเรียนและสั่งพิมพ์แบบฟอร์ม ปพ.6 ทางการแจกนักเรียนและผู้ปกครอง
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm('ต้องการรีเซ็ตข้อมูลคะแนนกลับเป็นค่าเริ่มต้นจากไฟล์งานวัดผลหรือไม่?')) {
-                resetToDefault();
-              }
-            }}
-            style={{
-              background: '#FFFFFF', color: '#475569', border: '1px solid #CBD5E1',
-              borderRadius: 8, padding: '7px 12px', fontSize: '0.78rem', fontWeight: 700,
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-            }}
-          >
-            <RotateCcw size={14} /> รีเซ็ตข้อมูลเริ่มต้น
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const snap = await getDocs(collection(db, 'club_evaluations'));
+                  const evalMap: Record<string, 'ผ' | 'มผ'> = {};
+                  snap.forEach(d => {
+                    const recs = d.data()?.records || {};
+                    for (const [sid, val] of Object.entries(recs as Record<string, { result?: 'ผ' | 'มผ' }>)) {
+                      if (val?.result) evalMap[sid] = val.result;
+                    }
+                  });
+                  let updated = 0;
+                  for (const st of currentClass.students) {
+                    const res = evalMap[st.code] || evalMap[`s_${st.code}`];
+                    if (res) {
+                      updateStudentEvaluation(
+                        currentClass.classId,
+                        st.code,
+                        st.traitResult,
+                        st.readThinkResult,
+                        res === 'มผ' ? 'ไม่ผ่าน' : 'ผ่าน'
+                      );
+                      updated += 1;
+                    }
+                  }
+                  toast.success(
+                    updated > 0
+                      ? `ซิงค์ผลกิจกรรมชุมนุมเข้าใบ ปพ.6 สำเร็จ ${updated} คน`
+                      : 'ตรวจสอบแล้ว นักเรียนทุกคนผ่านกิจกรรมพัฒนาผู้เรียน'
+                  );
+                } catch (err: any) {
+                  toast.error('ซิงค์ผลชุมนุมไม่สำเร็จ: ' + (err?.message || err));
+                }
+              }}
+              style={{
+                background: '#059669', color: '#FFFFFF', border: 'none',
+                borderRadius: 8, padding: '7px 14px', fontSize: '0.78rem', fontWeight: 800,
+                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              🎯 ซิงค์ผลชุมนุม/ลูกเสือเข้า ปพ.6
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('ต้องการรีเซ็ตข้อมูลคะแนนกลับเป็นค่าเริ่มต้นจากไฟล์งานวัดผลหรือไม่?')) {
+                  resetToDefault();
+                }
+              }}
+              style={{
+                background: '#FFFFFF', color: '#475569', border: '1px solid #CBD5E1',
+                borderRadius: 8, padding: '7px 12px', fontSize: '0.78rem', fontWeight: 700,
+                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <RotateCcw size={14} /> รีเซ็ตข้อมูลเริ่มต้น
+            </button>
+          </div>
         </div>
 
         {/* Filter Box (matching Screenshot 3) */}
@@ -561,7 +610,7 @@ export function OfficialPorPor6Form({
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
         <img
           src={`${import.meta.env.BASE_URL}images/school-logo.png`}
-          alt="ตราโรงเรียนบ้านคลองมดแดง"
+          alt={`ตรา${SCHOOL_NAME}`}
           style={{ width: 52, height: 52, objectFit: 'contain', margin: '0 auto 4px', display: 'block' }}
         />
         <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#000', letterSpacing: 0.2 }}>
@@ -830,6 +879,20 @@ function KmdExcelPorPor6Form({
     [student, core12Subjects]
   );
 
+  const earnedByType = useMemo(() => {
+    let earnedCore = 0;
+    let earnedElective = 0;
+    for (const s of core12Subjects) {
+      const g = student.scores[s.code]?.grade ?? '3';
+      const passed = g !== '0' && g !== 'ร' && g !== 'มส';
+      if (passed) {
+        if (s.type === 'พื้นฐาน') earnedCore += s.credits;
+        else earnedElective += s.credits;
+      }
+    }
+    return { earnedCore, earnedElective };
+  }, [core12Subjects, student.scores]);
+
   const totalHours = useMemo(
     () => core12Subjects.reduce((acc, s) => acc + s.hours, 0),
     [core12Subjects]
@@ -852,7 +915,7 @@ function KmdExcelPorPor6Form({
       <div style={{ textAlign: 'center', marginBottom: 10, lineHeight: 1.45 }}>
         <img
           src={`${import.meta.env.BASE_URL}images/school-logo.png`}
-          alt="ตราโรงเรียนบ้านคลองมดแดง"
+          alt={`ตรา${SCHOOL_NAME}`}
           style={{ width: 52, height: 52, objectFit: 'contain', margin: '0 auto 4px', display: 'block' }}
         />
         <div style={{ fontSize: '1.15rem', fontWeight: 900 }}>แบบรายงานผลการพัฒนาคุณภาพผู้เรียนรายบุคคล</div>
@@ -926,12 +989,12 @@ function KmdExcelPorPor6Form({
             <tr>
               <td style={{ ...pTd, padding: '5px 10px' }}>จำนวนหน่วยกิต/น้ำหนักวิชาพื้นฐาน</td>
               <td style={{ ...pTd, textAlign: 'center' }}>{gpaStats.coreCredits.toFixed(1)}</td>
-              <td style={{ ...pTd, textAlign: 'center' }}>{gpaStats.coreCredits.toFixed(1)}</td>
+              <td style={{ ...pTd, textAlign: 'center' }}>{earnedByType.earnedCore.toFixed(1)}</td>
             </tr>
             <tr>
               <td style={{ ...pTd, padding: '5px 10px' }}>จำนวนหน่วยกิต/น้ำหนักวิชาเพิ่มเติม</td>
               <td style={{ ...pTd, textAlign: 'center' }}>{gpaStats.electiveCredits.toFixed(1)}</td>
-              <td style={{ ...pTd, textAlign: 'center' }}>{gpaStats.electiveCredits.toFixed(1)}</td>
+              <td style={{ ...pTd, textAlign: 'center' }}>{earnedByType.earnedElective.toFixed(1)}</td>
             </tr>
             <tr style={{ fontWeight: 800 }}>
               <td style={{ ...pTd, padding: '5px 10px' }}>รวมจำนวนหน่วยกิต/น้ำหนัก</td>
@@ -1156,6 +1219,7 @@ function StudentGradeInspectModal({
                 <th style={{ ...thStyle, textAlign: 'left' }}>ชื่อรายวิชา</th>
                 <th style={thStyle}>ประเภท</th>
                 <th style={thStyle}>หน่วยกิต</th>
+                <th style={thStyle}>เวลาเรียน</th>
                 <th style={thStyle}>ระหว่างภาค (70)</th>
                 <th style={thStyle}>ปลายภาค (30)</th>
                 <th style={thStyle}>รวม (100)</th>
@@ -1181,9 +1245,21 @@ function StudentGradeInspectModal({
                         <input
                           type="number"
                           min={0}
+                          max={subj.hours}
+                          value={sc.attendedHours}
+                          onChange={e => onUpdateScore(subj.code, sc.coursework, sc.finalExam, undefined, sc.traitScore, sc.readThinkScore, Number(e.target.value))}
+                          style={numInput}
+                        />
+                      ) : `${sc.attendedHours}/${subj.hours}`}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      {editMode ? (
+                        <input
+                          type="number"
+                          min={0}
                           max={70}
                           value={sc.coursework}
-                          onChange={e => onUpdateScore(subj.code, Number(e.target.value), sc.finalExam)}
+                          onChange={e => onUpdateScore(subj.code, Number(e.target.value), sc.finalExam, undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours)}
                           style={numInput}
                         />
                       ) : sc.coursework}
@@ -1195,7 +1271,7 @@ function StudentGradeInspectModal({
                           min={0}
                           max={30}
                           value={sc.finalExam}
-                          onChange={e => onUpdateScore(subj.code, sc.coursework, Number(e.target.value))}
+                          onChange={e => onUpdateScore(subj.code, sc.coursework, Number(e.target.value), undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours)}
                           style={numInput}
                         />
                       ) : sc.finalExam}
@@ -1206,8 +1282,28 @@ function StudentGradeInspectModal({
                     <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 900, color: '#0284C7' }}>
                       {sc.grade}
                     </td>
-                    <td style={{ ...tdStyle, textAlign: 'center' }}>{sc.traitScore}</td>
-                    <td style={{ ...tdStyle, textAlign: 'center' }}>{sc.readThinkScore}</td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      {editMode ? (
+                        <select
+                          value={sc.traitScore}
+                          onChange={e => onUpdateScore(subj.code, sc.coursework, sc.finalExam, undefined, Number(e.target.value), sc.readThinkScore, sc.attendedHours)}
+                          style={numInput}
+                        >
+                          {[3, 2, 1, 0].map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      ) : sc.traitScore}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      {editMode ? (
+                        <select
+                          value={sc.readThinkScore}
+                          onChange={e => onUpdateScore(subj.code, sc.coursework, sc.finalExam, undefined, sc.traitScore, Number(e.target.value), sc.attendedHours)}
+                          style={numInput}
+                        >
+                          {[3, 2, 1, 0].map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                      ) : sc.readThinkScore}
+                    </td>
                   </tr>
                 );
               })}

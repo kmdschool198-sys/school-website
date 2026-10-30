@@ -8,6 +8,7 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { PageLoading } from '../components/PageState';
 import { downloadCsvReport, makeReportRows } from '../utils/csvReport';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 const COLOR = '#FF6A01';
 
@@ -96,32 +97,41 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
     });
   }, [availableClasses, attendanceDocs]);
 
-  // School-wide summaries
+  // School-wide summaries (weighted attendance rate and real sum averages)
   const schoolSummary = useMemo(() => {
     const totalStudents = classStats.reduce((s, x) => s + x.studentCount, 0);
     const totalMilk = classStats.reduce((s, x) => s + x.totalMilk, 0);
     const totalBrush = classStats.reduce((s, x) => s + x.totalBrush, 0);
+    const totalAvgPresent = Math.round(classStats.reduce((s, x) => s + x.avgPresent, 0) * 10) / 10;
     
-    // Weighted attendance rate
-    let totalCheckedDays = 0;
-    let sumAttRates = 0;
-    classStats.forEach(x => {
-      if (x.checkedDays > 0) {
-        totalCheckedDays++;
-        sumAttRates += x.attRate;
-      }
+    let sumPresentAll = 0;
+    let sumCheckedRecordsAll = 0;
+    attendanceDocs.forEach(d => {
+      Object.values(d.records || {}).forEach((r: any) => {
+        if (r.status === 'present' || r.status === 'absent' || r.status === 'leave') {
+          sumCheckedRecordsAll += 1;
+          if (r.status === 'present') sumPresentAll += 1;
+        }
+      });
     });
-    const avgAttRate = totalCheckedDays ? Math.round(sumAttRates / totalCheckedDays) : 0;
-    const avgDays = classStats.length ? Math.round((classStats.reduce((s, x) => s + x.checkedDays, 0) / classStats.length) * 10) / 10 : 0;
+
+    const avgAttRate = sumCheckedRecordsAll > 0
+      ? Math.round((sumPresentAll / sumCheckedRecordsAll) * 100)
+      : 0;
+
+    const avgDays = classStats.length
+      ? Math.round((classStats.reduce((s, x) => s + x.checkedDays, 0) / classStats.length) * 10) / 10
+      : 0;
 
     return {
       totalStudents,
       avgDays,
+      totalAvgPresent,
       avgAttRate,
       totalMilk,
       totalBrush
     };
-  }, [classStats]);
+  }, [classStats, attendanceDocs]);
 
   const [yearStr, monStr] = month.split('-');
   const yearNum = Number(yearStr);
@@ -138,7 +148,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         String(x.totalBrush)
       ]);
     const reportRows = makeReportRows({
-      title: 'สรุปรายงานสถิติประจำเดือน โรงเรียนบ้านคลองมดแดง',
+      title: `สรุปรายงานสถิติประจำเดือน ${SCHOOL_NAME}`,
       subtitle: `ประจำเดือน ${THAI_MONTHS[monthNum - 1]} พ.ศ. ${yearNum + 543}`,
       meta: [['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
       headers: ['ชั้น', 'จำนวนนักเรียน', 'วันทำการเช็คชื่อ', 'มาเรียนเฉลี่ย/วัน', 'อัตราการมาเรียน (%)', 'การดื่มนมรวม (กล่อง)', 'การแปรงฟันรวม (ครั้ง)'],
@@ -147,7 +157,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         'สรุปภาพรวมโรงเรียน',
         String(schoolSummary.totalStudents),
         String(schoolSummary.avgDays),
-        '—',
+        String(schoolSummary.totalAvgPresent),
         `${schoolSummary.avgAttRate}%`,
         String(schoolSummary.totalMilk),
         String(schoolSummary.totalBrush)
@@ -233,8 +243,8 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
                   <tr style={{ background: '#FFF7ED', fontWeight: 900, borderTop: '2px solid #FDBA74' }}>
                     <td style={{ ...tdCell, textAlign: 'left' }}>รวมทั้งหมด (เฉลี่ย)</td>
                     <td style={tdCell}>{schoolSummary.totalStudents} คน</td>
-                    <td style={tdCell}>—</td>
-                    <td style={tdCell}>—</td>
+                    <td style={tdCell}>{schoolSummary.avgDays} วัน</td>
+                    <td style={tdCell}>{schoolSummary.totalAvgPresent} คน</td>
                     <td style={{ ...tdCell, color: COLOR }}>{schoolSummary.avgAttRate}%</td>
                     <td style={{ ...tdCell, color: '#3B82F6' }}>{schoolSummary.totalMilk} กล่อง</td>
                     <td style={{ ...tdCell, color: '#06B6D4' }}>{schoolSummary.totalBrush} ครั้ง</td>
@@ -258,7 +268,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
             แบบรายงานสรุปข้อมูลสถิตินักเรียนและการจัดสวัสดิการประจำเดือน
           </div>
           <div style={{ fontWeight: 800, fontSize: '15px', lineHeight: 1.4 }}>
-            โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+            {SCHOOL_NAME} &nbsp; สังกัดสำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
           </div>
           <div style={{ fontSize: '14px', marginTop: 4 }}>
             ประจำเดือน <b>{THAI_MONTHS[monthNum - 1]} พ.ศ. {yearNum + 543}</b>
@@ -294,8 +304,8 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
             <tr style={{ fontWeight: 'bold', background: '#F8FAFC' }}>
               <td colSpan={2} style={printTd}>สรุปผลรวมเฉลี่ย</td>
               <td style={{ ...printTd, textAlign: 'center' }}>{schoolSummary.totalStudents}</td>
-              <td style={{ ...printTd, textAlign: 'center' }}>—</td>
-              <td style={{ ...printTd, textAlign: 'center' }}>—</td>
+              <td style={{ ...printTd, textAlign: 'center' }}>{schoolSummary.avgDays}</td>
+              <td style={{ ...printTd, textAlign: 'center' }}>{schoolSummary.totalAvgPresent}</td>
               <td style={{ ...printTd, textAlign: 'center' }}>{schoolSummary.avgAttRate}%</td>
               <td style={{ ...printTd, textAlign: 'center' }}>{schoolSummary.totalMilk}</td>
               <td style={{ ...printTd, textAlign: 'center' }}>{schoolSummary.totalBrush}</td>
@@ -313,7 +323,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           <div>
             <p>ลงชื่อ .............................................................. ผู้รับรองรายงาน</p>
             <p style={{ marginTop: 6 }}>(นายปรัชญา ปรางค์ชัยภูมิ)</p>
-            <p style={{ marginTop: 4 }}>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</p>
+            <p style={{ marginTop: 4 }}>ผู้อำนวยการ{SCHOOL_NAME}</p>
           </div>
         </div>
       </div>

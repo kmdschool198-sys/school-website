@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION, SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 import BranchPersonnel from '../components/BranchPersonnel';
 import '../App.css';
 import { sidebarMenus, pageContent } from '../data/pageContent';
@@ -234,7 +234,7 @@ function ContentPage() {
   const currentSidebar = sidebarMenus[catKey];
   const staticData = pageContent[activeSlug] || {
     title: 'กำลังอัปเดตข้อมูล',
-    subtitle: 'โรงเรียนบ้านคลองมดแดง',
+    subtitle: SCHOOL_NAME,
     type: 'text',
     content: 'ขออภัย กำลังอยู่ระหว่างการปรับปรุงเนื้อหาในส่วนนี้'
   };
@@ -395,7 +395,7 @@ function ContentPage() {
     const SHORT = 'https://maps.app.goo.gl/GVXx3ctAPKZbzZmPA';
     const LAT = 16.4046183;
     const LNG = 99.237658;
-    const LABEL = encodeURIComponent('โรงเรียนบ้านคลองมดแดง');
+    const LABEL = encodeURIComponent(SCHOOL_NAME);
     const QUERY = `${LAT},${LNG}`;
     const mapModes: Record<string, { label: string; t: string; z: number }> = {
       hybrid: { label: 'ดาวเทียม + ป้ายชื่อ', t: 'h', z: 18 },
@@ -467,7 +467,7 @@ function ContentPage() {
           </InfoCard>
           <InfoCard color="#1877F2" icon="📘" title="Facebook">
             <a href="https://web.facebook.com/BnKhlngMddang" target="_blank" rel="noreferrer" style={{ color: '#1877F2', fontWeight: 700, textDecoration: 'none' }}>
-              โรงเรียนบ้านคลองมดแดง →
+              {SCHOOL_NAME} →
             </a>
           </InfoCard>
           <InfoCard color="#000000" icon="🎵" title="TikTok">
@@ -663,7 +663,7 @@ function ContentPage() {
           <div style={{ position: 'relative' }}>
             <div style={{ fontSize: '0.85rem', letterSpacing: 2, opacity: 0.85, fontWeight: 700 }}>3D MODEL · CAMPUS</div>
             <h2 style={{ margin: '6px 0 4px', fontSize: '2rem', fontWeight: 900 }}>แบบจำลองอาคารทั้งหมด</h2>
-            <p style={{ opacity: 0.9, margin: 0 }}>โรงเรียนบ้านคลองมดแดง · รวม {total} อาคาร</p>
+            <p style={{ opacity: 0.9, margin: 0 }}>{SCHOOL_NAME} · รวม {total} อาคาร</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 12, marginTop: '1.5rem' }}>
               {[
@@ -912,7 +912,7 @@ function ContentPage() {
                 นายปรัชญา ปรางค์ชัยภูมิ
               </div>
               <div style={{ fontSize: '0.85rem', color: '#CBD5E1', marginTop: 2 }}>
-                ผู้อำนวยการสถานศึกษา · โรงเรียนบ้านคลองมดแดง
+                ผู้อำนวยการสถานศึกษา · {SCHOOL_NAME}
               </div>
             </div>
           </div>
@@ -1181,9 +1181,9 @@ function ContentPage() {
           fontSize: '0.88rem',
         }}>
           <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '1rem', marginBottom: 4 }}>
-            โรงเรียนบ้านคลองมดแดง
+            {SCHOOL_NAME}
           </div>
-          <div>สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 1 · กระทรวงศึกษาธิการ</div>
+          <div>{SCHOOL_AFFILIATION} · กระทรวงศึกษาธิการ</div>
           <div style={{ marginTop: 8, fontSize: '0.8rem', color: '#94A3B8' }}>
             เอกสารวิสัยทัศน์ในการบริหารจัดการสถานศึกษา (ระยะเวลา 1 ปี พ.ศ. 2570)
           </div>

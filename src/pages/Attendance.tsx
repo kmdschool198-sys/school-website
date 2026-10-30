@@ -11,6 +11,7 @@ import { useTeacherAuth, type Role } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { PageLoading } from '../components/PageState';
 import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 type Status = 'present' | 'absent' | 'leave';
 interface Student { id: string; code?: string; name: string; emoji?: string; }
@@ -412,7 +413,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
     });
 
     const reportRows = makeSectionedReportRows({
-      title: 'รายงานเช็คชื่อนักเรียน โรงเรียนบ้านคลองมดแดง',
+      title: `รายงานเช็คชื่อนักเรียน ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${currentClass.label}`], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
       sections,
@@ -434,7 +435,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
           </Link>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: '1.3rem', fontWeight: 900 }}>📋 ระบบเช็คชื่อนักเรียนออนไลน์</div>
-            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>โรงเรียนบ้านคลองมดแดง</div>
+            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>{SCHOOL_NAME}</div>
           </div>
           {isSuper && (
             <span style={{

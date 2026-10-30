@@ -8,6 +8,7 @@ import { ChevronLeft, LogOut, Printer, Download, ClipboardPaste, Sparkles } from
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { THAI_MONTHS_FULL, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
+import { SCHOOL_NAME } from '../config/siteLinks';
 import { toast } from '../components/GlobalToast';
 import ExcelPasteModal from '../components/ExcelPasteModal';
 import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
@@ -303,7 +304,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       };
     });
     const reportRows = makeSectionedReportRows({
-      title: 'รายงานน้ำหนัก-ส่วนสูง-BMI โรงเรียนบ้านคลองมดแดง',
+      title: `รายงานน้ำหนัก-ส่วนสูง-BMI ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${current.label}`], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
       sections,

@@ -8,6 +8,7 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import QuickDate from '../components/QuickDate';
 import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 import { toast } from '../components/GlobalToast';
 import ExcelPasteModal from '../components/ExcelPasteModal';
 import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
@@ -265,7 +266,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
       };
     });
     const reportRows = makeSectionedReportRows({
-      title: 'รายงานออมเงินนักเรียน โรงเรียนบ้านคลองมดแดง',
+      title: `รายงานออมเงินนักเรียน ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${current.label}`], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
       sections,
@@ -506,7 +507,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
             แบบรายงานการออมทรัพย์นักเรียนตามโครงการส่งเสริมการออมตามหลักปรัชญาของเศรษฐกิจพอเพียง
           </div>
           <div style={{ fontWeight: 800, fontSize: '12pt', lineHeight: 1.35 }}>
-            โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+            {SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}
           </div>
           <div style={{ fontSize: '11pt', marginTop: 4 }}>
             ระดับชั้น <b>{current?.fullClassName || current?.label || '-'}</b> &nbsp;·&nbsp; ข้อมูล ณ วันที่ <b>{thaiDateLabel}</b>
@@ -560,7 +561,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           <div>
             <div>ลงชื่อ ....................................................... ผู้รับรองข้อมูล</div>
             <div style={{ marginTop: 4 }}>({DIRECTOR_NAME})</div>
-            <div style={{ marginTop: 2 }}>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+            <div style={{ marginTop: 2 }}>ผู้อำนวยการ{SCHOOL_NAME}</div>
           </div>
         </div>
       </div>

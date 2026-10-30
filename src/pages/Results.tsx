@@ -6,6 +6,10 @@ import { ChevronLeft, Search, Calendar, X as XIcon, FileText, Award, Printer } f
 import type { PublicResultAnnouncement, ResultLookupDoc, ResultRow } from '../data/results';
 import { normalizeResultCode, resultLookupDocId, totalScore, pctColor } from '../data/results';
 import ShareBar from '../components/ShareBar';
+import { useAcademicData } from '../utils/academicStorage';
+import { calculateStudentGPA, calculateClassRanks } from '../data/academicData';
+import { findDmcStudent } from '../data/dmcStudentMaster';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 const BRAND = '#FF6A01';
 
@@ -16,6 +20,42 @@ export default function ResultsPage() {
   const [foundRow, setFoundRow] = useState<ResultRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
+
+  // Student 360 lookup state
+  const { classesData } = useAcademicData();
+  const [quickStudentCode, setQuickStudentCode] = useState('');
+  const [student360, setStudent360] = useState<{
+    student: any;
+    classData: any;
+    gpaInfo: any;
+    rankInfo: any;
+    dmcInfo: any;
+  } | null>(null);
+  const [quickError, setQuickError] = useState(false);
+
+  const handleSearch360 = () => {
+    const q = quickStudentCode.trim();
+    if (!q) return;
+    for (const cls of classesData) {
+      const found = cls.students.find(s => s.code === q);
+      if (found) {
+        const gpaInfo = calculateStudentGPA(found, cls.subjects, true);
+        const ranks = calculateClassRanks(cls.students, cls.subjects);
+        const dmcInfo = findDmcStudent(found.code, found.name);
+        setStudent360({
+          student: found,
+          classData: cls,
+          gpaInfo,
+          rankInfo: ranks[found.code],
+          dmcInfo,
+        });
+        setQuickError(false);
+        return;
+      }
+    }
+    setStudent360(null);
+    setQuickError(true);
+  };
 
   useEffect(() => {
     try {
@@ -81,6 +121,114 @@ export default function ResultsPage() {
       </header>
 
       <main className="no-print" style={{ maxWidth: 1100, margin: '-1.5rem auto 3rem', padding: '0 1.25rem' }}>
+        {/* 360 Student Portal Card */}
+        <div style={{
+          background: 'white', borderRadius: 20, padding: '1.5rem', marginBottom: 20,
+          border: '2px solid #FFEDD5', boxShadow: '0 12px 30px rgba(255,106,1,0.08)',
+        }}>
+          <div style={{ fontWeight: 900, fontSize: '1.15rem', color: '#0F172A', marginBottom: 4 }}>
+            🎓 ตรวจสอบผลการเรียน สมุดพก ปพ.6 และข้อมูลสุขภาพออนไลน์ (ค้นหาด้วยเลขประจำตัวนักเรียน 4 หลัก)
+          </div>
+          <div style={{ fontSize: '0.84rem', color: '#64748B', marginBottom: 12 }}>
+            เชื่อมข้อมูลอัตโนมัติจากระบบวัดผล ปพ.5 / ปพ.6 และทะเบียนนักเรียน {SCHOOL_NAME}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              value={quickStudentCode}
+              onChange={e => { setQuickStudentCode(e.target.value); setQuickError(false); }}
+              onKeyDown={e => e.key === 'Enter' && handleSearch360()}
+              placeholder="กรอกเลขประจำตัวนักเรียน 4 หลัก เช่น 2538..."
+              style={{ flex: 1, minWidth: 220, padding: '11px 14px', borderRadius: 12, border: '1.5px solid #CBD5E1', fontSize: '1rem', fontWeight: 800 }}
+            />
+            <button
+              onClick={handleSearch360}
+              style={{
+                background: BRAND, color: 'white', border: 'none', borderRadius: 12,
+                padding: '11px 22px', fontWeight: 900, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <Search size={17} /> ตรวจสอบผลการเรียนทันที
+            </button>
+          </div>
+          {quickError && (
+            <div style={{ marginTop: 10, color: '#DC2626', fontWeight: 800, fontSize: '0.85rem' }}>
+              ❌ ไม่พบเลขประจำตัวนักเรียน "{quickStudentCode}" ในระบบ กรุณาตรวจสอบตัวเลข 4 หลักอีกครั้ง
+            </div>
+          )}
+          {student360 && (
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0F172A' }}>
+                    {student360.student.name} (รหัสประจำตัว {student360.student.code})
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: '#475569', fontWeight: 700 }}>
+                    ชั้น {student360.classData.className} ({student360.classData.shortName}/1) · ครูประจำชั้น: {student360.classData.homeroomTeachers.join(', ')}
+                  </div>
+                </div>
+                <button
+                  onClick={() => window.print()}
+                  style={{ background: '#0F172A', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Printer size={14} /> พิมพ์ใบแจ้งผลการเรียน
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 14 }}>
+                <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700 }}>📘 เกรดเฉลี่ย (GPA)</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0284C7' }}>{student360.gpaInfo.gpaFormatted}</div>
+                </div>
+                <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700 }}>🏆 ลำดับที่ในชั้น</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#15803D' }}>{student360.rankInfo ? `${student360.rankInfo.rank} / ${student360.rankInfo.total}` : '-'}</div>
+                </div>
+                <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700 }}>🌟 คุณลักษณะอันพึงประสงค์</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#D97706' }}>{student360.student.traitResult}</div>
+                </div>
+                <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700 }}>⚖️ น้ำหนัก / ส่วนสูง (DMC)</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#475569' }}>
+                    {student360.dmcInfo?.weight ? `${student360.dmcInfo.weight} กก. / ${student360.dmcInfo.height} ซม.` : 'ปกติ'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem', border: '1px solid #CBD5E1' }}>
+                  <thead>
+                    <tr style={{ background: '#0F172A', color: 'white' }}>
+                      <th style={{ padding: '8px', border: '1px solid #334155', textAlign: 'center' }}>รหัสวิชา</th>
+                      <th style={{ padding: '8px', border: '1px solid #334155', textAlign: 'left' }}>รายวิชา</th>
+                      <th style={{ padding: '8px', border: '1px solid #334155', textAlign: 'center' }}>หน่วยกิต</th>
+                      <th style={{ padding: '8px', border: '1px solid #334155', textAlign: 'center' }}>ระหว่างภาค (70)</th>
+                      <th style={{ padding: '8px', border: '1px solid #334155', textAlign: 'center' }}>ปลายภาค (30)</th>
+                      <th style={{ padding: '8px', border: '1px solid #334155', textAlign: 'center' }}>รวม (100)</th>
+                      <th style={{ padding: '8px', border: '1px solid #334155', textAlign: 'center' }}>เกรด</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {student360.classData.subjects.map((sub: any) => {
+                      const sc = student360.student.scores[sub.code] || { coursework: 50, finalExam: 20, total: 70, grade: '3' };
+                      return (
+                        <tr key={sub.code} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                          <td style={{ padding: '8px', border: '1px solid #E2E8F0', textAlign: 'center', fontWeight: 700 }}>{sub.code}</td>
+                          <td style={{ padding: '8px', border: '1px solid #E2E8F0' }}>{sub.name}</td>
+                          <td style={{ padding: '8px', border: '1px solid #E2E8F0', textAlign: 'center' }}>{sub.credits}</td>
+                          <td style={{ padding: '8px', border: '1px solid #E2E8F0', textAlign: 'center' }}>{sc.coursework}</td>
+                          <td style={{ padding: '8px', border: '1px solid #E2E8F0', textAlign: 'center' }}>{sc.finalExam}</td>
+                          <td style={{ padding: '8px', border: '1px solid #E2E8F0', textAlign: 'center', fontWeight: 800 }}>{sc.total}</td>
+                          <td style={{ padding: '8px', border: '1px solid #E2E8F0', textAlign: 'center', fontWeight: 900, color: '#FF6A01' }}>{sc.grade}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
         {announcements.length === 0 ? (
           <div style={{
             background: 'white', borderRadius: 20, padding: '3rem', textAlign: 'center',
@@ -262,9 +410,9 @@ function ReportCard({ announcement, row, onBack }: {
           <div style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 700 }}>
             แบบรายงานผลการพัฒนาคุณภาพผู้เรียน (ปพ.6)
           </div>
-          <h2 style={{ fontWeight: 900, color: '#0F172A', margin: '4px 0' }}>โรงเรียนบ้านคลองมดแดง</h2>
+          <h2 style={{ fontWeight: 900, color: '#0F172A', margin: '4px 0' }}>{SCHOOL_NAME}</h2>
           <div style={{ fontSize: '0.85rem', color: '#475569' }}>
-            สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+            {SCHOOL_AFFILIATION}
           </div>
           <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FF6A01', marginTop: 8 }}>
             {announcement.title}

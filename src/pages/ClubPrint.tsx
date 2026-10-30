@@ -7,6 +7,7 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { doc as fbDoc } from 'firebase/firestore';
 import type { Club, ClubAttendanceDoc, ClubEvaluation, EvalLevel } from '../data/clubs';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 export default function ClubPrintPage() {
   const auth = useTeacherAuth();
@@ -122,8 +123,8 @@ function App() {
               ครูที่ปรึกษาชุมนุม: <b>{current.advisor}</b>
             </div>
             <div style={{ fontSize: '1.05rem', marginTop: '4rem' }}>
-              <div>โรงเรียนบ้านคลองมดแดง</div>
-              <div>สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2</div>
+              <div>{SCHOOL_NAME}</div>
+              <div>{SCHOOL_AFFILIATION}</div>
               <div>สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน</div>
               <div>กระทรวงศึกษาธิการ</div>
             </div>
@@ -137,7 +138,7 @@ function App() {
         <div style={page}>
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
             <h3 style={{ fontWeight: 900 }}>แบบบันทึกผลการประเมินกิจกรรมพัฒนาผู้เรียน</h3>
-            <div>โรงเรียนบ้านคลองมดแดง</div>
+            <div>{SCHOOL_NAME}</div>
             <div style={{ margin: '14px 0', fontSize: '1.1rem' }}>กิจกรรม <b>{current.name}</b></div>
             <div>ภาคเรียนที่ {term} ปีการศึกษา {year}</div>
             <div>ครูประจำชุมนุม: {current.advisor}</div>
@@ -184,7 +185,7 @@ function App() {
         <div style={page}>
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
             <h4 style={{ fontWeight: 900, margin: 0 }}>ตารางบันทึกเวลาของการเข้าร่วมกิจกรรม</h4>
-            <div style={{ fontSize: '0.95rem' }}>ภาคเรียนที่ {term} ปีการศึกษา {year} · โรงเรียนบ้านคลองมดแดง</div>
+            <div style={{ fontSize: '0.95rem' }}>ภาคเรียนที่ {term} ปีการศึกษา {year} · {SCHOOL_NAME}</div>
             <div style={{ fontSize: '0.92rem' }}>ชุมนุม <b>{current.name}</b></div>
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>

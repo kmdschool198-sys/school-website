@@ -1,11 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
-import { X, ClipboardPaste, Check, AlertCircle, Trash2 } from 'lucide-react';
-import { parseClipboardTable, cleanNumeric, isLikelyHeaderRow } from '../utils/excelPaste';
+import { X, ClipboardPaste, Check, AlertCircle, Trash2, ShieldAlert } from 'lucide-react';
+import { parseClipboardTable, cleanNumeric, isLikelyHeaderRow, matchPastedRowsToStudents } from '../utils/excelPaste';
 
 export interface ColumnOption {
   key: string;
   label: string;
   unit?: string;
+  min?: number;
+  max?: number;
   placeholder?: string;
 }
 
@@ -62,39 +64,75 @@ export default function ExcelPasteModal({
     return skipFirstRow ? parsedTable.slice(1) : parsedTable;
   }, [parsedTable, skipFirstRow]);
 
+  // Smart matching by student code when in 'all' mode
+  const smartMatches = useMemo(() => {
+    if (mappingMode !== 'all' || effectiveTable.length === 0) return null;
+    return matchPastedRowsToStudents(effectiveTable, students, columns);
+  }, [effectiveTable, students, columns, mappingMode]);
+
+  const isSmartCodeMatched = useMemo(() => {
+    return smartMatches ? smartMatches.some(m => m.matchType === 'code') : false;
+  }, [smartMatches]);
+
   // Auto-detect mode if multiple columns pasted
   const detectedCols = effectiveTable.length > 0 ? Math.max(...effectiveTable.map(r => r.length)) : 0;
 
   // Build mapping for each student
   const previewData = useMemo(() => {
-    return students.map((student, idx) => {
-      const row = effectiveTable[idx];
-      const newValues: Record<string, number | null> = {};
-      let hasChanges = false;
+    const smartMap = smartMatches ? new Map(smartMatches.map(m => [m.studentId, m])) : null;
 
-      if (row && row.length > 0) {
-        if (mappingMode === 'all') {
-          // Map columns sequentially
-          columns.forEach((col, colIdx) => {
-            if (colIdx < row.length) {
-              const val = cleanNumeric(row[colIdx]);
-              newValues[col.key] = val;
-              const cur = student.currentValues[col.key];
-              const curNum = cur === '' || cur === undefined || cur === null ? null : Number(cur);
-              if (val !== curNum && (val !== null || curNum !== null)) {
-                hasChanges = true;
-              }
-            }
-          });
-        } else {
-          // Specific column selected: col 0 goes to selected column
-          const val = cleanNumeric(row[0]);
-          newValues[mappingMode] = val;
-          const cur = student.currentValues[mappingMode];
+    return students.map((student, idx) => {
+      const smartRow = smartMap?.get(student.id);
+      let newValues: Record<string, number | null> = {};
+      let hasChanges = false;
+      let hasData = false;
+      const warnings: string[] = smartRow?.warnings ? [...smartRow.warnings] : [];
+
+      if (smartRow) {
+        newValues = smartRow.values;
+        hasData = Object.values(newValues).some(v => v !== null);
+        columns.forEach(col => {
+          const val = newValues[col.key];
+          const cur = student.currentValues[col.key];
           const curNum = cur === '' || cur === undefined || cur === null ? null : Number(cur);
-          if (val !== curNum && (val !== null || curNum !== null)) {
+          if (val !== undefined && val !== curNum && (val !== null || curNum !== null)) {
             hasChanges = true;
           }
+        });
+      } else {
+        const row = effectiveTable[idx];
+        if (row && row.length > 0) {
+          if (mappingMode === 'all') {
+            columns.forEach((col, colIdx) => {
+              if (colIdx < row.length) {
+                const val = cleanNumeric(row[colIdx]);
+                newValues[col.key] = val;
+                if (val !== null) {
+                  if (col.min !== undefined && val < col.min) warnings.push(`${col.label} ต่ำกว่าเกณฑ์ (${val} < ${col.min})`);
+                  if (col.max !== undefined && val > col.max) warnings.push(`${col.label} เกินเกณฑ์สูงสุด (${val} > ${col.max})`);
+                }
+                const cur = student.currentValues[col.key];
+                const curNum = cur === '' || cur === undefined || cur === null ? null : Number(cur);
+                if (val !== curNum && (val !== null || curNum !== null)) {
+                  hasChanges = true;
+                }
+              }
+            });
+          } else {
+            const val = cleanNumeric(row[0]);
+            newValues[mappingMode] = val;
+            const targetCol = columns.find(c => c.key === mappingMode);
+            if (val !== null && targetCol) {
+              if (targetCol.min !== undefined && val < targetCol.min) warnings.push(`${targetCol.label} ต่ำกว่าเกณฑ์ (${val} < ${targetCol.min})`);
+              if (targetCol.max !== undefined && val > targetCol.max) warnings.push(`${targetCol.label} เกินเกณฑ์สูงสุด (${val} > ${targetCol.max})`);
+            }
+            const cur = student.currentValues[mappingMode];
+            const curNum = cur === '' || cur === undefined || cur === null ? null : Number(cur);
+            if (val !== curNum && (val !== null || curNum !== null)) {
+              hasChanges = true;
+            }
+          }
+          hasData = !!(row.some(cell => cell.trim() !== ''));
         }
       }
 
@@ -103,10 +141,11 @@ export default function ExcelPasteModal({
         rowNumber: idx + 1,
         newValues,
         hasChanges,
-        hasData: !!(row && row.some(cell => cell.trim() !== '')),
+        hasData,
+        warnings,
       };
     });
-  }, [students, effectiveTable, mappingMode, columns]);
+  }, [students, effectiveTable, mappingMode, columns, smartMatches]);
 
   const updatedCount = previewData.filter(p => p.hasData).length;
 
@@ -259,6 +298,12 @@ export default function ExcelPasteModal({
                   ))}
                 </select>
               </div>
+
+              {isSmartCodeMatched && (
+                <span style={{ fontSize: '0.78rem', color: '#15803D', background: '#DCFCE7', border: '1px solid #86EFAC', padding: '3px 10px', borderRadius: 999, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Check size={13} /> ตรวจพบรหัสนักเรียน (Smart Match อัตโนมัติ)
+                </span>
+              )}
 
               {detectedCols > 0 && (
                 <span style={{ fontSize: '0.78rem', color: '#64748B', background: '#E2E8F0', padding: '3px 8px', borderRadius: 999 }}>
@@ -445,7 +490,17 @@ export default function ExcelPasteModal({
                           {i + 1}
                         </td>
                         <td style={{ padding: '6px 10px', fontWeight: 600, color: '#1E293B' }}>
-                          {item.student.name}
+                          <div>{item.student.name}</div>
+                          {item.student.code && (
+                            <span style={{ fontSize: '0.72rem', color: '#64748B', fontFamily: 'monospace' }}>
+                              รหัส: {item.student.code}
+                            </span>
+                          )}
+                          {item.warnings.length > 0 && (
+                            <div style={{ fontSize: '0.72rem', color: '#DC2626', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+                              <ShieldAlert size={12} /> {item.warnings.join(' • ')}
+                            </div>
+                          )}
                         </td>
                         {columns.map(col => {
                           const isMapped = mappingMode === 'all' || mappingMode === col.key;
@@ -475,7 +530,11 @@ export default function ExcelPasteModal({
                           );
                         })}
                         <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                          {item.hasData ? (
+                          {item.warnings.length > 0 ? (
+                            <span style={{ fontSize: '0.72rem', color: '#DC2626', fontWeight: 700, background: '#FEE2E2', border: '1px solid #FCA5A5', padding: '2px 8px', borderRadius: 999 }}>
+                              ⚠️ เกินเกณฑ์
+                            </span>
+                          ) : item.hasData ? (
                             <span style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: 700, background: '#DCFCE7', padding: '2px 8px', borderRadius: 999 }}>
                               จะอัปเดต
                             </span>

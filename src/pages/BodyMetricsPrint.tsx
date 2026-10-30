@@ -7,6 +7,7 @@ import { findDmcStudent } from '../data/dmcStudentMaster';
 import { ChevronLeft, Printer } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
@@ -80,7 +81,7 @@ function App() {
           <Link to="/body-metrics" style={lnk}><ChevronLeft size={16} />กลับหน้าบันทึก</Link>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>🖨️ แบบบันทึกน้ำหนัก-ส่วนสูงและภาวะโภชนาการ (ฟอร์มราชการ)</div>
-            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>พิมพ์รายภาคเรียน · A4 แนวนอน · โรงเรียนบ้านคลองมดแดง</div>
+            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>พิมพ์รายภาคเรียน · A4 แนวนอน · {SCHOOL_NAME}</div>
           </div>
           <select value={classId} onChange={e => setClassId(e.target.value)} style={inp}>
             {availableClasses.map(c => <option key={c.id} value={c.id}>{c.label} ({c.students.length} คน)</option>)}
@@ -110,7 +111,7 @@ function App() {
             แบบบันทึกน้ำหนัก - ส่วนสูง และเฝ้าระวังภาวะโภชนาการนักเรียน
           </div>
           <div style={{ fontWeight: 800, fontSize: '11pt', lineHeight: 1.3 }}>
-            โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+            {SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}
           </div>
           <div style={{ fontSize: '10.5pt', marginTop: 2 }}>
             ระดับชั้น <b>{current?.fullClassName || current?.label || '-'}</b> &nbsp;·&nbsp;
@@ -187,7 +188,7 @@ function App() {
           <div>
             <div>ลงชื่อ ....................................................... ผู้รับรองข้อมูล</div>
             <div style={{ marginTop: 4 }}>({DIRECTOR_NAME})</div>
-            <div style={{ marginTop: 2 }}>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+            <div style={{ marginTop: 2 }}>ผู้อำนวยการ{SCHOOL_NAME}</div>
           </div>
         </div>
       </div>

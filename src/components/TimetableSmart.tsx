@@ -4,6 +4,7 @@ import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { TIMETABLE_BACKUP } from '../data/timetableData';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 import {
   Printer, Save, AlertTriangle, X, Users, BookOpen, Calendar as Cal,
   Coffee, UserPlus, Download, Upload, RotateCcw, Database, CloudOff,
@@ -283,16 +284,23 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
     setCloudError('');
     try {
       const cleanData = JSON.parse(JSON.stringify(payload)) as TTData;
-      await setDoc(doc(db, 'config', 'timetable'), {
+      const writePromise = setDoc(doc(db, 'config', 'timetable'), {
         ...cleanData,
         schemaVersion: 1,
         updatedAt: serverTimestamp(),
         updatedBy: auth.currentUser?.email || null,
       });
+      const timeoutPromise = new Promise<'offline_cached'>(resolve => setTimeout(() => resolve('offline_cached'), 1800));
+      const res = await Promise.race([writePromise.then(() => 'synced' as const), timeoutPromise]);
+
       setSavedAt(new Date());
       setDirty(false);
       setCloudStatus('ready');
-      showToast('✅ บันทึกตารางสอนและการสอนแทนขึ้นระบบกลางเรียบร้อยแล้ว');
+      if (res === 'offline_cached') {
+        showToast('📴 บันทึกตารางสอนลงเครื่องแล้ว (ระบบจะซิงค์ขึ้นระบบกลางอัตโนมัติเมื่อมีสัญญาณอินเทอร์เน็ต)');
+      } else {
+        showToast('✅ บันทึกตารางสอนและการสอนแทนขึ้นระบบกลางเรียบร้อยแล้ว');
+      }
     } catch (e: any) {
       setCloudStatus('error');
       setCloudError('บันทึกไม่สำเร็จ กรุณาตรวจสอบสิทธิ์ผู้ใช้และอินเทอร์เน็ต');
@@ -1898,7 +1906,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
                   ตารางสอนรายบุคคล
                 </h2>
                 <div style={{ fontSize: '10pt', fontWeight: 800, color: '#1E293B', marginTop: 1 }}>
-                  โรงเรียนบ้านคลองมดแดง สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+                  {SCHOOL_NAME} {SCHOOL_AFFILIATION}
                 </div>
                 <div style={{ fontSize: '8.5pt', color: '#475569', fontWeight: 700 }}>
                   ภาคเรียนที่ {data.school.semester} ปีการศึกษา {data.school.year}
@@ -2099,7 +2107,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
                   ตารางเรียนประจำชั้นเรียน
                 </h2>
                 <div style={{ fontSize: '10pt', fontWeight: 800, color: '#1E293B', marginTop: 1 }}>
-                  โรงเรียนบ้านคลองมดแดง สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+                  {SCHOOL_NAME} {SCHOOL_AFFILIATION}
                 </div>
                 <div style={{ fontSize: '8.5pt', color: '#475569', fontWeight: 700 }}>
                   ภาคเรียนที่ {data.school.semester} ปีการศึกษา {data.school.year}
@@ -2949,3 +2957,83 @@ const td: React.CSSProperties = {
   fontSize: '0.84rem',
   minHeight: 60,
 };
+
+// ─── External Export Utilities (Double-Booking & Smart Substitution) ─────────
+export interface TimetableSlot {
+  day: number; // 0 = จันทร์ ... 4 = ศุกร์
+  period: number; // 1 - 7
+  subjectCode: string;
+  subjectName: string;
+  teacherName: string;
+  room?: string;
+  substituteTeacher?: string;
+}
+
+export type SchoolTimetableMap = Record<string, TimetableSlot[]>;
+
+export function findTimetableConflicts(allClassSchedules: SchoolTimetableMap) {
+  const occupied = new Map<string, { classId: string; subjectName: string }>();
+  const conflicts: Array<{
+    day: number;
+    period: number;
+    teacherName: string;
+    classA: string;
+    classB: string;
+  }> = [];
+
+  for (const [classId, slots] of Object.entries(allClassSchedules)) {
+    for (const slot of slots) {
+      const activeTeacher = (slot.substituteTeacher || slot.teacherName || '').trim();
+      if (!activeTeacher || activeTeacher === '-' || activeTeacher.includes('ชุมนุม')) continue;
+      const key = `${slot.day}_${slot.period}_${activeTeacher}`;
+      const existing = occupied.get(key);
+      if (existing && existing.classId !== classId) {
+        conflicts.push({
+          day: slot.day,
+          period: slot.period,
+          teacherName: activeTeacher,
+          classA: existing.classId,
+          classB: classId,
+        });
+      } else {
+        occupied.set(key, { classId, subjectName: slot.subjectName });
+      }
+    }
+  }
+  return conflicts;
+}
+
+export function getAvailableSubstituteTeachers(
+  day: number,
+  period: number,
+  allClassSchedules: SchoolTimetableMap,
+  allTeachers: string[],
+  absentTeacherName: string
+): Array<{ teacherName: string; dailyLoad: number }> {
+  const busyTeachersInPeriod = new Set<string>();
+  const dailyLoadCount = new Map<string, number>();
+
+  allTeachers.forEach(t => dailyLoadCount.set(t, 0));
+
+  for (const slots of Object.values(allClassSchedules)) {
+    for (const slot of slots) {
+      const activeTeacher = (slot.substituteTeacher || slot.teacherName || '').trim();
+      if (!activeTeacher) continue;
+      if (slot.day === day) {
+        dailyLoadCount.set(activeTeacher, (dailyLoadCount.get(activeTeacher) || 0) + 1);
+        if (slot.period === period) {
+          busyTeachersInPeriod.add(activeTeacher);
+        }
+      }
+    }
+  }
+
+  return allTeachers
+    .filter(t => t !== absentTeacherName && !busyTeachersInPeriod.has(t))
+    .map(t => ({
+      teacherName: t,
+      dailyLoad: dailyLoadCount.get(t) || 0,
+    }))
+    .sort((a, b) => a.dailyLoad - b.dailyLoad);
+}
+

@@ -1,3 +1,5 @@
+import { SCHOOL_NAME } from '../config/siteLinks';
+
 // ─── ครูโรงเรียนสาขา ───
 // เก็บแยกคนละ collection กับ "personnel" ของโรงเรียนหลักโดยตั้งใจ
 // เพราะเป็นข้อมูลสำหรับ "แสดงบนหน้าบุคลากร" อย่างเดียว ไม่เกี่ยวกับระบบงานครู
@@ -14,8 +16,8 @@ export interface Branch {
 }
 
 export const BRANCHES: Branch[] = [
-  { id: 'chumnumsai', name: 'โรงเรียนบ้านคลองมดแดง สาขาบ้านใหม่ชุมนุมไทร', shortName: 'สาขาบ้านใหม่ชุมนุมไทร' },
-  { id: 'pakha', name: 'โรงเรียนบ้านคลองมดแดง สาขาป่าคา', shortName: 'สาขาป่าคา' },
+  { id: 'chumnumsai', name: `${SCHOOL_NAME} สาขาบ้านใหม่ชุมนุมไทร`, shortName: 'สาขาบ้านใหม่ชุมนุมไทร' },
+  { id: 'pakha', name: `${SCHOOL_NAME} สาขาป่าคา`, shortName: 'สาขาป่าคา' },
 ];
 
 export function branchById(id: string): Branch | undefined {

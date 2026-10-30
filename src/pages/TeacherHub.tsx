@@ -9,6 +9,7 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 interface SmartAppIcon {
   id: string;
@@ -32,6 +33,8 @@ const SMART_APPS: SmartAppIcon[] = [
   { id: 'behavior', to: '/behavior', label: 'ความประพฤติ', subtitle: 'ตัด-เพิ่มแต้ม/ใบเตือน', category: 'student', emoji: '🛡️', gradient: 'linear-gradient(135deg,#DC2626,#991B1B)', badge: 'ใหม่' },
   { id: 'lunch', to: '/lunch', label: 'อาหารกลางวัน', subtitle: 'เมนูมื้อเที่ยง & งบ 22 บ.', category: 'daily', emoji: '🍱', gradient: 'linear-gradient(135deg,#EA580C,#C2410C)', badge: 'ใหม่' },
   { id: 'duty', to: '/duty', label: 'เวรประจำวัน', subtitle: 'ตรวจ 11 เขต & เวรครู', category: 'daily', emoji: '🧹', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
+  { id: 'janitor-tasks', to: '/janitor-tasks', label: 'งานนักการภารโรง', subtitle: 'เช็กงานเช้า-บ่าย & รูป', category: 'daily', emoji: '🛠️', gradient: 'linear-gradient(135deg,#D97706,#B45309)', badge: 'ใหม่' },
+  { id: 'home-visit', to: '/home-visit', label: 'เยี่ยมบ้านนักเรียน', subtitle: 'คัดกรองทุน กสศ. & รูปบ้าน', category: 'student', emoji: '🏠', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
   { id: 'homeroom', to: '/homeroom', label: 'กิจกรรมโฮมรูม', subtitle: 'อบรมหน้าเสาธง/เช้า', category: 'daily', emoji: '🏫', gradient: 'linear-gradient(135deg,#38BDF8,#0284C7)' },
   { id: 'milk-report', to: '/milk-report', label: 'รายงานดื่มนม', subtitle: 'ดึงจากเช็คชื่ออัตโนมัติ', category: 'daily', emoji: '🥛', gradient: 'linear-gradient(135deg,#60A5FA,#3B82F6)' },
   { id: 'brush-log', to: '/brush-log', label: 'บันทึกแปรงฟัน', subtitle: 'หลังอาหารกลางวัน', category: 'daily', emoji: '🪥', gradient: 'linear-gradient(135deg,#06B6D4,#0891B2)' },
@@ -184,7 +187,7 @@ function DashboardView({ userName, role }: { userName: string; role: string }) {
         flexWrap: 'wrap', gap: 10, marginBottom: 14,
       }}>
         <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: '#FF6A01' }}>🏫</span> ภาพรวมระบบบริหารจัดการโรงเรียนบ้านคลองมดแดง (Smart School OS)
+          <span style={{ color: '#FF6A01' }}>🏫</span> ภาพรวมระบบบริหารจัดการ{SCHOOL_NAME} (Smart School OS)
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import {
@@ -19,6 +19,7 @@ import {
   yearLabel,
   THAI_MONTHS_FULL,
 } from '../utils/csvReport';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const LUNCH_RATE_PER_HEAD = 22; // งบอาหารกลางวัน สพฐ./อปท. 22 บาท/คน/วัน
@@ -248,8 +249,8 @@ function LunchDutyContent({ userName }: { userName: string }) {
     return { c, totalLunch, totalDuty, days: days.size };
   }), [availableClasses, allDocs, month]);
 
-  // Toggle individual student's noLunch / noDuty locally (Read-Only safe for Firestore)
-  const toggleStudentFlag = (classId: string, studentId: string, field: 'noLunch' | 'noDuty') => {
+  // Toggle individual student's noLunch / noDuty and sync to Cloud Firestore attendance
+  const toggleStudentFlag = async (classId: string, studentId: string, field: 'noLunch' | 'noDuty') => {
     const cls = availableClasses.find(c => c.id === classId);
     if (!cls) return;
     const existingDoc = dayDocs.find(d => d.classId === classId);
@@ -272,12 +273,18 @@ function LunchDutyContent({ userName }: { userName: string }) {
       records: nextRecords,
     };
 
-    // Update local state safely without mutating Firestore attendance collection
     setAllDocs(prev => {
       const filtered = prev.filter(d => !(d.classId === classId && d.date === date));
       return [...filtered, newDoc];
     });
-    setSavedToast('อัปเดตสถานะอาหารกลางวัน/เวรรายบุคคลแล้ว');
+
+    try {
+      await setDoc(doc(db, 'attendance', `${classId}_${date}`), newDoc, { merge: true });
+      setSavedToast('อัปเดตสถานะอาหารกลางวัน/เวรลง Cloud Firestore แล้ว');
+    } catch (err) {
+      console.error('Failed to sync lunch/duty flag:', err);
+      setSavedToast('อัปเดตสถานะในเครื่องแล้ว');
+    }
     setTimeout(() => setSavedToast(null), 1800);
   };
 
@@ -340,7 +347,7 @@ function LunchDutyContent({ userName }: { userName: string }) {
     });
 
     const reportRows = makeSectionedReportRows({
-      title: `${titleLabel} โรงเรียนบ้านคลองมดแดง`,
+      title: `${titleLabel} ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [
         ['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${targetClasses[0]?.label || '-'}`],
@@ -961,7 +968,7 @@ function LunchDutyContent({ userName }: { userName: string }) {
               แบบบันทึกการตรวจสอบโครงการอาหารกลางวันและเวรทำความสะอาดเขตพื้นที่ประจำวัน
             </div>
             <div style={{ fontSize: '11.5pt', fontWeight: 700 }}>
-              โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+              {SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}
             </div>
             <div style={{ fontSize: '11pt', fontWeight: 700, marginTop: 2 }}>
               ประจำวันที่ {fmtThai(date)} &nbsp;|&nbsp; ครูเวรผู้ตรวจ: {currentMeta.inspectTeacher}
@@ -1043,7 +1050,7 @@ function LunchDutyContent({ userName }: { userName: string }) {
             <div>
               <div>ลงชื่อ....................................................</div>
               <div style={{ fontWeight: 800 }}>({DIRECTOR_NAME})</div>
-              <div>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+              <div>ผู้อำนวยการ{SCHOOL_NAME}</div>
             </div>
           </div>
         </div>

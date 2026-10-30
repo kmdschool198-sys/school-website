@@ -8,6 +8,7 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import type { HomeroomDoc } from '../data/homeroom';
 import { termOfDate, academicYearOfDate } from '../data/homeroom';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 export default function HomeroomPrintPage() {
   const auth = useTeacherAuth();
@@ -125,7 +126,7 @@ function App() {
             แบบสรุปผลการดำเนินงานกิจกรรมโฮมรูม (Homeroom) และการดูแลช่วยเหลือนักเรียน
           </div>
           <div style={{ marginTop: 4, fontSize: '1rem', fontWeight: 800 }}>
-            โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+            {SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}
           </div>
           <div style={{ marginTop: 4, fontSize: '0.98rem' }}>
             {levelWord} {gradeNum || '.........'}{roomLabel ? `/${roomLabel}` : '/.........'} &nbsp;·&nbsp; ภาคเรียนที่ {term} ปีการศึกษา {year}
@@ -157,7 +158,7 @@ function App() {
           <div>
             <div>ลงชื่อ ....................................................... ผู้รับรองข้อมูล</div>
             <div style={{ marginTop: 6 }}>(นายปรัชญา ปรางค์ชัยภูมิ)</div>
-            <div style={{ marginTop: 2 }}>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+            <div style={{ marginTop: 2 }}>ผู้อำนวยการ{SCHOOL_NAME}</div>
           </div>
         </div>
 

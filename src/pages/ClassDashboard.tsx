@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { collection, onSnapshot, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
+import { useAcademicData } from '../utils/academicStorage';
+import { calculateStudentGPA } from '../data/academicData';
 import {
   ChevronLeft, LogOut, Users, Calendar, Target,
   DollarSign, Activity, Sparkles,
@@ -118,16 +120,34 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
   }, [classLabel]);
 
   // ─── Computed ───
+  const { classesData } = useAcademicData();
+  const acadClass = useMemo(() => {
+    const shortKey = cls.id.split('_')[0];
+    return classesData.find(c => c.classId === shortKey || c.classId === cls.id);
+  }, [classesData, cls.id]);
+
+  const classAvgGpa = useMemo(() => {
+    if (!acadClass || acadClass.students.length === 0) return null;
+    const sum = acadClass.students.reduce(
+      (acc, st) => acc + calculateStudentGPA(st, acadClass.subjects, true).gpa,
+      0
+    );
+    return (sum / acadClass.students.length).toFixed(2);
+  }, [acadClass]);
+
   const todayAtt = attDocs.find(d => d.date === today);
   const todayCounts = useMemo(() => {
     if (!todayAtt) return null;
-    let p = 0, a = 0, l = 0;
+    let p = 0, a = 0, l = 0, milk = 0, brush = 0;
     Object.values(todayAtt.records || {}).forEach((r: any) => {
-      if (r.status === 'present') p++;
-      else if (r.status === 'absent') a++;
+      if (r.status === 'present') {
+        p++;
+        if (!r.noMilk) milk++;
+        if (!r.noBrush) brush++;
+      } else if (r.status === 'absent') a++;
       else if (r.status === 'leave') l++;
     });
-    return { p, a, l };
+    return { p, a, l, milk, brush };
   }, [todayAtt]);
 
   const recentDays = useMemo(() => {
@@ -216,15 +236,26 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
           )}
         </Card>
 
-        {/* Milk-brush today */}
-        <Card title="🥛 นม-แปรงฟัน วันนี้" icon={<Sparkles size={18} />} link="/milk-brush-report">
-          {todayCounts ? (
-            <div style={{ background: '#DBEAFE', borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.85rem', color: '#1E40AF' }}>นักเรียนที่ได้รับนม+แปรงฟันวันนี้</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1E40AF', margin: '6px 0' }}>{todayCounts.p}</div>
-              <div style={{ fontSize: '0.78rem', color: '#1E40AF' }}>จากทั้งหมด {cls.students.length} คน</div>
+        {/* Milk-brush & GPA today */}
+        <Card title="🥛 นม-แปรงฟัน & ผลสัมฤทธิ์ห้อง" icon={<Sparkles size={18} />} link="/milk-report">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ background: '#DBEAFE', borderRadius: 10, padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.78rem', color: '#1E40AF', fontWeight: 700 }}>🥛 ดื่มนม / แปรงฟันวันนี้</div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#1E40AF', margin: '4px 0' }}>
+                {todayCounts ? `${todayCounts.milk} / ${todayCounts.brush}` : '-'}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#1E40AF' }}>จากทั้งหมด {cls.students.length} คน</div>
             </div>
-          ) : <Empty msg="ยังไม่ได้เช็คชื่อวันนี้" />}
+            <div style={{ background: '#FEF3C7', borderRadius: 10, padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '0.78rem', color: '#92400E', fontWeight: 700 }}>📘 GPA เฉลี่ยประจำห้อง</div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#D97706', margin: '4px 0' }}>
+                {classAvgGpa || '-'}
+              </div>
+              <Link to="/porpor6" style={{ fontSize: '0.72rem', color: '#B45309', fontWeight: 800, textDecoration: 'none' }}>
+                ดูสมุดพก ปพ.6 →
+              </Link>
+            </div>
+          </div>
         </Card>
 
         {/* Clubs */}

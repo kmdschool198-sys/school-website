@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { ChevronLeft, LogOut, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 import { useTeacherAuth, type Role } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 const BRAND = '#FF6A01';
 
@@ -64,8 +65,22 @@ function App({ role, userName, onLogout }: { role: Role; userName: string; onLog
   };
 
   const updateStatus = async (l: LeaveRequest, status: LeaveRequest['status'], approverNote = '') => {
-    try { await setDoc(doc(db, 'teacher_leaves', l.id), { ...l, status, approverNote }); }
-    catch (e: any) { alert('❌ ' + (e?.message || e)); }
+    try {
+      await setDoc(doc(db, 'teacher_leaves', l.id), { ...l, status, approverNote });
+      if (status === 'อนุมัติ') {
+        await setDoc(doc(db, 'config', 'substitute_alerts'), {
+          latestApprovedLeave: {
+            leaveId: l.id,
+            teacherName: l.teacherName,
+            type: l.type,
+            startDate: l.startDate,
+            endDate: l.endDate,
+            substitute: l.substitute || 'รอจัดครูสอนแทนในตาราง',
+            approvedAt: Date.now(),
+          },
+        }, { merge: true });
+      }
+    } catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };
 
   const del = async (l: LeaveRequest) => {
@@ -81,7 +96,7 @@ function App({ role, userName, onLogout }: { role: Role; userName: string; onLog
           <Link to="/" style={lnk}><ChevronLeft size={16} />หน้าหลัก</Link>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: '1.3rem', fontWeight: 900 }}>📝 แบบฟอร์มลาออนไลน์ครู</div>
-            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>โรงเรียนบ้านคลองมดแดง · {userName}</div>
+            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>{SCHOOL_NAME} · {userName}</div>
           </div>
           {isSuper && <span style={superBadge}>👑 ผู้อนุมัติ</span>}
           <button onClick={onLogout} style={btnLogout}><LogOut size={12} />ออกจากระบบ</button>
@@ -149,8 +164,16 @@ function LeaveCard({ leave, isSuper, onEdit, onDelete, onUpdate }: {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <button onClick={onEdit} style={btnSm}><Edit2 size={12} /> แก้ไข</button>
+        {leave.status === 'อนุมัติ' && (
+          <Link
+            to={`/timetable?subTeacher=${encodeURIComponent(leave.teacherName)}&date=${leave.startDate}`}
+            style={{ ...btnSm, background: '#1D4ED8', color: 'white', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          >
+            📅 จัดตารางสอนแทน
+          </Link>
+        )}
         {isSuper && leave.status === 'รออนุมัติ' && (
           <>
             <button onClick={() => {

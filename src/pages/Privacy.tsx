@@ -14,7 +14,7 @@ import {
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PdpaRequestForm from '../components/PdpaRequestForm';
-import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
+import { SCHOOL_EMAIL, SCHOOL_PHONE, SCHOOL_NAME, SCHOOL_ADDRESS } from '../config/siteLinks';
 
 const updatedAt = '17 มิถุนายน 2569';
 const privacyPhone = SCHOOL_PHONE;
@@ -65,11 +65,11 @@ export default function Privacy() {
               นโยบายคุ้มครองข้อมูลส่วนบุคคล
             </h1>
             <p style={{ ...lead, maxWidth: 820 }}>
-              โรงเรียนบ้านคลองมดแดงแจ้งการเก็บ ใช้ เปิดเผย และคุ้มครองข้อมูลส่วนบุคคลของนักเรียน ผู้ปกครอง ครู บุคลากร และผู้ใช้เว็บไซต์ ก่อนหรือขณะเก็บข้อมูลตามหลัก PDPA
+              {SCHOOL_NAME}แจ้งการเก็บ ใช้ เปิดเผย และคุ้มครองข้อมูลส่วนบุคคลของนักเรียน ผู้ปกครอง ครู บุคลากร และผู้ใช้เว็บไซต์ ก่อนหรือขณะเก็บข้อมูลตามหลัก PDPA
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 20 }}>
               <Badge>ปรับปรุงล่าสุด {updatedAt}</Badge>
-              <Badge>ผู้ควบคุมข้อมูล: โรงเรียนบ้านคลองมดแดง</Badge>
+              <Badge>ผู้ควบคุมข้อมูล: {SCHOOL_NAME}</Badge>
             </div>
           </div>
         </section>
@@ -79,9 +79,9 @@ export default function Privacy() {
             <h2 style={heading}>ผู้ควบคุมข้อมูลและช่องทางติดต่อ</h2>
             <div style={contactPanel}>
               <div>
-                <h3 style={subheading}>โรงเรียนบ้านคลองมดแดง</h3>
+                <h3 style={subheading}>{SCHOOL_NAME}</h3>
                 <p style={paragraph}>
-                  เลขที่ 198 หมู่ 3 ตำบลโป่งน้ำร้อน อำเภอคลองลาน จังหวัดกำแพงเพชร 62180
+                  {SCHOOL_ADDRESS}
                 </p>
                 <p style={paragraph}>
                   ติดต่อเรื่องข้อมูลส่วนบุคคลได้ที่ผู้บริหารโรงเรียนหรือเจ้าหน้าที่ที่ได้รับมอบหมาย ผ่านช่องทางติดต่อของโรงเรียน
@@ -90,7 +90,7 @@ export default function Privacy() {
               <div style={{ display: 'grid', gap: 10 }}>
                 <ContactLine icon={<Phone size={16} />} label="โทรศัพท์" value={privacyPhone} />
                 <ContactLine icon={<Mail size={16} />} label="อีเมล" value={privacyEmail} />
-                <ContactLine icon={<ExternalLink size={16} />} label="Facebook" value="โรงเรียนบ้านคลองมดแดง" />
+                <ContactLine icon={<ExternalLink size={16} />} label="Facebook" value={SCHOOL_NAME} />
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { downloadCsvReport } from '../utils/csvReport';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const STORAGE_KEY = 'kmd_behavior_logs_v2_dmc';
@@ -177,45 +178,49 @@ function BehaviorContent({ userName }: { userName: string }) {
     [unifiedRosters, selectedClassId]
   );
 
-  // Compute behavior summary per student (base 100 points)
+  // Compute behavior summary per student (base 100 points) — All students in class (unfiltered)
+  const allClassBehaviorList = useMemo(() => {
+    return currentClass.students.map(st => {
+      const stLogs = logs.filter(l => l.studentCode === st.code);
+      const added = stLogs.filter(l => l.type === 'add').reduce((s, l) => s + l.points, 0);
+      const deducted = stLogs.filter(l => l.type === 'deduct').reduce((s, l) => s + l.points, 0);
+      const netScore = 100 + added - deducted;
+      let statusLabel = 'ปกติ (ความประพฤติดี)';
+      let statusColor = '#0284C7';
+      let statusBg = '#E0F2FE';
+
+      if (netScore > 100) {
+        statusLabel = `ดีเยี่ยม (คนดีศรี${SCHOOL_NAME.replace('โรงเรียนบ้าน', '').replace('โรงเรียน', '')})`;
+        statusColor = '#15803D';
+        statusBg = '#DCFCE7';
+      } else if (netScore < 70) {
+        statusLabel = 'ต้องเชิญผู้ปกครอง / ทัณฑ์บน';
+        statusColor = '#B91C1C';
+        statusBg = '#FEE2E2';
+      } else if (netScore < 85) {
+        statusLabel = 'เฝ้าระวัง (ตักเตือนครั้งที่ 1)';
+        statusColor = '#B45309';
+        statusBg = '#FEF3C7';
+      }
+
+      return {
+        ...st,
+        added,
+        deducted,
+        netScore,
+        statusLabel,
+        statusColor,
+        statusBg,
+        logs: stLogs.sort((a, b) => b.createdAt - a.createdAt),
+      };
+    });
+  }, [currentClass, logs]);
+
   const studentBehaviorList = useMemo(() => {
-    return currentClass.students
-      .filter(st => !search.trim() || st.name.includes(search.trim()) || st.code.includes(search.trim()))
-      .map(st => {
-        const stLogs = logs.filter(l => l.studentCode === st.code);
-        const added = stLogs.filter(l => l.type === 'add').reduce((s, l) => s + l.points, 0);
-        const deducted = stLogs.filter(l => l.type === 'deduct').reduce((s, l) => s + l.points, 0);
-        const netScore = 100 + added - deducted;
-        let statusLabel = 'ปกติ (ความประพฤติดี)';
-        let statusColor = '#0284C7';
-        let statusBg = '#E0F2FE';
-
-        if (netScore > 100) {
-          statusLabel = 'ดีเยี่ยม (คนดีศรีคลองมดแดง)';
-          statusColor = '#15803D';
-          statusBg = '#DCFCE7';
-        } else if (netScore < 70) {
-          statusLabel = 'ต้องเชิญผู้ปกครอง / ทัณฑ์บน';
-          statusColor = '#B91C1C';
-          statusBg = '#FEE2E2';
-        } else if (netScore < 85) {
-          statusLabel = 'เฝ้าระวัง (ตักเตือนครั้งที่ 1)';
-          statusColor = '#B45309';
-          statusBg = '#FEF3C7';
-        }
-
-        return {
-          ...st,
-          added,
-          deducted,
-          netScore,
-          statusLabel,
-          statusColor,
-          statusBg,
-          logs: stLogs.sort((a, b) => b.createdAt - a.createdAt),
-        };
-      });
-  }, [currentClass, logs, search]);
+    const q = search.trim();
+    if (!q) return allClassBehaviorList;
+    return allClassBehaviorList.filter(st => st.name.includes(q) || st.code.includes(q));
+  }, [allClassBehaviorList, search]);
 
   const handleRecordPoint = async (reason: string, points: number, type: 'add' | 'deduct') => {
     if (!modalStudent || !reason.trim()) return;
@@ -272,11 +277,11 @@ function BehaviorContent({ userName }: { userName: string }) {
 
   const exportBehaviorCsv = () => {
     const rows: Array<Array<string | number>> = [
-      [`รายงานสรุปคะแนนความประพฤตินักเรียน โรงเรียนบ้านคลองมดแดง`],
+      [`รายงานสรุปคะแนนความประพฤตินักเรียน ${SCHOOL_NAME}`],
       [`ระดับชั้น: ${currentClass.fullClassName} (${currentClass.label})`, `ครูประจำชั้น: ${currentClass.homeroomTeacher}`],
       [],
       ['เลขที่', 'รหัสนักเรียน', 'ชื่อ-นามสกุล', 'ชื่อผู้ปกครอง (DMC)', 'คะแนนตั้งต้น', 'คะแนนความดีสะสม (+)', 'คะแนนที่ถูกตัด (-)', 'คะแนนสุทธิคงเหลือ', 'สถานะการประเมิน', 'ประวัติล่าสุด'],
-      ...studentBehaviorList.map(st => [
+      ...allClassBehaviorList.map(st => [
         st.no,
         st.code,
         st.name,
@@ -293,8 +298,8 @@ function BehaviorContent({ userName }: { userName: string }) {
   };
 
   const printTargetStudent = useMemo(
-    () => studentBehaviorList.find(s => s.code === printStudentCode) || studentBehaviorList[0],
-    [studentBehaviorList, printStudentCode]
+    () => allClassBehaviorList.find(s => s.code === printStudentCode) || allClassBehaviorList[0],
+    [allClassBehaviorList, printStudentCode]
   );
 
   // ================= PRINT VIEW MODE (ใบเตือน / เกียรติบัตรความดี / ตารางสรุปประจำชั้น) =================
@@ -339,11 +344,11 @@ function BehaviorContent({ userName }: { userName: string }) {
             <div>
               <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.95rem' }}>
                 {printMode === 'warning' && `📄 หนังสือแจ้งเตือนความประพฤติ — ${printTargetStudent?.name}`}
-                {printMode === 'award' && `🏆 เกียรติบัตรคนดีศรีคลองมดแดง — ${printTargetStudent?.name}`}
+                {printMode === 'award' && `🏆 เกียรติบัตรคนดีศรี${SCHOOL_NAME.replace('โรงเรียนบ้าน', '').replace('โรงเรียน', '')} — ${printTargetStudent?.name}`}
                 {printMode === 'class_summary' && `📋 บัญชีสรุปคะแนนความประพฤติประจำชั้น ${currentClass.fullClassName}`}
               </div>
               <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                แบบฟอร์มราชการ โรงเรียนบ้านคลองมดแดง (ขนาด A4)
+                แบบฟอร์มราชการ {SCHOOL_NAME} (ขนาด A4)
               </div>
             </div>
           </div>
@@ -376,7 +381,7 @@ function BehaviorContent({ userName }: { userName: string }) {
           <BehaviorAwardPrintSheet student={printTargetStudent} currentClass={currentClass} />
         )}
         {printMode === 'class_summary' && (
-          <BehaviorClassSummaryPrintSheet students={studentBehaviorList} currentClass={currentClass} />
+          <BehaviorClassSummaryPrintSheet students={allClassBehaviorList} currentClass={currentClass} />
         )}
       </div>
     );
@@ -1011,7 +1016,7 @@ function BehaviorWarningPrintSheet({
           หนังสือแจ้งผลการประเมินความประพฤติและขอความร่วมมือผู้ปกครองดูแลนักเรียน
         </div>
         <div style={{ fontSize: '12pt', fontWeight: 700 }}>
-          ฝ่ายกิจการนักเรียน โรงเรียนบ้านคลองมดแดง &nbsp; สพป.กำแพงเพชร เขต 2
+          ฝ่ายกิจการนักเรียน {SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}
         </div>
       </div>
 
@@ -1028,7 +1033,7 @@ function BehaviorWarningPrintSheet({
           <div><b>ที่อยู่ตามทะเบียน DMC:</b> {student.address}</div>
         )}
         <div style={{ textIndent: '2.5em', marginTop: 8 }}>
-          ด้วยฝ่ายกิจการนักเรียนและครูประจำชั้น{currentClass.fullClassName} โรงเรียนบ้านคลองมดแดง ได้ดำเนินการส่งเสริมระเบียบวินัยและบันทึกคะแนนความประพฤตินักเรียนประจำภาคเรียนที่ 1 ปีการศึกษา 2569 (คะแนนตั้งต้น 100 คะแนน) โดยปัจจุบัน <b>{student.name}</b> มีสรุปผลคะแนนความประพฤติดังต่อไปนี้:
+          ด้วยฝ่ายกิจการนักเรียนและครูประจำชั้น{currentClass.fullClassName} {SCHOOL_NAME} ได้ดำเนินการส่งเสริมระเบียบวินัยและบันทึกคะแนนความประพฤตินักเรียนประจำภาคเรียนที่ 1 ปีการศึกษา 2569 (คะแนนตั้งต้น 100 คะแนน) โดยปัจจุบัน <b>{student.name}</b> มีสรุปผลคะแนนความประพฤติดังต่อไปนี้:
         </div>
       </div>
 
@@ -1097,7 +1102,7 @@ function BehaviorWarningPrintSheet({
         <div>
           <div>ลงชื่อ..........................................................ผู้อำนวยการโรงเรียน</div>
           <div style={{ fontWeight: 800 }}>({DIRECTOR_NAME})</div>
-          <div>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+          <div>ผู้อำนวยการ{SCHOOL_NAME}</div>
         </div>
       </div>
 
@@ -1138,10 +1143,10 @@ function BehaviorAwardPrintSheet({
         style={{ width: 82, height: 82, objectFit: 'contain', margin: '0 auto 10px' }}
       />
       <div style={{ fontSize: '20pt', fontWeight: 900, color: '#7C2D12' }}>
-        โรงเรียนบ้านคลองมดแดง
+        {SCHOOL_NAME}
       </div>
       <div style={{ fontSize: '13pt', fontWeight: 700, color: '#334155', marginBottom: 18 }}>
-        สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+        {SCHOOL_AFFILIATION}
       </div>
 
       <div style={{ fontSize: '14pt', fontWeight: 700, marginBottom: 14 }}>
@@ -1169,7 +1174,7 @@ function BehaviorAwardPrintSheet({
       <div style={{ fontSize: '13pt', lineHeight: 1.7 }}>
         <div>ลงชื่อ..........................................................</div>
         <div style={{ fontWeight: 900 }}>({DIRECTOR_NAME})</div>
-        <div>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+        <div>ผู้อำนวยการ{SCHOOL_NAME}</div>
       </div>
 
       <BehaviorPrintStyles />
@@ -1199,7 +1204,7 @@ function BehaviorClassSummaryPrintSheet({
           แบบสรุปผลการประเมินคะแนนความประพฤตินักเรียนประจำชั้น (ฝ่ายกิจการนักเรียน)
         </div>
         <div style={{ fontSize: '11.5pt', fontWeight: 700 }}>
-          โรงเรียนบ้านคลองมดแดง &nbsp;|&nbsp; ระดับชั้น{currentClass.fullClassName} ({currentClass.label}) &nbsp;|&nbsp; ภาคเรียนที่ 1 ปีการศึกษา 2569
+          {SCHOOL_NAME} &nbsp;|&nbsp; ระดับชั้น{currentClass.fullClassName} ({currentClass.label}) &nbsp;|&nbsp; ภาคเรียนที่ 1 ปีการศึกษา 2569
         </div>
       </div>
 
@@ -1240,7 +1245,7 @@ function BehaviorClassSummaryPrintSheet({
         <div>
           <div>ลงชื่อ..........................................................ผู้อำนวยการโรงเรียน</div>
           <div style={{ fontWeight: 800 }}>({DIRECTOR_NAME})</div>
-          <div>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+          <div>ผู้อำนวยการ{SCHOOL_NAME}</div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, onSnapshot, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { calculateStudentGPA, calculateClassRanks } from '../data/academicData';
 import { useAcademicData } from '../utils/academicStorage';
@@ -10,6 +10,8 @@ import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { downloadCsvReport } from '../utils/csvReport';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
+import type { BehaviorLogEntry } from './BehaviorPage';
 import {
   SCHOOL_CALENDAR_COLLECTION,
   resolveSchoolDay,
@@ -71,7 +73,6 @@ function OneStopPrintHub() {
   const [docs, setDocs] = useState<AttDoc[]>([]);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
   const [schoolDays, setSchoolDays] = useState<Record<string, SchoolDayOverride>>({});
-
   useEffect(() => {
     if (availableRooms.length && !availableRooms.some(r => r.id === selectedRoomId)) {
       setSelectedRoomId(availableRooms[0].id);
@@ -110,6 +111,35 @@ function OneStopPrintHub() {
       setSchoolDays(map);
     });
   }, []);
+
+  const [behaviorLogs, setBehaviorLogs] = useState<BehaviorLogEntry[]>(() => {
+    try {
+      const raw = localStorage.getItem('kmd_behavior_logs_v2_dmc');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    return onSnapshot(doc(db, 'config', 'behavior_logs'), snap => {
+      if (snap.exists() && Array.isArray(snap.data()?.logs)) {
+        setBehaviorLogs(snap.data().logs as BehaviorLogEntry[]);
+      }
+    });
+  }, []);
+
+  const getStudentBehaviorSummary = (studentCode: string) => {
+    const stLogs = behaviorLogs.filter(l => l.studentCode === studentCode);
+    const added = stLogs.filter(l => l.type === 'add').reduce((s, l) => s + l.points, 0);
+    const deducted = stLogs.filter(l => l.type === 'deduct').reduce((s, l) => s + l.points, 0);
+    const netScore = 100 + added - deducted;
+    const statusLabel =
+      netScore > 100 ? 'ดีเยี่ยม' :
+      netScore < 70 ? 'ต้องเชิญผู้ปกครอง' :
+      netScore < 85 ? 'เฝ้าระวัง' : 'ปกติ (เรียบร้อย)';
+    return { added, deducted, netScore, statusLabel };
+  };
 
   const currentRoom = availableRooms.find(r => r.id === selectedRoomId) || availableRooms[0];
   const currentAcadClass = useMemo(
@@ -172,7 +202,7 @@ function OneStopPrintHub() {
     if (!currentRoom) return;
     if (isMonthlyGridDoc) {
       const rows: Array<Array<string | number>> = [
-        [`${formInfo.title} โรงเรียนบ้านคลองมดแดง`],
+        [`${formInfo.title} ${SCHOOL_NAME}`],
         [`ชั้น ${currentRoom.label}`, `ประจำเดือน ${THAI_MONTHS[monthNum - 1]} พ.ศ. ${year + 543}`],
         [],
         ['ที่', 'รหัสนักเรียน', 'ชื่อ-สกุล', ...days.map(String), 'สรุปผล'],
@@ -191,7 +221,7 @@ function OneStopPrintHub() {
     } else if (instantDoc === 'academic_class') {
       const ranks = calculateClassRanks(currentAcadClass.students, currentAcadClass.subjects);
       const rows: Array<Array<string | number>> = [
-        [`สรุปผลการเรียนและเกรดเฉลี่ยประจำชั้น ${currentAcadClass.className}`],
+        [`สรุปผลการเรียนและเกรดเฉลี่ยประจำชั้น ${currentAcadClass.className} ${SCHOOL_NAME}`],
         ['เลขที่', 'รหัส', 'ชื่อ-สกุล', ...currentAcadClass.subjects.map(s => s.code), 'GPA', 'ลำดับที่'],
         ...currentAcadClass.students.map(st => [
           st.no,
@@ -203,6 +233,19 @@ function OneStopPrintHub() {
         ]),
       ];
       downloadCsvReport(`สรุปผลการเรียน_${currentAcadClass.shortName}.csv`, rows);
+    } else if (instantDoc === 'behavior_class') {
+      const rows: Array<Array<string | number>> = [
+        [`สรุปคะแนนความประพฤติและคุณลักษณะอันพึงประสงค์ประจำชั้น ${currentAcadClass.className} ${SCHOOL_NAME}`],
+        ['เลขที่', 'รหัสนักเรียน', 'ชื่อ-สกุล', 'ตั้งต้น', 'ความดี (+)', 'ถูกหัก (-)', 'คะแนนสุทธิ', 'คุณลักษณะฯ', 'อ่านคิดวิเคราะห์', 'สรุปความประพฤติ'],
+        ...currentAcadClass.students.map(st => {
+          const beh = getStudentBehaviorSummary(st.code);
+          return [
+            st.no, st.code, st.name, 100, beh.added, beh.deducted, beh.netScore,
+            st.traitResult, st.readThinkResult, beh.statusLabel,
+          ];
+        }),
+      ];
+      downloadCsvReport(`สรุปความประพฤติ_${currentAcadClass.shortName}_${month}.csv`, rows);
     }
   };
 
@@ -383,7 +426,7 @@ function OneStopPrintHub() {
             <div style={{ textAlign: 'center', marginBottom: 10 }}>
               <div style={{ fontWeight: 900, fontSize: '14pt' }}>{formInfo.title}</div>
               <div style={{ fontSize: '11.5pt', fontWeight: 700 }}>
-                โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2
+                {SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}
               </div>
               <div style={{ fontSize: '11pt', marginTop: 2 }}>
                 ระดับชั้น <b>{currentRoom?.label || '-'}</b> &nbsp;·&nbsp;
@@ -498,7 +541,7 @@ function OneStopPrintHub() {
                   แบบสรุปผลการเรียนรายวิชาและเกรดเฉลี่ยประจำชั้น (ปพ.5 / ปพ.6)
                 </div>
                 <div style={{ fontSize: '11pt', fontWeight: 700 }}>
-                  โรงเรียนบ้านคลองมดแดง &nbsp;|&nbsp; ชั้น{currentAcadClass.className} ({currentAcadClass.shortName}/1) &nbsp;|&nbsp; ภาคเรียนที่ 1 ปีการศึกษา 2569
+                  {SCHOOL_NAME} &nbsp;|&nbsp; ชั้น{currentAcadClass.className} ({currentAcadClass.shortName}/1) &nbsp;|&nbsp; ภาคเรียนที่ 1 ปีการศึกษา 2569
                 </div>
               </div>
 
@@ -566,34 +609,41 @@ function OneStopPrintHub() {
                 แบบสรุปผลการประเมินคะแนนความประพฤติและคุณลักษณะอันพึงประสงค์ประจำชั้น
               </div>
               <div style={{ fontSize: '11pt', fontWeight: 700 }}>
-                โรงเรียนบ้านคลองมดแดง &nbsp;|&nbsp; ชั้น{currentAcadClass.className} ({currentAcadClass.shortName}/1) &nbsp;|&nbsp; ประจำเดือน {THAI_MONTHS[monthNum - 1]} พ.ศ. {year + 543}
+                {SCHOOL_NAME} &nbsp;|&nbsp; ชั้น{currentAcadClass.className} ({currentAcadClass.shortName}/1) &nbsp;|&nbsp; ประจำเดือน {THAI_MONTHS[monthNum - 1]} พ.ศ. {year + 543}
               </div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt' }}>
               <thead>
                 <tr style={{ background: '#F1F5F9' }}>
-                  <th style={{ ...thCell, width: '7%' }}>เลขที่</th>
-                  <th style={{ ...thCell, width: '12%' }}>รหัสนักเรียน</th>
-                  <th style={{ ...thCell, width: '33%', textAlign: 'left', paddingLeft: 6 }}>ชื่อ - นามสกุล</th>
-                  <th style={{ ...thCell, width: '12%' }}>คะแนนตั้งต้น</th>
-                  <th style={{ ...thCell, width: '12%' }}>คุณลักษณะฯ</th>
-                  <th style={{ ...thCell, width: '12%' }}>อ่านคิดวิเคราะห์</th>
-                  <th style={{ ...thCell, width: '12%' }}>สรุปความประพฤติ</th>
+                  <th style={{ ...thCell, width: '6%' }}>เลขที่</th>
+                  <th style={{ ...thCell, width: '10%' }}>รหัส</th>
+                  <th style={{ ...thCell, width: '28%', textAlign: 'left', paddingLeft: 6 }}>ชื่อ - นามสกุล</th>
+                  <th style={{ ...thCell, width: '8%' }}>ตั้งต้น</th>
+                  <th style={{ ...thCell, width: '8%' }}>ความดี (+)</th>
+                  <th style={{ ...thCell, width: '8%' }}>ถูกหัก (-)</th>
+                  <th style={{ ...thCell, width: '9%' }}>คงเหลือ</th>
+                  <th style={{ ...thCell, width: '9%' }}>คุณลักษณะฯ</th>
+                  <th style={{ ...thCell, width: '14%' }}>สรุปความประพฤติ</th>
                 </tr>
               </thead>
               <tbody>
-                {currentAcadClass.students.map(st => (
-                  <tr key={st.code}>
-                    <td style={tdCell}>{st.no}</td>
-                    <td style={tdCell}>{st.code}</td>
-                    <td style={{ ...tdCell, textAlign: 'left', paddingLeft: 6 }}>{st.name}</td>
-                    <td style={{ ...tdCell, fontWeight: 700 }}>100</td>
-                    <td style={tdCell}>{st.traitResult}</td>
-                    <td style={tdCell}>{st.readThinkResult}</td>
-                    <td style={{ ...tdCell, fontWeight: 800 }}>ปกติ (เรียบร้อย)</td>
-                  </tr>
-                ))}
+                {currentAcadClass.students.map(st => {
+                  const beh = getStudentBehaviorSummary(st.code);
+                  return (
+                    <tr key={st.code}>
+                      <td style={tdCell}>{st.no}</td>
+                      <td style={tdCell}>{st.code}</td>
+                      <td style={{ ...tdCell, textAlign: 'left', paddingLeft: 6 }}>{st.name}</td>
+                      <td style={tdCell}>100</td>
+                      <td style={{ ...tdCell, color: '#15803D', fontWeight: 700 }}>{beh.added > 0 ? `+${beh.added}` : '-'}</td>
+                      <td style={{ ...tdCell, color: '#DC2626', fontWeight: 700 }}>{beh.deducted > 0 ? `-${beh.deducted}` : '-'}</td>
+                      <td style={{ ...tdCell, fontWeight: 900 }}>{beh.netScore}</td>
+                      <td style={tdCell}>{st.traitResult}</td>
+                      <td style={{ ...tdCell, fontWeight: 800 }}>{beh.statusLabel}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 

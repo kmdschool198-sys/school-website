@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { ChevronLeft, LogOut, Plus, Trash2, Edit2, Save, X, Award, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 const BRAND = '#FF6A01';
 
@@ -61,6 +62,22 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
   const totalHours = filtered.reduce((s, x) => s + (x.hours || 0), 0);
 
+  const teacherSummary = useMemo(() => {
+    const map: Record<string, { name: string; totalHours: number; count: number; paHours: number }> = {};
+    filtered.forEach(item => {
+      if (!item.teacherName) return;
+      if (!map[item.teacherName]) {
+        map[item.teacherName] = { name: item.teacherName, totalHours: 0, count: 0, paHours: 0 };
+      }
+      map[item.teacherName].totalHours += Number(item.hours) || 0;
+      map[item.teacherName].count += 1;
+      if (item.category === 'PA' || item.category === 'วPA' || item.category === 'พัฒนาวิชาชีพ') {
+        map[item.teacherName].paHours += Number(item.hours) || 0;
+      }
+    });
+    return Object.values(map).sort((a, b) => b.totalHours - a.totalHours);
+  }, [filtered]);
+
   const create = () => {
     const today = todayStr();
     setEditing({
@@ -109,7 +126,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           <Link to="/" style={lnk}><ChevronLeft size={16} />หน้าหลัก</Link>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: '1.3rem', fontWeight: 900 }}>🎓 ระบบบันทึกข้อมูลการอบรมครู</div>
-            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>โรงเรียนบ้านคลองมดแดง · {userName}</div>
+            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>{SCHOOL_NAME} · {userName}</div>
           </div>
           <button onClick={onLogout} style={btnLogout}><LogOut size={12} />ออกจากระบบ</button>
         </div>
@@ -145,6 +162,41 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           <Stat label="⏱️ ชั่วโมงรวม" value={totalHours} color="#10B981" />
           <Stat label="👨‍🏫 ครู" value={filter ? 1 : teachers.length} color={BRAND} />
         </div>
+
+        {/* วPA 20 Hours Target Summary Cards */}
+        {teacherSummary.length > 0 && (
+          <div style={{ background: 'white', borderRadius: 12, padding: '1rem', marginBottom: 14, border: '1px solid #FFEDD5' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+              <h6 style={{ margin: 0, fontWeight: 900, color: '#0F172A' }}>
+                🏆 สรุปชั่วโมงการพัฒนาตนเองตามเกณฑ์ วPA (เป้าหมาย ≥ 20 ชั่วโมง/ปีการศึกษา)
+              </h6>
+              <button onClick={() => window.print()} style={btnSecondary}>🖨️ พิมพ์สรุปเสนอ ผอ. (A4)</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+              {teacherSummary.map(t => {
+                const passed = t.totalHours >= 20;
+                const pct = Math.min(100, Math.round((t.totalHours / 20) * 100));
+                return (
+                  <div key={t.name} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${passed ? '#86EFAC' : '#FDE68A'}`, background: passed ? '#F0FDF4' : '#FFFBEB' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '0.86rem', color: '#0F172A' }}>
+                      <span>{t.name}</span>
+                      <span style={{ color: passed ? '#15803D' : '#B45309' }}>{t.totalHours} / 20 ชม.</span>
+                    </div>
+                    <div style={{ height: 8, background: '#E2E8F0', borderRadius: 999, overflow: 'hidden', margin: '6px 0' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: passed ? '#16A34A' : '#F59E0B' }} />
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>อบรม {t.count} ครั้ง</span>
+                      <span style={{ fontWeight: 800, color: passed ? '#15803D' : '#D97706' }}>
+                        {passed ? '✓ ผ่านเกณฑ์ วPA' : `ขาดอีก ${20 - t.totalHours} ชม.`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {filtered.length === 0 ? (
           <Empty msg="ยังไม่มีข้อมูล — กดปุ่ม 'เพิ่มข้อมูลอบรม' เพื่อเริ่ม" />

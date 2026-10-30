@@ -6,6 +6,7 @@ import {
   Menu, X, Clock, ChevronRight, Globe, FileCheck, Utensils, ClipboardCheck, ShieldAlert, ShieldCheck,
 } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 interface NavItem {
   to: string;
@@ -176,7 +177,7 @@ export default function SmartSchoolLayout({
           >
             <img
               src={`${import.meta.env.BASE_URL}images/school-logo.png`}
-              alt="ตราโรงเรียนบ้านคลองมดแดง"
+              alt={`ตรา${SCHOOL_NAME}`}
               style={{
                 width: 38, height: 38, borderRadius: 10,
                 background: '#FFFFFF', padding: 2, objectFit: 'contain', flexShrink: 0,
@@ -187,7 +188,7 @@ export default function SmartSchoolLayout({
                 SMART SCHOOL OS
               </div>
               <div style={{ fontSize: '0.73rem', color: '#FDBA74', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                ร.ร.บ้านคลองมดแดง
+                {SCHOOL_NAME}
               </div>
             </div>
           </Link>

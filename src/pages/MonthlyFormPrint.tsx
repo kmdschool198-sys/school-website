@@ -9,6 +9,7 @@ import { ChevronLeft, Printer, Calendar, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 import {
   SCHOOL_CALENDAR_COLLECTION,
   resolveSchoolDay,
@@ -217,7 +218,7 @@ function App() {
     });
 
     const reportRows = makeSectionedReportRows({
-      title: `${info.title} โรงเรียนบ้านคลองมดแดง`,
+      title: `${info.title} ${SCHOOL_NAME}`,
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(yearStr)}`,
       meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${current.label}`], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
       sections,
@@ -281,7 +282,7 @@ function App() {
             style={{ width: 44, height: 44, objectFit: 'contain', marginBottom: 2 }}
           />
           <div style={{ fontWeight: 900, fontSize: '1.15rem' }}>{info.title}</div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>โรงเรียนบ้านคลองมดแดง &nbsp; สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2</div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>{SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}</div>
           <div style={{ fontSize: '0.9rem', marginTop: 2 }}>
             ระดับชั้น <b>{current?.fullClassName || current?.label || '-'}</b> ·
             ประจำเดือน <b>{THAI_MONTHS[monthNum - 1]} พ.ศ. {year + 543}</b> ·
@@ -398,7 +399,7 @@ function App() {
             <div style={{ marginTop: 4 }}>
               (นายปรัชญา ปรางค์ชัยภูมิ)
             </div>
-            <div style={{ marginTop: 2 }}>ผู้อำนวยการโรงเรียนบ้านคลองมดแดง</div>
+            <div style={{ marginTop: 2 }}>ผู้อำนวยการ{SCHOOL_NAME}</div>
           </div>
         </div>
       </div>

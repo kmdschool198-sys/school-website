@@ -53,7 +53,7 @@ import GooglePhotosInput from '../components/GooglePhotosInput';
 import PdpaNotice from '../components/PdpaNotice';
 import Toast from '../components/Toast';
 import { DEFAULT_STUDENTS } from '../data/defaultStudents';
-import { SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
+import { SCHOOL_NAME, SCHOOL_ADDRESS, SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 import PersonnelSync from '../components/PersonnelSync';
 import BranchPersonnelManager from '../components/BranchPersonnelManager';
 import {
@@ -337,12 +337,12 @@ function Admin() {
 
   // Settings
   const [schoolSettings, setSchoolSettings] = useState({
-    name: 'โรงเรียนบ้านคลองมดแดง',
+    name: SCHOOL_NAME,
     motto: 'พัฒนา สามัคคี มีวินัย',
-    address: '198 ม.3 ต.โป่งน้ำร้อน อ.คลองลาน จ.กำแพงเพชร 62180',
+    address: SCHOOL_ADDRESS,
     phone: SCHOOL_PHONE,
     email: SCHOOL_EMAIL,
-    facebook: 'โรงเรียนบ้านคลองมดแดง',
+    facebook: SCHOOL_NAME,
     logoUrl: ''
   });
 

@@ -1,4 +1,5 @@
 import { ExternalLink, MessageCircle } from 'lucide-react';
+import { SCHOOL_NAME } from '../config/siteLinks';
 
 interface FacebookPostCardProps {
   url?: string;
@@ -60,7 +61,7 @@ export default function FacebookPostCard({ url, title, compact = false, preview 
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
           }}>
-            {title || 'โพสต์ประชาสัมพันธ์จากโรงเรียนบ้านคลองมดแดง'}
+            {title || `โพสต์ประชาสัมพันธ์จาก${SCHOOL_NAME}`}
           </div>
         </div>
         <div style={{
@@ -141,7 +142,7 @@ export default function FacebookPostCard({ url, title, compact = false, preview 
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ color: '#0F172A', fontWeight: 900 }}>โพสต์ Facebook</div>
-          <div style={{ color: '#64748B', fontSize: '0.82rem' }}>{title || 'โรงเรียนบ้านคลองมดแดง'}</div>
+          <div style={{ color: '#64748B', fontSize: '0.82rem' }}>{title || SCHOOL_NAME}</div>
         </div>
       </div>
 
@@ -152,7 +153,7 @@ export default function FacebookPostCard({ url, title, compact = false, preview 
         padding: '1.25rem',
       }}>
         <div style={{ color: '#0F172A', fontWeight: 900, fontSize: '1rem', marginBottom: 6 }}>
-          {title || 'โพสต์ประชาสัมพันธ์จากโรงเรียนบ้านคลองมดแดง'}
+          {title || `โพสต์ประชาสัมพันธ์จาก${SCHOOL_NAME}`}
         </div>
         <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.7 }}>
           เปิดดูรูปภาพ รายละเอียด และความคิดเห็นต่อได้บน Facebook
