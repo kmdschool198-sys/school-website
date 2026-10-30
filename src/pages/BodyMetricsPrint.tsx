@@ -4,6 +4,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
+import { bmiInterpretation } from '../utils/bmi';
 import { ChevronLeft, Printer } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -12,14 +13,6 @@ import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 
-function getBmiInterpretation(bmi?: number): string {
-  if (!bmi || bmi <= 0) return '-';
-  if (bmi < 16) return 'ผอมมาก';
-  if (bmi < 18.5) return 'ค่อนข้างผอม';
-  if (bmi < 23) return 'สมส่วน';
-  if (bmi < 25) return 'ท้วม';
-  return 'เริ่มอ้วน';
-}
 
 export default function BodyMetricsPrintPage() {
   const auth = useTeacherAuth();
@@ -166,7 +159,7 @@ function App() {
                     ];
                   })}
                   <td style={{ ...td, fontWeight: 700 }}>{latestBmi || '-'}</td>
-                  <td style={td}>{getBmiInterpretation(latestBmi)}</td>
+                  <td style={td}>{bmiInterpretation(latestBmi)}</td>
                 </tr>
               );
             })}

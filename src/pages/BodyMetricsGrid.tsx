@@ -4,6 +4,7 @@ import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'fire
 import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
+import { bmiInterpretation } from '../utils/bmi';
 import { ChevronLeft, LogOut, Printer, Download, ClipboardPaste, Sparkles } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -531,8 +532,7 @@ function bmiColor(b: number) {
   if (b < 25) return '#10B981'; if (b < 30) return '#F59E0B'; return '#EF4444';
 }
 function bmiStatus(b: number) {
-  if (b < 16) return 'ผอมมาก'; if (b < 18.5) return 'ผอม';
-  if (b < 25) return 'สมส่วน'; if (b < 30) return 'ท้วม'; return 'อ้วน';
+  return bmiInterpretation(b);
 }
 
 const lnk: React.CSSProperties = { color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 };
