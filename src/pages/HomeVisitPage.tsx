@@ -295,7 +295,7 @@ function HomeVisitContent() {
       </div>
 
       {/* Print A4 Sheet */}
-      <div className="only-print-visit">
+      <div className="only-print-visit print-area">
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
           <div style={{ fontSize: '14pt', fontWeight: 800 }}>
             แบบสรุปรายงานการเยี่ยมบ้านนักเรียนและคัดกรองความยากจน (ระบบดูแลช่วยเหลือนักเรียน)

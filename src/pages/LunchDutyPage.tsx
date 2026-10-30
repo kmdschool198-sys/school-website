@@ -956,7 +956,7 @@ function LunchDutyContent({ userName }: { userName: string }) {
       </div>
 
       {/* ================= OFFICIAL A4 PRINT SHEET FOR DAILY LUNCH & DUTY REPORT ================= */}
-      <div className="only-print-lunch-duty">
+      <div className="only-print-lunch-duty print-area">
         <div className="ld-print-sheet">
           <div style={{ textAlign: 'center', marginBottom: 10 }}>
             <img

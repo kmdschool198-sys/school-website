@@ -833,7 +833,7 @@ function JanitorTaskContent({ userName }: { userName: string }) {
       </div>
 
       {/* ================= OFFICIAL A4 PRINT SHEET FOR JANITOR DAILY REPORT ================= */}
-      <div className="only-print-janitor">
+      <div className="only-print-janitor print-area">
         <div style={{ textAlign: 'center', marginBottom: 12 }}>
           <img
             src={`${import.meta.env.BASE_URL}school_logo_kmd.png`}

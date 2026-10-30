@@ -808,7 +808,7 @@ function DutyContent({ userName }: { userName: string }) {
       </div>
 
       {/* ================= OFFICIAL A4 PRINT SHEET FOR DUTY REPORT ================= */}
-      <div className="only-print-duty">
+      <div className="only-print-duty print-area">
         <div className="duty-print-sheet">
           <div style={{ textAlign: 'center', marginBottom: 12 }}>
             <img

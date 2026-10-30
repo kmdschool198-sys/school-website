@@ -932,7 +932,7 @@ function LunchContent({ userName }: { userName: string }) {
       </div>
 
       {/* ================= OFFICIAL A4 PRINT SHEET FOR LUNCH REPORT ================= */}
-      <div className="only-print-lunch">
+      <div className="only-print-lunch print-area">
         <div className="lunch-print-sheet">
           <div style={{ textAlign: 'center', marginBottom: 12 }}>
             <img

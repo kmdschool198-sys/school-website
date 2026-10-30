@@ -405,7 +405,7 @@ function ReportCard({ announcement, row, onBack }: {
       </div>
 
       {/* Print area */}
-      <div className="report-print" style={{ fontSize: '0.92rem' }}>
+      <div className="report-print print-area" style={{ fontSize: '0.92rem' }}>
         {/* School header */}
         <div style={{ textAlign: 'center', marginBottom: 16, paddingBottom: 14, borderBottom: '2px solid #FF6A01' }}>
           <div style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: 700 }}>

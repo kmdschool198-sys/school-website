@@ -408,7 +408,7 @@ function OneStopPrintHub() {
 
       {/* ================= LIVE PRINTABLE A4 SHEET PREVIEW ================= */}
       <div
-        className="print-hub-sheet"
+        className="print-hub-sheet print-area"
         style={{
           background: '#FFFFFF',
           maxWidth: currentDocConfig.orientation === 'landscape' ? '297mm' : '210mm',

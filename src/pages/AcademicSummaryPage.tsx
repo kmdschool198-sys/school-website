@@ -1143,7 +1143,7 @@ function AcademicSummaryContent() {
       )}
 
       {/* ================= OFFICIAL A4 EXECUTIVE PRINT REPORT ================= */}
-      <div className="only-print-exec-acad">
+      <div className="only-print-exec-acad print-area">
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
           <img
             src={`${import.meta.env.BASE_URL}school_logo_kmd.png`}

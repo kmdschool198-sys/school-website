@@ -978,7 +978,7 @@ function BehaviorContent({ userName }: { userName: string }) {
       </div>
 
       {/* Fallback when pressing Ctrl+P directly on /behavior */}
-      <div className="only-print-behavior">
+      <div className="only-print-behavior print-area">
         <BehaviorClassSummaryPrintSheet students={studentBehaviorList} currentClass={currentClass} />
       </div>
 

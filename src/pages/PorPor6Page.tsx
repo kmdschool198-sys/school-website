@@ -168,7 +168,7 @@ function PorPor6Content() {
         </div>
 
         {/* Printable A4 Pages */}
-        <div className="porpor6-print-container" style={{ maxWidth: '210mm', margin: '20px auto', padding: '0 8px' }}>
+        <div className="porpor6-print-container print-area" style={{ maxWidth: '210mm', margin: '20px auto', padding: '0 8px' }}>
           {targetStudents.map((st, idx) =>
             formTemplate === 'kmd_excel' ? (
               <KmdExcelPorPor6Form

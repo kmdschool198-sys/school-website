@@ -883,7 +883,7 @@ function PorPor5Content() {
       </div>
 
       {/* Fallback when pressing Ctrl+P directly on the PorPor5 page */}
-      <div className="only-print-pp5">
+      <div className="only-print-pp5 print-area">
         <PorPor5OfficialPrintSheets
           currentClass={currentClass}
           currentSubject={currentSubject}
