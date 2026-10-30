@@ -109,7 +109,7 @@ export default function BehaviorPage() {
 
 function BehaviorContent({ userName }: { userName: string }) {
   const { classes: unifiedRosters } = useSchoolRoster();
-  const [selectedClassId, setSelectedClassId] = useState<string>('m1_1');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [search, setSearch] = useState<string>('');
   const [logs, setLogs] = useState<BehaviorLogEntry[]>(() => {
     try {

@@ -64,7 +64,7 @@ export default function PrintHubPage() {
 function OneStopPrintHub() {
   const { classesData } = useAcademicData();
   const { classes: availableRooms } = useSchoolRoster();
-  const [selectedRoomId, setSelectedRoomId] = useState<string>('p1_1');
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const [month, setMonth] = useState<string>(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;

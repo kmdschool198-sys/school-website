@@ -33,8 +33,12 @@ export interface UnifiedStudent {
 }
 
 export interface UnifiedClassRoster {
-  id: string;        // roomId e.g. 'p1_1', 'kg_a2_1', 'm1_1'
-  classId: string;   // same as id ('p1_1', 'kg_a2_1', 'm1_1')
+  // The class key every Firestore record uses (attendance `{classId}_{date}`, homeroom, lunch, duty):
+  // the classId saved in config/attendance_classes (e.g. 'kg_a2_1', 'mnnbhd8om45cr'). Only when the
+  // school has no cloud roster yet does it fall back to the DMC room id.
+  id: string;
+  classId: string;   // same as id
+  roomId: string;    // DMC room id 'p1_1', 'kg_a2_1', 'm1_1' (for DMC metadata only)
   acadId: string;    // 'a2', 'a3', 'p1'...'m3'
   shortClass: string;// 'อ.2', 'ป.1', 'ม.1'
   label: string;     // 'อ.2/1', 'ป.1/1', 'ม.1/1'
@@ -71,6 +75,7 @@ export function buildSeedRosters(details: StudentDetailsMap = {}): UnifiedClassR
     return {
       id: meta.roomId,
       classId: meta.roomId,
+      roomId: meta.roomId,
       acadId: meta.acadId,
       shortClass: meta.shortClass,
       label: meta.label,
@@ -104,7 +109,7 @@ export function mergeWithFirestoreClasses(
       const dmc = findDmcStudent(st.code || st.id, st.name);
       const gender = inferGender(st.name, st.emoji, dmc);
       return {
-        id: st.id || dmc?.id || `${base.classId}_s${idx + 1}`,
+        id: st.id || dmc?.id || `${cloud.classId}_s${idx + 1}`,
         code: st.code || dmc?.code || String(idx + 1),
         name: st.name || dmc?.name || '',
         emoji: st.emoji || dmc?.emoji || (gender === 'male' ? '👦' : '👧'),
@@ -119,6 +124,9 @@ export function mergeWithFirestoreClasses(
 
     return {
       ...base,
+      id: cloud.classId,
+      classId: cloud.classId,
+      roomId: base.roomId,
       students: mergedStudents,
       maleCount,
       femaleCount,

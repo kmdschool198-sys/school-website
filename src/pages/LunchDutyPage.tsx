@@ -127,7 +127,7 @@ function LunchDutyContent({ userName }: { userName: string }) {
   const [date, setDate] = useState(todayStr());
   const [allDocs, setAllDocs] = useState<AttDoc[]>([]);
   const [activeTab, setActiveTab] = useState<'lunch' | 'duty' | 'roster'>('lunch');
-  const [selectedClassId, setSelectedClassId] = useState<string>('p1_1');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [csvPeriod, setCsvPeriod] = useState<'month' | 'year'>('month');
   const [csvScope, setCsvScope] = useState<string>('all');
   const [savedToast, setSavedToast] = useState<string | null>(null);

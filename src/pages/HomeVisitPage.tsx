@@ -36,7 +36,7 @@ export default function HomeVisitPage() {
 
 function HomeVisitContent() {
   const { classes: rosters } = useSchoolRoster();
-  const [selectedClassId, setSelectedClassId] = useState<string>('m1_1');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [records, setRecords] = useState<Record<string, HomeVisitRecord>>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_HOME_VISIT_KEY);

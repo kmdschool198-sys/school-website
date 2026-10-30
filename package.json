@@ -13,6 +13,7 @@
     "setup:staff-auth": "node scripts/setup_staff_auth.mjs",
     "upload:student-details": "node scripts/upload_student_details.mjs",
     "backup:firestore": "node scripts/backup_firestore.mjs",
+    "backfill:links": "node scripts/backfill_links.mjs",
     "pdpa:retention-review": "node scripts/pdpa_retention_review.mjs"
   },
   "dependencies": {
