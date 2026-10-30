@@ -12,9 +12,8 @@ import QuickDate from '../components/QuickDate';
 import DriveImage from '../components/DriveImage';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { downloadCsvReport } from '../utils/csvReport';
-import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
-
-const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
+import { SCHOOL_NAME, SCHOOL_AFFILIATION, DIRECTOR_NAME } from '../config/siteLinks';
+import { janitorDocId } from '../data/janitor';
 const STORAGE_JANITOR_KEY = 'kmd_janitor_tasks_v1';
 
 export type ComplianceStatus = 'ตามคำสั่งครบถ้วน' | 'ทำได้บางส่วน' | 'ไม่ตรงตามคำสั่ง' | 'รอตรวจประเมิน';
@@ -123,8 +122,16 @@ function JanitorTaskContent({ userName }: { userName: string }) {
     });
   }, []);
 
-  const docId = `janitor_${date}`;
+  // One record per staff member per day. Records saved before this change used
+  // `janitor_<date>` for whoever was selected; they stay where they are and are still
+  // read and updated for that staff member, so no existing data moves or is lost.
+  const legacyDocId = `janitor_${date}`;
+  const docId = recordsMap[legacyDocId]?.staffName === selectedStaff
+    ? legacyDocId
+    : janitorDocId(date, selectedStaff);
 
+  // A day nobody has recorded yet starts blank and "รอตรวจประเมิน", so printed reports never
+  // show work or ratings that did not happen. The orders are the usual assignment and can be edited.
   const currentRecord: JanitorDailyRecord = useMemo(() => {
     if (recordsMap[docId]) return recordsMap[docId];
     return {
@@ -133,17 +140,17 @@ function JanitorTaskContent({ userName }: { userName: string }) {
       staffName: selectedStaff,
       assignedBy: DIRECTOR_NAME,
       morningOrder: 'ดูแลความสะอาดรอบอาคารเรียน ตัดแต่งกิ่งไม้ และตรวจเช็กระบบน้ำประปา',
-      morningChecklist: [MORNING_PRESETS[0], MORNING_PRESETS[1], MORNING_PRESETS[2]],
-      morningDetail: 'ปฏิบัติงานเปิดอาคารเรียน กวาดใบไม้หน้าอาคาร และดูแลความเรียบร้อยช่วงเช้าครบถ้วน',
+      morningChecklist: [],
+      morningDetail: '',
       morningPhotos: [],
       afternoonOrder: 'ดูแลความสะอาดห้องน้ำ โรงอาหารหลังมื้อเที่ยง และสำรวจซ่อมแซมอุปกรณ์ชำรุด',
-      afternoonChecklist: [AFTERNOON_PRESETS[0], AFTERNOON_PRESETS[1], AFTERNOON_PRESETS[4]],
-      afternoonDetail: 'ล้างห้องน้ำ จัดการขยะโรงอาหาร และตรวจปิดล็อกอาคารเรียนเรียบร้อย',
+      afternoonChecklist: [],
+      afternoonDetail: '',
       afternoonPhotos: [],
-      complianceStatus: 'ตามคำสั่งครบถ้วน',
-      qualityStars: 5,
-      evaluatorName: DIRECTOR_NAME,
-      evaluatorComment: 'ปฏิบัติงานได้รวดเร็ว เรียบร้อย และครบถ้วนตามคำสั่งที่มอบหมายดีมาก',
+      complianceStatus: 'รอตรวจประเมิน',
+      qualityStars: 0,
+      evaluatorName: '',
+      evaluatorComment: '',
       updatedAt: Date.now(),
     };
   }, [recordsMap, docId, date, selectedStaff]);

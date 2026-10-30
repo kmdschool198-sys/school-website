@@ -42,6 +42,7 @@ const LunchPage = lazy(() => import('./pages/LunchPage'));
 const DutyPage = lazy(() => import('./pages/DutyPage'));
 const TimetablePage = lazy(() => import('./pages/TimetablePage'));
 const JanitorTaskPage = lazy(() => import('./pages/JanitorTaskPage'));
+const JanitorDutyPage = lazy(() => import('./pages/JanitorDutyPage'));
 const HomeVisitPage = lazy(() => import('./pages/HomeVisitPage'));
 
 function App() {
@@ -86,6 +87,7 @@ function App() {
           <Route path="/lunch-duty" element={<LunchPage />} />
           <Route path="/timetable" element={<TimetablePage />} />
           <Route path="/janitor-tasks" element={<JanitorTaskPage />} />
+          <Route path="/janitor-duty" element={<JanitorDutyPage />} />
           <Route path="/home-visit" element={<HomeVisitPage />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />

@@ -4,6 +4,7 @@ import {
   Home, Printer, CheckSquare, School, Users, Coffee, Smile, Wallet,
   BookOpen, BarChart2, FileText, Heart, Calendar, Settings, LogOut,
   Menu, X, Clock, ChevronRight, Globe, FileCheck, Utensils, ClipboardCheck, ShieldAlert, ShieldCheck,
+  Gauge, House, Wrench, CalendarClock,
 } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { SCHOOL_NAME } from '../config/siteLinks';
@@ -25,6 +26,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       { to: '/teacher-hub', label: 'หน้าหลัก (Dashboard)', icon: <Home size={17} />, highlightColor: '#2563EB' },
+      { to: '/executive', label: 'แดชบอร์ดผู้บริหาร', icon: <Gauge size={17} />, highlightColor: '#7C3AED' },
       { to: '/print-hub', label: 'ศูนย์รวมการพิมพ์ (One-Stop)', icon: <Printer size={17} />, highlightColor: '#BE123C', badge: 'ครบวงจร' },
       { to: '/attendance', label: 'เช็คชื่อรายวัน', icon: <CheckSquare size={17} />, highlightColor: '#059669' },
     ],
@@ -54,6 +56,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/behavior', label: 'คะแนนความประพฤติ & ใบเตือน', icon: <ShieldAlert size={17} />, highlightColor: '#B91C1C', badge: 'ใหม่' },
       { to: '/body-metrics', label: 'ข้อมูลสุขภาพ (BMI)', icon: <Heart size={17} /> },
+      { to: '/home-visit', label: 'เยี่ยมบ้านนักเรียน', icon: <House size={17} /> },
       { to: '/class-dashboard', label: 'แดชบอร์ดรายชั้นเรียน', icon: <FileCheck size={17} /> },
       { to: '/manage-roster', label: 'จัดการรายชื่อนักเรียน', icon: <Users size={17} /> },
       { to: '/school-stats-report', label: 'รายงานสถิติประจำเดือน', icon: <BarChart2 size={17} /> },
@@ -64,6 +67,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/timetable', label: 'ตารางสอน & จัดสอนแทน', icon: <Calendar size={17} />, highlightColor: '#4F46E5', badge: 'อัจฉริยะ' },
       { to: '/school-calendar', label: 'ปฏิทินการศึกษา', icon: <Calendar size={17} /> },
+      { to: '/janitor-duty', label: 'ตารางเวร & รายงานนักการ', icon: <CalendarClock size={17} /> },
+      { to: '/janitor-tasks', label: 'บันทึกงานนักการ (เช้า-บ่าย)', icon: <Wrench size={17} /> },
       { to: '/admin', label: 'จัดการระบบส่วนกลาง', icon: <Settings size={17} /> },
     ],
   },
