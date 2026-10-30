@@ -211,7 +211,7 @@ function Home() {
               <span style={{ color: '#FFD400' }}>Inspire.</span>
             </h1>
             <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'rgba(255,255,255,0.95)', marginBottom: '1rem', letterSpacing: '0.5px' }}>
-              {SCHOOL_NAME} <span style={{ opacity: 0.6, fontWeight: 600 }}>· Ban Mae Daed Noi School</span>
+              {SCHOOL_NAME} <span style={{ opacity: 0.6, fontWeight: 600 }}>· Ban Klong Mod Daeng School</span>
             </div>
 
             <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.85)', marginBottom: '2.5rem', maxWidth: '600px', lineHeight: 1.7 }}>

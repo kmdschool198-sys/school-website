@@ -1,38 +1,6 @@
-// Removed unused React import
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
-import Admin from './pages/Admin';
-import ContentPage from './pages/ContentPage';
-import CalendarPage from './pages/Calendar';
-import Attendance from './pages/Attendance';
-import Results from './pages/Results';
-import Privacy from './pages/Privacy';
-import ClubAttendance from './pages/ClubAttendance';
-import TeacherHub from './pages/TeacherHub';
-import MilkReport from './pages/MilkReport';
-import MonthlyFormPrint from './pages/MonthlyFormPrint';
-import BodyMetricsPrint from './pages/BodyMetricsPrint';
-import ClubPrint from './pages/ClubPrint';
-import BodyMetricsGrid from './pages/BodyMetricsGrid';
-import SavingGrid from './pages/SavingGrid';
-import ManageClubs from './pages/ManageClubs';
-import ManageRoster from './pages/ManageRoster';
-import BrushLog from './pages/BrushLog';
-import ClassDashboard from './pages/ClassDashboard';
-import Homeroom from './pages/Homeroom';
-import HomeroomPrint from './pages/HomeroomPrint';
-import SchoolStatsReport from './pages/SchoolStatsReport';
-import SchoolCalendar from './pages/SchoolCalendar';
-import PorPor6Page from './pages/PorPor6Page';
-import AcademicSummaryPage from './pages/AcademicSummaryPage';
-import PorPor5Page from './pages/PorPor5Page';
-import PrintHubPage from './pages/PrintHubPage';
-import BehaviorPage from './pages/BehaviorPage';
-import LunchPage from './pages/LunchPage';
-import DutyPage from './pages/DutyPage';
-import TimetablePage from './pages/TimetablePage';
-import JanitorTaskPage from './pages/JanitorTaskPage';
-import HomeVisitPage from './pages/HomeVisitPage';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import PrivacyConsentBanner from './components/PrivacyConsentBanner';
@@ -42,12 +10,47 @@ import ScrollProgress from './components/ScrollProgress';
 import RouteTitle from './components/RouteTitle';
 import { SchoolDataProvider } from './context/SchoolDataContext';
 
+// Only the home page ships in the first bundle; every other page loads when visited
+const Admin = lazy(() => import('./pages/Admin'));
+const ContentPage = lazy(() => import('./pages/ContentPage'));
+const CalendarPage = lazy(() => import('./pages/Calendar'));
+const Attendance = lazy(() => import('./pages/Attendance'));
+const Results = lazy(() => import('./pages/Results'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const ClubAttendance = lazy(() => import('./pages/ClubAttendance'));
+const TeacherHub = lazy(() => import('./pages/TeacherHub'));
+const MilkReport = lazy(() => import('./pages/MilkReport'));
+const MonthlyFormPrint = lazy(() => import('./pages/MonthlyFormPrint'));
+const BodyMetricsPrint = lazy(() => import('./pages/BodyMetricsPrint'));
+const ClubPrint = lazy(() => import('./pages/ClubPrint'));
+const BodyMetricsGrid = lazy(() => import('./pages/BodyMetricsGrid'));
+const SavingGrid = lazy(() => import('./pages/SavingGrid'));
+const ManageClubs = lazy(() => import('./pages/ManageClubs'));
+const ManageRoster = lazy(() => import('./pages/ManageRoster'));
+const BrushLog = lazy(() => import('./pages/BrushLog'));
+const ClassDashboard = lazy(() => import('./pages/ClassDashboard'));
+const Homeroom = lazy(() => import('./pages/Homeroom'));
+const HomeroomPrint = lazy(() => import('./pages/HomeroomPrint'));
+const SchoolStatsReport = lazy(() => import('./pages/SchoolStatsReport'));
+const SchoolCalendar = lazy(() => import('./pages/SchoolCalendar'));
+const PorPor6Page = lazy(() => import('./pages/PorPor6Page'));
+const AcademicSummaryPage = lazy(() => import('./pages/AcademicSummaryPage'));
+const PorPor5Page = lazy(() => import('./pages/PorPor5Page'));
+const PrintHubPage = lazy(() => import('./pages/PrintHubPage'));
+const BehaviorPage = lazy(() => import('./pages/BehaviorPage'));
+const LunchPage = lazy(() => import('./pages/LunchPage'));
+const DutyPage = lazy(() => import('./pages/DutyPage'));
+const TimetablePage = lazy(() => import('./pages/TimetablePage'));
+const JanitorTaskPage = lazy(() => import('./pages/JanitorTaskPage'));
+const HomeVisitPage = lazy(() => import('./pages/HomeVisitPage'));
+
 function App() {
   return (
     <ErrorBoundary>
       <SchoolDataProvider>
         <Router>
           <RouteTitle />
+          <Suspense fallback={<div style={{ minHeight: '60vh' }} aria-busy="true" />}>
           <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
@@ -88,6 +91,7 @@ function App() {
           <Route path="/personnel/:slug" element={<ContentPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+          </Suspense>
         <PrivacyConsentBanner />
         <GlobalToast />
         <ScrollReveal />

@@ -35,6 +35,8 @@ const staticTitles: Record<string, string> = {
   '/lunch': 'โครงการอาหารกลางวันนักเรียน',
   '/duty': 'ระบบเวรประจำวันและเขตพื้นที่ความสะอาด',
   '/lunch-duty': 'โครงการอาหารกลางวันนักเรียน',
+  '/janitor-tasks': 'ระบบตรวจสอบการปฏิบัติงานนักการภารโรง',
+  '/home-visit': 'ระบบบันทึกการเยี่ยมบ้านนักเรียน',
 };
 
 const printFormTitles: Record<string, string> = {

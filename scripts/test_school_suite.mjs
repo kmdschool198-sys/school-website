@@ -26,7 +26,7 @@ test('Suite 1: School Metadata & Branding Integrity', async (t) => {
 
   await t.test('Name of another school ("บ้านแม่แดดน้อย") must not appear in src code', () => {
     const srcDir = path.join(rootDir, 'src');
-    const legacyName = 'แม่แดดน้อย';
+    const otherSchool = /แม่แดดน้อย|Mae\s*Daed/i;
     const foundFiles = [];
 
     function scanDir(dir) {
@@ -37,7 +37,7 @@ test('Suite 1: School Metadata & Branding Integrity', async (t) => {
           scanDir(fullPath);
         } else if (/\.(tsx?|jsx?|json|css|html)$/.test(entry.name)) {
           const text = fs.readFileSync(fullPath, 'utf-8');
-          if (text.includes(legacyName)) {
+          if (otherSchool.test(text)) {
             foundFiles.push(path.relative(rootDir, fullPath));
           }
         }
