@@ -38,13 +38,15 @@ import GlobalToast from './components/GlobalToast';
 import ScrollReveal from './components/ScrollReveal';
 import ScrollProgress from './components/ScrollProgress';
 import RouteTitle from './components/RouteTitle';
+import { SchoolDataProvider } from './context/SchoolDataContext';
 
 function App() {
   return (
     <ErrorBoundary>
-      <Router>
-        <RouteTitle />
-        <Routes>
+      <SchoolDataProvider>
+        <Router>
+          <RouteTitle />
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/calendar" element={<CalendarPage />} />
@@ -87,6 +89,7 @@ function App() {
         <ScrollReveal />
         <ScrollProgress />
       </Router>
+      </SchoolDataProvider>
     </ErrorBoundary>
   );
 }
