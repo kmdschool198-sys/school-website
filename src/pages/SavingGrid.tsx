@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
+import { sameStudent } from '../utils/studentKey';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { ChevronLeft, LogOut, Download, ClipboardPaste, Printer, Sparkles } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
@@ -17,7 +18,7 @@ const COLOR = '#10B981';
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 
 interface Student { id: string; code?: string; name: string; emoji?: string; }
-interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; amount?: number; date?: string; }
+interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; studentCode?: string; amount?: number; date?: string; }
 type CsvPeriod = 'month' | 'year';
 type CsvScope = 'class' | 'all';
 
@@ -53,10 +54,10 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const students = current?.students || [];
   const currentMonth = date.slice(0, 7);
 
-  // Match by id OR name (handles old data without studentId)
+  // Match by id, then code, then name (handles old data without studentId)
   const matchesInClass = (l: LogEntry, s: Student, classLabel?: string) =>
     (l.classLabel === classLabel || !l.classLabel) &&
-    (l.studentId === s.id || (l.studentName && l.studentName.trim() === s.name.trim()));
+    sameStudent(l, s);
   const matches = (l: LogEntry, s: Student) => matchesInClass(l, s, current?.label);
 
   const findEntry = (s: Student) => logs.find(l => matches(l, s) && l.date === date);

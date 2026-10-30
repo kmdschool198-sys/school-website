@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { sameStudent } from '../utils/studentKey';
 import { useSchoolRoster, type UnifiedClassRoster } from '../utils/useSchoolRoster';
 import {
   ShieldAlert, Award, PlusCircle, MinusCircle, Printer, Download,
@@ -19,6 +20,7 @@ const STORAGE_KEY = 'kmd_behavior_logs_v2_dmc';
 export interface BehaviorLogEntry {
   id: string;
   studentCode: string;
+  studentId?: string;      // student_xxxx (older entries have only studentCode)
   studentName: string;
   classId: string;
   classLabel: string;
@@ -122,6 +124,7 @@ function BehaviorContent({ userName }: { userName: string }) {
 
   // Action Modal state
   const [modalStudent, setModalStudent] = useState<{
+    id: string;
     code: string;
     name: string;
     no: number;
@@ -181,7 +184,7 @@ function BehaviorContent({ userName }: { userName: string }) {
   // Compute behavior summary per student (base 100 points) — All students in class (unfiltered)
   const allClassBehaviorList = useMemo(() => {
     return currentClass.students.map(st => {
-      const stLogs = logs.filter(l => l.studentCode === st.code);
+      const stLogs = logs.filter(l => sameStudent(l, st));
       const added = stLogs.filter(l => l.type === 'add').reduce((s, l) => s + l.points, 0);
       const deducted = stLogs.filter(l => l.type === 'deduct').reduce((s, l) => s + l.points, 0);
       const netScore = 100 + added - deducted;
@@ -227,6 +230,7 @@ function BehaviorContent({ userName }: { userName: string }) {
     const entry: BehaviorLogEntry = {
       id: `beh_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       studentCode: modalStudent.code,
+      studentId: modalStudent.id,
       studentName: modalStudent.name,
       classId: currentClass.classId,
       classLabel: currentClass.label,
@@ -587,7 +591,7 @@ function BehaviorContent({ userName }: { userName: string }) {
                         <button
                           type="button"
                           onClick={() => {
-                            setModalStudent({ code: st.code, name: st.name, no: st.no, mode: 'add' });
+                            setModalStudent({ id: st.id, code: st.code, name: st.name, no: st.no, mode: 'add' });
                             setCustomPoints(5);
                             setCustomReason('');
                           }}
@@ -602,7 +606,7 @@ function BehaviorContent({ userName }: { userName: string }) {
                         <button
                           type="button"
                           onClick={() => {
-                            setModalStudent({ code: st.code, name: st.name, no: st.no, mode: 'deduct' });
+                            setModalStudent({ id: st.id, code: st.code, name: st.name, no: st.no, mode: 'deduct' });
                             setCustomPoints(5);
                             setCustomReason('');
                           }}

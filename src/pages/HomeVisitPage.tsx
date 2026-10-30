@@ -15,6 +15,7 @@ const STORAGE_HOME_VISIT_KEY = 'kmd_home_visits_v1';
 
 export interface HomeVisitRecord {
   studentCode: string;
+  studentId?: string;      // student_xxxx (records saved before this field have only studentCode)
   visited: boolean;
   visitDate: string;
   economicStatus: 'ปกติ' | 'ยากจน' | 'ยากจนพิเศษ (กสศ.)';
@@ -63,19 +64,21 @@ function HomeVisitContent() {
     [rosters, selectedClassId]
   );
 
-  const updateVisit = async (studentCode: string, patch: Partial<HomeVisitRecord>) => {
+  // A student nobody has visited yet starts as not visited with an empty note, so the
+  // printed report and the executive dashboard never count visits that did not happen
+  const updateVisit = async (studentCode: string, patch: Partial<HomeVisitRecord>, studentId?: string) => {
     const existing: HomeVisitRecord = records[studentCode] || {
       studentCode,
-      visited: true,
-      visitDate: new Date().toISOString().slice(0, 10),
+      visited: false,
+      visitDate: '',
       economicStatus: 'ปกติ',
       livingWith: 'บิดา-มารดา',
       scholarshipNeed: false,
       photoUrl: '',
-      note: 'ครอบครัวดูแลเอาใจใส่ดี',
+      note: '',
       updatedAt: Date.now(),
     };
-    const nextRec: HomeVisitRecord = { ...existing, ...patch, updatedAt: Date.now() };
+    const nextRec: HomeVisitRecord = { ...existing, ...patch, ...(studentId ? { studentId } : {}), updatedAt: Date.now() };
     const nextMap = { ...records, [studentCode]: nextRec };
     setRecords(nextMap);
     try { localStorage.setItem(STORAGE_HOME_VISIT_KEY, JSON.stringify(nextMap)); } catch { /* ignore */ }
@@ -97,7 +100,7 @@ function HomeVisitContent() {
         const rec = records[st.code];
         return [
           st.no, st.code, st.name, st.guardianName || '-', st.address || '-',
-          rec?.visited !== false ? 'เยี่ยมแล้ว' : 'รอเยี่ยม',
+          rec?.visited ? 'เยี่ยมแล้ว' : 'รอเยี่ยม',
           rec?.economicStatus || 'ปกติ',
           rec?.livingWith || 'บิดา-มารดา',
           rec?.scholarshipNeed ? 'ต้องการทุน' : '-',
@@ -113,7 +116,7 @@ function HomeVisitContent() {
     let visited = 0, poor = 0, needScholarship = 0;
     currentClass.students.forEach(st => {
       const r = records[st.code];
-      if (!r || r.visited !== false) visited += 1;
+      if (r?.visited) visited += 1;
       if (r?.economicStatus === 'ยากจน' || r?.economicStatus === 'ยากจนพิเศษ (กสศ.)') poor += 1;
       if (r?.scholarshipNeed) needScholarship += 1;
     });
@@ -192,6 +195,7 @@ function HomeVisitContent() {
                 <tr style={{ background: '#0F172A', color: 'white' }}>
                   <th style={{ padding: 10, width: 45 }}>ที่</th>
                   <th style={{ padding: 10, textAlign: 'left', width: 220 }}>ชื่อ-สกุล / ผู้ปกครอง & ที่อยู่ (DMC)</th>
+                  <th style={{ padding: 10, width: 120 }}>การเยี่ยมบ้าน</th>
                   <th style={{ padding: 10, width: 135 }}>สถานะเศรษฐกิจ</th>
                   <th style={{ padding: 10, width: 150 }}>อาศัยอยู่กับ</th>
                   <th style={{ padding: 10, width: 100 }}>ขอรับทุน</th>
@@ -202,13 +206,13 @@ function HomeVisitContent() {
                 {currentClass.students.map(st => {
                   const rec = records[st.code] || {
                     studentCode: st.code,
-                    visited: true,
+                    visited: false,
                     visitDate: '',
                     economicStatus: 'ปกติ',
                     livingWith: 'บิดา-มารดา',
                     scholarshipNeed: false,
                     photoUrl: '',
-                    note: 'ครอบครัวดูแลเอาใจใส่ดี',
+                    note: '',
                     updatedAt: 0,
                   };
                   return (
@@ -220,9 +224,24 @@ function HomeVisitContent() {
                         <div style={{ fontSize: '0.72rem', color: '#64748B' }}>📍 {st.address || '-'}</div>
                       </td>
                       <td style={{ padding: 10, textAlign: 'center' }}>
+                        <button
+                          onClick={() => updateVisit(st.code, rec.visited
+                            ? { visited: false, visitDate: '' }
+                            : { visited: true, visitDate: rec.visitDate || new Date().toISOString().slice(0, 10) }, st.id)}
+                          style={{ border: '1px solid #CBD5E1', borderRadius: 999, padding: '4px 10px', fontWeight: 800, cursor: 'pointer',
+                            background: rec.visited ? '#DCFCE7' : '#FFF', color: rec.visited ? '#166534' : '#64748B' }}
+                        >
+                          {rec.visited ? 'เยี่ยมแล้ว' : 'ยังไม่เยี่ยม'}
+                        </button>
+                        {rec.visited && (
+                          <input type="date" value={rec.visitDate || ''} onChange={e => updateVisit(st.code, { visitDate: e.target.value }, st.id)}
+                            style={{ marginTop: 4, fontSize: '0.72rem', border: '1px solid #CBD5E1', borderRadius: 6 }} />
+                        )}
+                      </td>
+                      <td style={{ padding: 10, textAlign: 'center' }}>
                         <select
                           value={rec.economicStatus}
-                          onChange={e => updateVisit(st.code, { economicStatus: e.target.value as any })}
+                          onChange={e => updateVisit(st.code, { economicStatus: e.target.value as any }, st.id)}
                           style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #CBD5E1', fontWeight: 700, fontSize: '0.78rem' }}
                         >
                           <option value="ปกติ">ปกติ</option>
@@ -233,7 +252,7 @@ function HomeVisitContent() {
                       <td style={{ padding: 10, textAlign: 'center' }}>
                         <select
                           value={rec.livingWith}
-                          onChange={e => updateVisit(st.code, { livingWith: e.target.value as any })}
+                          onChange={e => updateVisit(st.code, { livingWith: e.target.value as any }, st.id)}
                           style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid #CBD5E1', fontWeight: 700, fontSize: '0.78rem' }}
                         >
                           <option value="บิดา-มารดา">บิดา-มารดา</option>
@@ -244,7 +263,7 @@ function HomeVisitContent() {
                       <td style={{ padding: 10, textAlign: 'center' }}>
                         <button
                           type="button"
-                          onClick={() => updateVisit(st.code, { scholarshipNeed: !rec.scholarshipNeed })}
+                          onClick={() => updateVisit(st.code, { scholarshipNeed: !rec.scholarshipNeed }, st.id)}
                           style={{
                             padding: '5px 10px', borderRadius: 999, border: 'none', cursor: 'pointer',
                             fontWeight: 800, fontSize: '0.74rem',
@@ -266,14 +285,14 @@ function HomeVisitContent() {
                             <input
                               type="url"
                               value={rec.photoUrl}
-                              onChange={e => updateVisit(st.code, { photoUrl: e.target.value })}
+                              onChange={e => updateVisit(st.code, { photoUrl: e.target.value }, st.id)}
                               placeholder="วางลิงก์รูปถ่ายเยี่ยมบ้าน (Google Drive)..."
                               style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.76rem' }}
                             />
                             <input
                               type="text"
                               value={rec.note}
-                              onChange={e => updateVisit(st.code, { note: e.target.value })}
+                              onChange={e => updateVisit(st.code, { note: e.target.value }, st.id)}
                               placeholder="บันทึกสภาพครอบครัว..."
                               style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.76rem' }}
                             />

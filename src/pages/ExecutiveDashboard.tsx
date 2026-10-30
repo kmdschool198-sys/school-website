@@ -16,6 +16,7 @@ import { useAcademicData } from '../utils/academicStorage';
 import { calculateStudentGPA } from '../data/academicData';
 import { resolveSchoolDay } from '../data/schoolCalendar';
 import { bmiInterpretation } from '../utils/bmi';
+import { sameStudent } from '../utils/studentKey';
 import type { BehaviorLogEntry } from './BehaviorPage';
 import type { HomeVisitRecord } from './HomeVisitPage';
 import {
@@ -25,7 +26,7 @@ import {
 
 interface AttRecord { status: string; noMilk?: boolean; noBrush?: boolean; noLunch?: boolean }
 interface AttDoc { classId: string; date: string; records: Record<string, AttRecord> }
-interface BodyLog { studentId?: string; studentName?: string; bmi?: number; date?: string }
+interface BodyLog { studentId?: string; studentCode?: string; studentName?: string; bmi?: number; date?: string }
 
 const LOW_BEHAVIOR_SCORE = 80;   // ต่ำกว่านี้ต้องติดตาม (คะแนนเริ่มต้น 100)
 const LOW_GPA = 1.5;             // กลุ่มเสี่ยงด้านการเรียน
@@ -101,19 +102,15 @@ function Dashboard() {
   // ── ดูแลช่วยเหลือ ──
   const allStudents = useMemo(() => classes.flatMap(c => c.students.map(s => ({ ...s, classLabel: c.label }))), [classes]);
   const care = useMemo(() => {
-    const scoreOf = (code: string) => behaviorLogs.filter(l => l.studentCode === code)
+    const scoreOf = (s: { id: string; code?: string; name: string }) => behaviorLogs.filter(l => sameStudent(l, s))
       .reduce((n, l) => n + (l.type === 'add' ? l.points : -l.points), 100);
-    const lowBehavior = allStudents.map(s => ({ s, score: scoreOf(s.code) })).filter(x => x.score < LOW_BEHAVIOR_SCORE);
+    const lowBehavior = allStudents.map(s => ({ s, score: scoreOf(s) })).filter(x => x.score < LOW_BEHAVIOR_SCORE);
     const visitList = Object.values(visits);
     const visited = visitList.filter(v => v.visited).length;
     const poor = visitList.filter(v => v.economicStatus !== 'ปกติ').length;
     const scholarship = visitList.filter(v => v.scholarshipNeed).length;
-    const latestBmi = new Map<string, number>();
-    [...bodyLogs].sort((a, b) => (a.date || '').localeCompare(b.date || '')).forEach(l => {
-      const key = l.studentId || l.studentName || '';
-      if (key && l.bmi) latestBmi.set(key, l.bmi);
-    });
-    const bmiFlags = allStudents.map(s => ({ s, bmi: latestBmi.get(s.id) ?? latestBmi.get(s.name) ?? s.bmi }))
+    const sortedBody = [...bodyLogs].filter(l => l.bmi).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const bmiFlags = allStudents.map(s => ({ s, bmi: sortedBody.find(l => sameStudent(l, s))?.bmi ?? s.bmi }))
       .filter(x => x.bmi && bmiInterpretation(x.bmi) !== 'สมส่วน');
     return { lowBehavior, visited, poor, scholarship, bmiFlags };
   }, [allStudents, behaviorLogs, visits, bodyLogs]);

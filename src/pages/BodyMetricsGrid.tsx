@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { bmiInterpretation } from '../utils/bmi';
+import { sameStudent } from '../utils/studentKey';
 import { ChevronLeft, LogOut, Printer, Download, ClipboardPaste, Sparkles } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -18,7 +19,7 @@ const COLOR = '#EC4899';
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 
 interface Student { id: string; code?: string; name: string; emoji?: string; weight?: number; height?: number; bmi?: number; }
-interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; weight?: number; height?: number; bmi?: number; date?: string; }
+interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; studentCode?: string; weight?: number; height?: number; bmi?: number; date?: string; }
 type CsvPeriod = 'month' | 'year';
 type CsvScope = 'class' | 'all';
 
@@ -58,7 +59,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   // Find existing log entry for a student in this month (or fallback to DMC 1/2569 baseline weight/height)
   const matchesInClass = (l: LogEntry, s: Student, classLabel?: string) =>
     (l.classLabel === classLabel || !l.classLabel) &&
-    (l.studentId === s.id || (l.studentName && l.studentName.trim() === s.name.trim()));
+    sameStudent(l, s);
 
   const dmcFallbackEntry = (s: Student, classLabel?: string): LogEntry | undefined => {
     const dmc = findStudentDetails(studentDetails, s.code || s.id, s.name);

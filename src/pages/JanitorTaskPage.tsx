@@ -14,6 +14,7 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import { downloadCsvReport } from '../utils/csvReport';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION, DIRECTOR_NAME } from '../config/siteLinks';
 import { janitorDocId } from '../data/janitor';
+import { usePersonnel, personnelIdByName } from '../utils/usePersonnel';
 const STORAGE_JANITOR_KEY = 'kmd_janitor_tasks_v1';
 
 export type ComplianceStatus = 'ตามคำสั่งครบถ้วน' | 'ทำได้บางส่วน' | 'ไม่ตรงตามคำสั่ง' | 'รอตรวจประเมิน';
@@ -22,6 +23,7 @@ export interface JanitorDailyRecord {
   id: string;
   date: string;
   staffName: string;
+  staffId?: string;        // personnel doc id (older records have only the name)
   assignedBy: string;
   morningOrder: string;
   morningChecklist: string[];
@@ -126,6 +128,7 @@ function JanitorTaskContent({ userName }: { userName: string }) {
   // `janitor_<date>` for whoever was selected; they stay where they are and are still
   // read and updated for that staff member, so no existing data moves or is lost.
   const legacyDocId = `janitor_${date}`;
+  const supportPeople = usePersonnel('support');
   const docId = recordsMap[legacyDocId]?.staffName === selectedStaff
     ? legacyDocId
     : janitorDocId(date, selectedStaff);
@@ -161,6 +164,7 @@ function JanitorTaskContent({ userName }: { userName: string }) {
       ...patch,
       id: docId,
       date,
+      staffId: personnelIdByName(supportPeople, currentRecord.staffName) || currentRecord.staffId || '',
       updatedAt: Date.now(),
     };
     const updatedMap = { ...recordsMap, [docId]: next };

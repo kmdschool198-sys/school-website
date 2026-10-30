@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { bmiInterpretation } from '../utils/bmi';
+import { sameStudent } from '../utils/studentKey';
 import { ChevronLeft, Printer } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -47,14 +48,16 @@ function App() {
   const termMonths: number[] = term === 1 ? [5, 6, 7, 8, 9, 10] : [11, 12, 1, 2, 3, 4];
 
   // For each student × month → latest measurement (fallback to DMC baseline on first month of term)
-  const getMeasurement = (studentCode: string | undefined, studentName: string, classLabel: string, m: number) => {
+  const getMeasurement = (student: { id: string; code?: string; name: string }, classLabel: string, m: number) => {
+    const studentCode = student.code;
+    const studentName = student.name;
     const ceYear = year - 543;
     const effectiveYear = (term === 2 && m <= 4) ? ceYear + 1 : ceYear;
     const monthStr = String(m).padStart(2, '0');
     const yrStr = String(effectiveYear);
     const matches = logs.filter(l =>
       (l.classLabel === classLabel || !l.classLabel) &&
-      (l.studentName === studentName || (l.studentName && studentName.includes(l.studentName.slice(-15)))) &&
+      sameStudent(l, student) &&
       l.date && l.date.startsWith(`${yrStr}-${monthStr}`)
     );
     if (matches.length > 0) {
@@ -139,7 +142,7 @@ function App() {
               const dmc = findStudentDetails(studentDetails, s.code, s.name);
               let latestBmi = s.bmi ?? dmc?.bmi;
               termMonths.forEach(m => {
-                const mes = getMeasurement(s.code, s.name, current?.label || '', m);
+                const mes = getMeasurement(s, current?.label || '', m);
                 if (mes.bmi) latestBmi = mes.bmi;
                 else if (mes.weight && mes.height) {
                   latestBmi = Math.round((Number(mes.weight) / Math.pow(Number(mes.height) / 100, 2)) * 10) / 10;
@@ -152,7 +155,7 @@ function App() {
                   <td style={td}>{s.code || '-'}</td>
                   <td style={{ ...td, textAlign: 'left', paddingLeft: 6 }}>{s.name}</td>
                   {termMonths.map(m => {
-                    const mes = getMeasurement(s.code, s.name, current?.label || '', m);
+                    const mes = getMeasurement(s, current?.label || '', m);
                     return [
                       <td key={`w${m}`} style={td}>{mes.weight || ''}</td>,
                       <td key={`h${m}`} style={td}>{mes.height || ''}</td>,

@@ -249,7 +249,9 @@ school-website/
 | รหัสนักเรียน | `student_3206` / เลขประจำตัว `3206` | `src/data/dmcStudentMaster.ts` + `config/attendance_classes` | เช็คชื่อ (`records[studentId]`), ข้อมูลส่วนบุคคล, น้ำหนัก, ออมเงิน, ความประพฤติ, เยี่ยมบ้าน, ผลการเรียน |
 | รหัสห้อง | `p1_1`, `kg_a2_1`, `m1_1` | `DMC_CLASS_METADATA` | เอกสาร `attendance`, `homeroom` (`{classId}_{date}`) |
 | วันที่ | `YYYY-MM-DD` | ทุกระบบ | วันเปิด-ปิดตัดสินด้วย `resolveSchoolDay()` จาก `activities` + `school_calendar` (hook `useSchoolDays`) |
-| บุคลากร | ชื่อเต็มใน `personnel.name` (`category`) | หน้าจัดการระบบ | ครูประจำชั้น, นักการ (`support`), ผู้จัดเวร |
+| บุคลากร | รหัสเอกสาร `personnel/{id}` (และชื่อใน `personnel.name`) | หน้าจัดการระบบ | การลา (`teacherId`, `substituteId`), อบรม (`teacherId`), งานนักการ (`staffId`), ตารางเวร (`slot.staffId`) |
+
+**วิธีจับคู่ (ใช้ร่วมกันทุกหน้า):** นักเรียน → `sameStudent()` ใน `src/utils/studentKey.ts` (รหัส `student_xxxx` ก่อน → เลขประจำตัว → ชื่อที่ตัดคำนำหน้าแล้ว) · บุคลากร → `samePerson()` / `personnelIdByName()` ใน `src/utils/usePersonnel.ts` (รหัสก่อน → ชื่อ) บันทึกใหม่ทุกชนิดเก็บรหัสไว้คู่กับชื่อ บันทึกเก่าที่มีแต่ชื่อยังอ่านได้ตามเดิม
 
 **กติกาข้อมูล:** แก้โครงสร้างได้แบบเพิ่มเท่านั้น (เพิ่มฟิลด์/เอกสารใหม่ และอ่านรูปแบบเดิมต่อ) **ห้ามลบหรือย้ายข้อมูลจริงที่ใช้อยู่** ก่อนปรับโครงสร้างให้รัน `npm run backup:firestore` (อ่านอย่างเดียว เก็บไว้ที่ `private/backups/`) และเมื่อหลายหน้าบันทึกลงเอกสารเดียวกัน (เช่น `attendance` ที่เช็คชื่อ/อาหาร/เวร ใช้ร่วมกัน) ต้องเก็บฟิลด์ของหน้าอื่นไว้เสมอ
 

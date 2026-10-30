@@ -3,12 +3,13 @@
 // (written by /janitor-tasks). Both printouts use the shared official layout.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { CalendarClock, Plus, Printer, Save, Trash2, Wrench } from 'lucide-react';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { useTeacherAuth } from '../utils/teacherAuth';
+import { usePersonnel, personnelIdByName, samePerson, type PersonnelRef } from '../utils/usePersonnel';
 import { useSchoolDays } from '../utils/useSchoolDays';
 import { resolveSchoolDay } from '../data/schoolCalendar';
 import {
@@ -53,7 +54,8 @@ function slotText(s: DutySlot) {
 function JanitorDuty({ userName }: { userName: string }) {
   const [tab, setTab] = useState<Tab>('roster');
   const [month, setMonth] = useState(thisMonth());
-  const [staffList, setStaffList] = useState<string[]>([]);
+  const people = usePersonnel('support');
+  const staffList = useMemo(() => people.map(p => p.name), [people]);
   const [roster, setRoster] = useState<JanitorRoster>(EMPTY_ROSTER);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -63,17 +65,7 @@ function JanitorDuty({ userName }: { userName: string }) {
   const { holidays, schoolDays } = useSchoolDays();
 
   // สายสนับสนุนจากทะเบียนบุคลากร (personnel.category === 'support')
-  useEffect(() => {
-    return onSnapshot(query(collection(db, 'personnel'), orderBy('order', 'asc')), snap => {
-      const names: string[] = [];
-      snap.forEach(d => {
-        const p = d.data() as { category?: string; name?: string };
-        if (p.category === 'support' && p.name) names.push(p.name);
-      });
-      setStaffList(names);
-      setReportStaff(prev => prev || names[0] || '');
-    });
-  }, []);
+  useEffect(() => { setReportStaff(prev => prev || staffList[0] || ''); }, [staffList]);
 
   useEffect(() => {
     return onSnapshot(doc(db, 'config', 'janitor_roster'), snap => {
@@ -108,7 +100,7 @@ function JanitorDuty({ userName }: { userName: string }) {
   };
 
   const addSlot = (key: string, kind: 'weekly' | 'overrides', slot: DutySlot) => {
-    const list = [...(roster[kind][key] || []), slot];
+    const list = [...(roster[kind][key] || []), { ...slot, staffId: personnelIdByName(people, slot.staff) }];
     edit({ ...roster, [kind]: { ...roster[kind], [key]: list } });
   };
   const removeSlot = (key: string, kind: 'weekly' | 'overrides', idx: number) => {
@@ -225,7 +217,7 @@ function JanitorDuty({ userName }: { userName: string }) {
               {staffList.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-          <MonthlyReport staff={reportStaff} dates={dates} monthLabel={monthLabel} roster={roster}
+          <MonthlyReport staff={reportStaff} person={people.find(p => p.name === reportStaff)} dates={dates} monthLabel={monthLabel} roster={roster}
             records={records} holidays={holidays} schoolDays={schoolDays} />
         </>
       )}
@@ -235,8 +227,9 @@ function JanitorDuty({ userName }: { userName: string }) {
   );
 }
 
-function MonthlyReport({ staff, dates, monthLabel, roster, records, holidays, schoolDays }: {
+function MonthlyReport({ staff, person, dates, monthLabel, roster, records, holidays, schoolDays }: {
   staff: string;
+  person?: PersonnelRef;
   dates: string[];
   monthLabel: string;
   roster: JanitorRoster;
@@ -246,14 +239,18 @@ function MonthlyReport({ staff, dates, monthLabel, roster, records, holidays, sc
 }) {
   const byDate = useMemo(() => {
     const map: Record<string, JanitorDailyRecord> = {};
-    records.filter(r => r.staffName === staff).forEach(r => { map[r.date] = r; });
+    // match by personnel id when the record has one, else by name (records before ids)
+    const mine = (r: { staffId?: string; staffName?: string }) => person
+      ? samePerson({ id: r.staffId, name: r.staffName }, person)
+      : r.staffName === staff;
+    records.filter(mine).forEach(r => { map[r.date] = r; });
     return map;
-  }, [records, staff]);
+  }, [records, staff, person]);
 
   let workDays = 0, recorded = 0, complete = 0;
   const rows = dates.map(d => {
     const day = resolveSchoolDay(d, schoolDays, holidays);
-    const duty = dutiesForDate(roster, d).filter(s => s.staff === staff);
+    const duty = dutiesForDate(roster, d).filter(s => person ? samePerson({ id: s.staffId, name: s.staff }, person) : s.staff === staff);
     const rec = byDate[d];
     if (day.open || duty.length) workDays++;
     if (rec) recorded++;

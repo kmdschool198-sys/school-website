@@ -307,3 +307,24 @@ test('Suite 5: Attendance Statistics & Aggregation', async (t) => {
     assert.strictEqual(rate, 55.0);
   });
 });
+
+// -------------------------------------------------------------
+// Test Suite 6: Linking records to students
+// -------------------------------------------------------------
+test('Suite 6: Student record matching', async (t) => {
+  const { sameStudent, normalizeThaiName } = await import('../src/utils/studentKey.ts');
+  const s = { id: 'student_3206', code: '3206', name: 'เด็กชายสมชาย ใจดี' };
+
+  await t.test('roster id wins when the record has one', () => {
+    assert.equal(sameStudent({ studentId: 'student_3206', studentName: 'คนอื่น' }, s), true);
+    assert.equal(sameStudent({ studentId: 'student_9999', studentCode: '3206' }, s), false);
+  });
+
+  await t.test('older records fall back to code, then to name with prefix changes', () => {
+    assert.equal(sameStudent({ studentCode: '3206' }, s), true);
+    assert.equal(sameStudent({ studentCode: 'student_3206' }, s), true);
+    assert.equal(sameStudent({ studentName: 'นายสมชาย  ใจดี' }, s), true);
+    assert.equal(sameStudent({ studentName: 'เด็กชายสมชาย ใจร้าย' }, s), false);
+    assert.equal(normalizeThaiName('ด.ญ. สมหญิง  รักเรียน'), 'สมหญิงรักเรียน');
+  });
+});

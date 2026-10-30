@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
+import { usePersonnel, personnelIdByName } from '../utils/usePersonnel';
 import { ChevronLeft, LogOut, Plus, Trash2, Edit2, Save, X, Award, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -12,6 +13,7 @@ const BRAND = '#FF6A01';
 interface TrainingRecord {
   id: string;
   teacherName: string;
+  teacherId?: string;       // personnel doc id (older records have only the name)
   topic: string;            // หัวข้อการอบรม
   organizer: string;        // หน่วยงานจัดการอบรม
   startDate: string;
@@ -38,6 +40,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const [items, setItems] = useState<TrainingRecord[]>([]);
   const [editing, setEditing] = useState<TrainingRecord | null>(null);
   const [filter, setFilter] = useState<string>('');
+  const people = usePersonnel();
   const [yearFilter, setYearFilter] = useState<string>('');
 
   useEffect(() => {
@@ -66,17 +69,19 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
     const map: Record<string, { name: string; totalHours: number; count: number; paHours: number }> = {};
     filtered.forEach(item => {
       if (!item.teacherName) return;
-      if (!map[item.teacherName]) {
-        map[item.teacherName] = { name: item.teacherName, totalHours: 0, count: 0, paHours: 0 };
+      // One row per person: the personnel id when the record has it, so spelling variants add up
+      const key = item.teacherId || personnelIdByName(people, item.teacherName) || item.teacherName;
+      if (!map[key]) {
+        map[key] = { name: item.teacherName, totalHours: 0, count: 0, paHours: 0 };
       }
-      map[item.teacherName].totalHours += Number(item.hours) || 0;
-      map[item.teacherName].count += 1;
+      map[key].totalHours += Number(item.hours) || 0;
+      map[key].count += 1;
       if (item.category === 'PA' || item.category === 'วPA' || item.category === 'พัฒนาวิชาชีพ') {
-        map[item.teacherName].paHours += Number(item.hours) || 0;
+        map[key].paHours += Number(item.hours) || 0;
       }
     });
     return Object.values(map).sort((a, b) => b.totalHours - a.totalHours);
-  }, [filtered]);
+  }, [filtered, people]);
 
   const create = () => {
     const today = todayStr();
@@ -89,7 +94,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
   const save = async (t: TrainingRecord) => {
     try {
-      const clean: any = { ...t };
+      const clean: any = { ...t, teacherId: personnelIdByName(people, t.teacherName) || t.teacherId || '' };
       if (!clean.certificateUrl) delete clean.certificateUrl;
       if (!clean.note) delete clean.note;
       if (!clean.budget) delete clean.budget;
@@ -235,6 +240,9 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           </div>
         )}
 
+        <datalist id="personnel-names">
+          {people.map(p => <option key={p.id} value={p.name}>{p.position || ''}</option>)}
+        </datalist>
         {editing && <Editor item={editing} onSave={save} onCancel={() => setEditing(null)} />}
       </main>
     </div>
@@ -251,7 +259,7 @@ function Editor({ item, onSave, onCancel }: { item: TrainingRecord; onSave: (t: 
           <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-          <div><label style={lbl}>ชื่อครู *</label><input value={t.teacherName} onChange={e => setT({ ...t, teacherName: e.target.value })} style={inp} /></div>
+          <div><label style={lbl}>ชื่อครู *</label><input list="personnel-names" value={t.teacherName} onChange={e => setT({ ...t, teacherName: e.target.value })} style={inp} /></div>
           <div><label style={lbl}>ประเภท</label>
             <select value={t.category} onChange={e => setT({ ...t, category: e.target.value as any })} style={inp}>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}

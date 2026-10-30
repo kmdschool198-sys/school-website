@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
+import { usePersonnel, personnelIdByName } from '../utils/usePersonnel';
 import { ChevronLeft, LogOut, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 import { useTeacherAuth, type Role } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -12,6 +13,7 @@ const BRAND = '#FF6A01';
 interface LeaveRequest {
   id: string;
   teacherName: string;       // ผู้ขอลา
+  teacherId?: string;        // personnel doc id (older leave records have only the name)
   position: string;          // ตำแหน่ง
   type: 'ลาป่วย' | 'ลากิจ' | 'ลาคลอด' | 'ลาพักผ่อน' | 'อื่น ๆ';
   startDate: string;         // YYYY-MM-DD
@@ -20,6 +22,7 @@ interface LeaveRequest {
   reason: string;
   contact: string;
   substitute?: string;       // ผู้สอนแทน
+  substituteId?: string;
   status: 'รออนุมัติ' | 'อนุมัติ' | 'ไม่อนุมัติ';
   approverNote?: string;
   createdAt: number;
@@ -38,6 +41,7 @@ function App({ role, userName, onLogout }: { role: Role; userName: string; onLog
   const [items, setItems] = useState<LeaveRequest[]>([]);
   const [editing, setEditing] = useState<LeaveRequest | null>(null);
   const isSuper = role === 'owner' || role === 'super' || role === 'admin';
+  const people = usePersonnel();
 
   useEffect(() => {
     return onSnapshot(query(collection(db, 'teacher_leaves'), orderBy('createdAt', 'desc')), snap => {
@@ -59,7 +63,10 @@ function App({ role, userName, onLogout }: { role: Role; userName: string; onLog
   const save = async (l: LeaveRequest) => {
     try {
       const days = computeDays(l.startDate, l.endDate);
-      await setDoc(doc(db, 'teacher_leaves', l.id), { ...l, days });
+      // Link the typed names to the personnel register so leave follows the person, not the spelling
+      const teacherId = personnelIdByName(people, l.teacherName) || l.teacherId || '';
+      const substituteId = personnelIdByName(people, l.substitute) || l.substituteId || '';
+      await setDoc(doc(db, 'teacher_leaves', l.id), { ...l, days, teacherId, substituteId });
       setEditing(null);
     } catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };
@@ -126,6 +133,9 @@ function App({ role, userName, onLogout }: { role: Role; userName: string; onLog
           </div>
         )}
 
+        <datalist id="personnel-names">
+          {people.map(p => <option key={p.id} value={p.name}>{p.position || ''}</option>)}
+        </datalist>
         {editing && <Editor item={editing} onSave={save} onCancel={() => setEditing(null)} />}
       </main>
     </div>
@@ -203,7 +213,7 @@ function Editor({ item, onSave, onCancel }: { item: LeaveRequest; onSave: (l: Le
           <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-          <div><label style={lbl}>ชื่อ-สกุล *</label><input value={l.teacherName} onChange={e => setL({ ...l, teacherName: e.target.value })} style={inp} /></div>
+          <div><label style={lbl}>ชื่อ-สกุล *</label><input list="personnel-names" value={l.teacherName} onChange={e => setL({ ...l, teacherName: e.target.value })} style={inp} /></div>
           <div><label style={lbl}>ตำแหน่ง</label><input value={l.position} onChange={e => setL({ ...l, position: e.target.value })} placeholder="เช่น ครู คศ.1" style={inp} /></div>
           <div><label style={lbl}>ประเภทการลา</label>
             <select value={l.type} onChange={e => setL({ ...l, type: e.target.value as any })} style={inp}>
@@ -222,7 +232,7 @@ function Editor({ item, onSave, onCancel }: { item: LeaveRequest; onSave: (l: Le
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={lbl}>ครูผู้สอนแทน</label>
-            <input value={l.substitute || ''} onChange={e => setL({ ...l, substitute: e.target.value })} placeholder="ชื่อครูผู้สอนแทนระหว่างลา" style={inp} />
+            <input list="personnel-names" value={l.substitute || ''} onChange={e => setL({ ...l, substitute: e.target.value })} placeholder="ชื่อครูผู้สอนแทนระหว่างลา" style={inp} />
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>

@@ -12,6 +12,7 @@ export const DUTY_SHIFTS: DutyShift[] = ['เช้า', 'บ่าย', 'เว
 export interface DutySlot {
   shift: DutyShift;
   staff: string;
+  staffId?: string;  // personnel doc id
   area: string;      // พื้นที่/งานที่รับผิดชอบ
   note?: string;
 }
