@@ -495,6 +495,13 @@ activities (ที่มี isHoliday: true)
 | `scripts/import_clubs.cjs` | นำเข้าชุมนุมจาก Google Sheets — มีระบบจับคู่ชื่อไทยแบบยืดหยุ่น (Levenshtein distance) รองรับการสะกดต่างเล็กน้อย |
 | `scripts/setup_staff_auth.mjs` | สร้างบัญชีครูและกำหนดสิทธิ์ (`npm run setup:staff-auth`) |
 | `scripts/pdpa_retention_review.mjs` | ทบทวนระยะเวลาเก็บข้อมูลตาม PDPA (`npm run pdpa:retention-review`) |
+| `scripts/backup_firestore.mjs` | สำรองทุกคอลเลกชันลง `private/backups/` อ่านอย่างเดียว (`npm run backup:firestore`) — รันก่อนแก้ข้อมูลทุกครั้ง |
+| `scripts/upload_student_details.mjs` | อัปโหลดข้อมูลส่วนบุคคลนักเรียน DMC เข้า `student_details` (`npm run upload:student-details -- --write`) |
+| `scripts/backfill_links.mjs` | เติมช่องเชื่อมที่ว่าง (เลขประจำตัวในรายชื่อ, `studentId` ในบันทึก) ไม่ทับค่าที่มีอยู่ (`npm run backfill:links`) |
+| `scripts/parse_school_calendar.py` + `import_school_calendar.mjs` | อ่านไฟล์ปฏิทินโรงเรียน (.xlsx) แล้วเพิ่มวันเปิด/ปิดลง `school_calendar` ไม่แตะวันที่ครูกดไว้แล้ว (`npm run import:calendar`) |
+| `scripts/parse_porpor5.py` + `apply_porpor5_scores.py` | อ่านคะแนนจากไฟล์ ปพ.5 ของครู แล้วแก้คะแนนใน `src/data/academicData.ts` โดยจับคู่ด้วยเลขประจำตัว |
+
+ทุกสคริปต์ที่เขียนข้อมูลรันแบบทดลอง (dry run) ก่อนเสมอ ต้องเติม `--write` จึงจะบันทึกจริง ไฟล์ข้อมูลกลางทางเก็บใน `private/` ซึ่งไม่ขึ้น git
 
 ---
 

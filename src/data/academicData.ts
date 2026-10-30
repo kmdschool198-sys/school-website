@@ -7312,10 +7312,10 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 60,
-            "finalExam": 18,
-            "total": 78,
-            "grade": "3.5",
+            "coursework": 67,
+            "finalExam": 25,
+            "total": 92,
+            "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
@@ -7449,27 +7449,27 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 67,
-            "finalExam": 23,
-            "total": 90,
+            "coursework": 68,
+            "finalExam": 26,
+            "total": 94,
             "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21103": {
-            "coursework": 67,
-            "finalExam": 25,
-            "total": 92,
+            "coursework": 68,
+            "finalExam": 26,
+            "total": 94,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21104": {
-            "coursework": 67,
-            "finalExam": 25,
-            "total": 92,
+            "coursework": 68,
+            "finalExam": 26,
+            "total": 94,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -7586,28 +7586,28 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ง21201": {
-            "coursework": 53,
+            "coursework": 58,
             "finalExam": 18,
-            "total": 71,
-            "grade": "3",
+            "total": 76,
+            "grade": "3.5",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 2
           },
           "ว21103": {
-            "coursework": 68,
-            "finalExam": 26,
-            "total": 94,
-            "grade": "4",
+            "coursework": 55,
+            "finalExam": 9,
+            "total": 64,
+            "grade": "2",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 2
           },
           "ว21104": {
-            "coursework": 68,
-            "finalExam": 26,
-            "total": 94,
-            "grade": "4",
+            "coursework": 55,
+            "finalExam": 9,
+            "total": 64,
+            "grade": "2",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 2
@@ -7723,28 +7723,28 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 70,
-            "finalExam": 26,
-            "total": 96,
+            "coursework": 69,
+            "finalExam": 28,
+            "total": 97,
             "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21103": {
-            "coursework": 55,
-            "finalExam": 9,
-            "total": 64,
-            "grade": "2",
+            "coursework": 66,
+            "finalExam": 28,
+            "total": 94,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21104": {
-            "coursework": 55,
-            "finalExam": 9,
-            "total": 64,
-            "grade": "2",
+            "coursework": 65,
+            "finalExam": 28,
+            "total": 93,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -7860,28 +7860,28 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ง21201": {
-            "coursework": 44,
-            "finalExam": 16,
-            "total": 60,
-            "grade": "2",
+            "coursework": 61,
+            "finalExam": 20,
+            "total": 81,
+            "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 2
           },
           "ว21103": {
-            "coursework": 66,
-            "finalExam": 28,
-            "total": 94,
-            "grade": "4",
+            "coursework": 57,
+            "finalExam": 10,
+            "total": 67,
+            "grade": "2.5",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 2
           },
           "ว21104": {
-            "coursework": 65,
-            "finalExam": 28,
-            "total": 93,
-            "grade": "4",
+            "coursework": 58,
+            "finalExam": 10,
+            "total": 68,
+            "grade": "2.5",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 2
@@ -7997,8 +7997,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 61,
-            "finalExam": 23,
+            "coursework": 62,
+            "finalExam": 22,
             "total": 84,
             "grade": "4",
             "attendedHours": 40,
@@ -8006,19 +8006,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว21103": {
-            "coursework": 57,
-            "finalExam": 10,
-            "total": 67,
-            "grade": "2.5",
+            "coursework": 58,
+            "finalExam": 16,
+            "total": 74,
+            "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21104": {
             "coursework": 58,
-            "finalExam": 10,
-            "total": 68,
-            "grade": "2.5",
+            "finalExam": 16,
+            "total": 74,
+            "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -8134,28 +8134,28 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 64,
-            "finalExam": 21,
-            "total": 85,
+            "coursework": 69,
+            "finalExam": 28,
+            "total": 97,
             "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21103": {
-            "coursework": 58,
-            "finalExam": 16,
-            "total": 74,
-            "grade": "3",
+            "coursework": 69,
+            "finalExam": 28,
+            "total": 97,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21104": {
-            "coursework": 58,
-            "finalExam": 16,
-            "total": 74,
-            "grade": "3",
+            "coursework": 69,
+            "finalExam": 28,
+            "total": 97,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -8271,9 +8271,9 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 62,
-            "finalExam": 26,
-            "total": 88,
+            "coursework": 69,
+            "finalExam": 28,
+            "total": 97,
             "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
@@ -8408,9 +8408,9 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 67,
-            "finalExam": 26,
-            "total": 93,
+            "coursework": 69,
+            "finalExam": 27,
+            "total": 96,
             "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
@@ -8418,8 +8418,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
           },
           "ว21103": {
             "coursework": 69,
-            "finalExam": 28,
-            "total": 97,
+            "finalExam": 27,
+            "total": 96,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -8427,8 +8427,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
           },
           "ว21104": {
             "coursework": 69,
-            "finalExam": 28,
-            "total": 97,
+            "finalExam": 27,
+            "total": 96,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -8545,8 +8545,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 63,
-            "finalExam": 27,
+            "coursework": 66,
+            "finalExam": 24,
             "total": 90,
             "grade": "4",
             "attendedHours": 40,
@@ -8554,18 +8554,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว21103": {
-            "coursework": 69,
-            "finalExam": 27,
-            "total": 96,
+            "coursework": 66,
+            "finalExam": 23,
+            "total": 89,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21104": {
-            "coursework": 69,
-            "finalExam": 27,
-            "total": 96,
+            "coursework": 66,
+            "finalExam": 23,
+            "total": 89,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -8682,27 +8682,27 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 52,
-            "finalExam": 19,
-            "total": 71,
-            "grade": "3",
+            "coursework": 68,
+            "finalExam": 25,
+            "total": 93,
+            "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21103": {
-            "coursework": 66,
-            "finalExam": 23,
-            "total": 89,
+            "coursework": 67,
+            "finalExam": 25,
+            "total": 92,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21104": {
-            "coursework": 66,
-            "finalExam": 23,
-            "total": 89,
+            "coursework": 67,
+            "finalExam": 25,
+            "total": 92,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -8819,27 +8819,27 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง21201": {
-            "coursework": 70,
-            "finalExam": 26,
-            "total": 96,
+            "coursework": 69,
+            "finalExam": 28,
+            "total": 97,
             "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21103": {
-            "coursework": 67,
-            "finalExam": 25,
-            "total": 92,
+            "coursework": 69,
+            "finalExam": 28,
+            "total": 97,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว21104": {
-            "coursework": 67,
-            "finalExam": 25,
-            "total": 92,
+            "coursework": 69,
+            "finalExam": 28,
+            "total": 97,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -9224,9 +9224,9 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ง22101": {
-            "coursework": 54,
+            "coursework": 56,
             "finalExam": 30,
-            "total": 84,
+            "total": 86,
             "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
@@ -9269,18 +9269,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว22103": {
-            "coursework": 54,
+            "coursework": 56,
             "finalExam": 30,
-            "total": 84,
+            "total": 86,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว22104": {
-            "coursework": 54,
+            "coursework": 56,
             "finalExam": 30,
-            "total": 84,
+            "total": 86,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -9498,10 +9498,10 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง22101": {
-            "coursework": 56,
-            "finalExam": 30,
-            "total": 86,
-            "grade": "4",
+            "coursework": 50,
+            "finalExam": 22,
+            "total": 72,
+            "grade": "3",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
@@ -9543,19 +9543,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว22103": {
-            "coursework": 56,
-            "finalExam": 30,
-            "total": 86,
-            "grade": "4",
+            "coursework": 50,
+            "finalExam": 22,
+            "total": 72,
+            "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว22104": {
-            "coursework": 56,
-            "finalExam": 30,
-            "total": 86,
-            "grade": "4",
+            "coursework": 50,
+            "finalExam": 22,
+            "total": 72,
+            "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -9635,9 +9635,9 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง22101": {
-            "coursework": 50,
-            "finalExam": 22,
-            "total": 72,
+            "coursework": 49,
+            "finalExam": 21,
+            "total": 70,
             "grade": "3",
             "attendedHours": 40,
             "traitScore": 3,
@@ -9680,18 +9680,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว22103": {
-            "coursework": 50,
-            "finalExam": 22,
-            "total": 72,
+            "coursework": 49,
+            "finalExam": 21,
+            "total": 70,
             "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว22104": {
-            "coursework": 50,
-            "finalExam": 22,
-            "total": 72,
+            "coursework": 49,
+            "finalExam": 21,
+            "total": 70,
             "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
@@ -9773,8 +9773,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
           },
           "ง22101": {
             "coursework": 49,
-            "finalExam": 21,
-            "total": 70,
+            "finalExam": 22,
+            "total": 71,
             "grade": "3",
             "attendedHours": 40,
             "traitScore": 3,
@@ -9818,8 +9818,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
           },
           "ว22103": {
             "coursework": 49,
-            "finalExam": 21,
-            "total": 70,
+            "finalExam": 22,
+            "total": 71,
             "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
@@ -9827,8 +9827,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
           },
           "ว22104": {
             "coursework": 49,
-            "finalExam": 21,
-            "total": 70,
+            "finalExam": 22,
+            "total": 71,
             "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
@@ -9909,10 +9909,10 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง22101": {
-            "coursework": 49,
-            "finalExam": 22,
-            "total": 71,
-            "grade": "3",
+            "coursework": 55,
+            "finalExam": 30,
+            "total": 85,
+            "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 2
@@ -9954,19 +9954,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว22103": {
-            "coursework": 49,
-            "finalExam": 22,
-            "total": 71,
-            "grade": "3",
+            "coursework": 55,
+            "finalExam": 30,
+            "total": 85,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 2
           },
           "ว22104": {
-            "coursework": 49,
-            "finalExam": 22,
-            "total": 71,
-            "grade": "3",
+            "coursework": 55,
+            "finalExam": 30,
+            "total": 85,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 2
@@ -10046,10 +10046,10 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง22101": {
-            "coursework": 55,
-            "finalExam": 30,
-            "total": 85,
-            "grade": "4",
+            "coursework": 47,
+            "finalExam": 23,
+            "total": 70,
+            "grade": "3",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
@@ -10091,19 +10091,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว22103": {
-            "coursework": 55,
-            "finalExam": 30,
-            "total": 85,
-            "grade": "4",
+            "coursework": 47,
+            "finalExam": 23,
+            "total": 70,
+            "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว22104": {
-            "coursework": 55,
-            "finalExam": 30,
-            "total": 85,
-            "grade": "4",
+            "coursework": 47,
+            "finalExam": 23,
+            "total": 70,
+            "grade": "3",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -10183,8 +10183,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง22101": {
-            "coursework": 47,
-            "finalExam": 23,
+            "coursework": 49,
+            "finalExam": 21,
             "total": 70,
             "grade": "3",
             "attendedHours": 40,
@@ -10228,8 +10228,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว22103": {
-            "coursework": 47,
-            "finalExam": 23,
+            "coursework": 49,
+            "finalExam": 21,
             "total": 70,
             "grade": "3",
             "attendedHours": 20,
@@ -10237,8 +10237,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว22104": {
-            "coursework": 47,
-            "finalExam": 23,
+            "coursework": 49,
+            "finalExam": 21,
             "total": 70,
             "grade": "3",
             "attendedHours": 20,
@@ -10320,10 +10320,10 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง22101": {
-            "coursework": 49,
-            "finalExam": 21,
-            "total": 70,
-            "grade": "3",
+            "coursework": 58,
+            "finalExam": 18,
+            "total": 76,
+            "grade": "3.5",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 2
@@ -10365,19 +10365,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว22103": {
-            "coursework": 49,
-            "finalExam": 21,
-            "total": 70,
-            "grade": "3",
+            "coursework": 58,
+            "finalExam": 18,
+            "total": 76,
+            "grade": "3.5",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 2
           },
           "ว22104": {
-            "coursework": 49,
-            "finalExam": 21,
-            "total": 70,
-            "grade": "3",
+            "coursework": 58,
+            "finalExam": 18,
+            "total": 76,
+            "grade": "3.5",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 2
@@ -10457,10 +10457,10 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง22101": {
-            "coursework": 58,
-            "finalExam": 18,
-            "total": 76,
-            "grade": "3.5",
+            "coursework": 61,
+            "finalExam": 30,
+            "total": 91,
+            "grade": "4",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
@@ -10502,19 +10502,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว22103": {
-            "coursework": 58,
-            "finalExam": 18,
-            "total": 76,
-            "grade": "3.5",
+            "coursework": 61,
+            "finalExam": 30,
+            "total": 91,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว22104": {
-            "coursework": 58,
-            "finalExam": 18,
-            "total": 76,
-            "grade": "3.5",
+            "coursework": 61,
+            "finalExam": 30,
+            "total": 91,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -10731,10 +10731,10 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ง22101": {
-            "coursework": 61,
-            "finalExam": 30,
-            "total": 91,
-            "grade": "4",
+            "coursework": 40,
+            "finalExam": 20,
+            "total": 60,
+            "grade": "2",
             "attendedHours": 40,
             "traitScore": 3,
             "readThinkScore": 3
@@ -10776,19 +10776,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว22103": {
-            "coursework": 61,
-            "finalExam": 30,
-            "total": 91,
-            "grade": "4",
+            "coursework": 40,
+            "finalExam": 20,
+            "total": 60,
+            "grade": "2",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว22104": {
-            "coursework": 61,
-            "finalExam": 30,
-            "total": 91,
-            "grade": "4",
+            "coursework": 40,
+            "finalExam": 20,
+            "total": 60,
+            "grade": "2",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -10868,8 +10868,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ง22101": {
-            "coursework": 40,
-            "finalExam": 20,
+            "coursework": 42,
+            "finalExam": 18,
             "total": 60,
             "grade": "2",
             "attendedHours": 40,
@@ -10913,8 +10913,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว22103": {
-            "coursework": 40,
-            "finalExam": 20,
+            "coursework": 42,
+            "finalExam": 18,
             "total": 60,
             "grade": "2",
             "attendedHours": 20,
@@ -10922,8 +10922,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว22104": {
-            "coursework": 40,
-            "finalExam": 20,
+            "coursework": 42,
+            "finalExam": 18,
             "total": 60,
             "grade": "2",
             "attendedHours": 20,
@@ -11355,8 +11355,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว23103": {
-            "coursework": 45,
-            "finalExam": 6,
+            "coursework": 47,
+            "finalExam": 4,
             "total": 51,
             "grade": "1",
             "attendedHours": 20,
@@ -11364,8 +11364,8 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว23104": {
-            "coursework": 45,
-            "finalExam": 6,
+            "coursework": 47,
+            "finalExam": 4,
             "total": 51,
             "grade": "1",
             "attendedHours": 20,
@@ -11492,19 +11492,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 47,
-            "finalExam": 4,
-            "total": 51,
-            "grade": "1",
+            "coursework": 55,
+            "finalExam": 20,
+            "total": 75,
+            "grade": "3.5",
             "attendedHours": 20,
             "traitScore": 2,
             "readThinkScore": 2
           },
           "ว23104": {
-            "coursework": 47,
-            "finalExam": 4,
-            "total": 51,
-            "grade": "1",
+            "coursework": 55,
+            "finalExam": 20,
+            "total": 75,
+            "grade": "3.5",
             "attendedHours": 20,
             "traitScore": 2,
             "readThinkScore": 2
@@ -11629,19 +11629,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 55,
-            "finalExam": 20,
-            "total": 75,
-            "grade": "3.5",
+            "coursework": 66,
+            "finalExam": 28,
+            "total": 94,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 55,
-            "finalExam": 20,
-            "total": 75,
-            "grade": "3.5",
+            "coursework": 67,
+            "finalExam": 28,
+            "total": 95,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -11904,16 +11904,16 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
           },
           "ว23103": {
             "coursework": 66,
-            "finalExam": 28,
-            "total": 94,
+            "finalExam": 29,
+            "total": 95,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 67,
-            "finalExam": 28,
+            "coursework": 66,
+            "finalExam": 29,
             "total": 95,
             "grade": "4",
             "attendedHours": 20,
@@ -12040,18 +12040,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 66,
-            "finalExam": 29,
-            "total": 95,
+            "coursework": 70,
+            "finalExam": 30,
+            "total": 100,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 66,
-            "finalExam": 29,
-            "total": 95,
+            "coursework": 70,
+            "finalExam": 30,
+            "total": 100,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -12177,19 +12177,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว23103": {
-            "coursework": 70,
-            "finalExam": 30,
-            "total": 100,
-            "grade": "4",
+            "coursework": 58,
+            "finalExam": 20,
+            "total": 78,
+            "grade": "3.5",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 70,
-            "finalExam": 30,
-            "total": 100,
-            "grade": "4",
+            "coursework": 58,
+            "finalExam": 20,
+            "total": 78,
+            "grade": "3.5",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -12314,19 +12314,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 58,
-            "finalExam": 20,
-            "total": 78,
-            "grade": "3.5",
+            "coursework": 48,
+            "finalExam": 5,
+            "total": 53,
+            "grade": "1",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 58,
-            "finalExam": 20,
-            "total": 78,
-            "grade": "3.5",
+            "coursework": 48,
+            "finalExam": 5,
+            "total": 53,
+            "grade": "1",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
@@ -12451,19 +12451,19 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 2
           },
           "ว23103": {
-            "coursework": 48,
-            "finalExam": 5,
-            "total": 53,
-            "grade": "1",
+            "coursework": 66,
+            "finalExam": 29,
+            "total": 95,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 2,
             "readThinkScore": 2
           },
           "ว23104": {
-            "coursework": 48,
-            "finalExam": 5,
-            "total": 53,
-            "grade": "1",
+            "coursework": 66,
+            "finalExam": 29,
+            "total": 95,
+            "grade": "4",
             "attendedHours": 20,
             "traitScore": 2,
             "readThinkScore": 2
@@ -12589,16 +12589,16 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
           },
           "ว23103": {
             "coursework": 66,
-            "finalExam": 29,
-            "total": 95,
+            "finalExam": 28,
+            "total": 94,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 66,
-            "finalExam": 29,
+            "coursework": 67,
+            "finalExam": 28,
             "total": 95,
             "grade": "4",
             "attendedHours": 20,
@@ -12725,18 +12725,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 66,
-            "finalExam": 28,
-            "total": 94,
+            "coursework": 67,
+            "finalExam": 29,
+            "total": 96,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 67,
-            "finalExam": 28,
-            "total": 95,
+            "coursework": 68,
+            "finalExam": 29,
+            "total": 97,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -12862,18 +12862,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 67,
-            "finalExam": 29,
-            "total": 96,
+            "coursework": 70,
+            "finalExam": 30,
+            "total": 100,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 68,
-            "finalExam": 29,
-            "total": 97,
+            "coursework": 70,
+            "finalExam": 30,
+            "total": 100,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -12999,18 +12999,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 70,
-            "finalExam": 30,
-            "total": 100,
+            "coursework": 66,
+            "finalExam": 27,
+            "total": 93,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 70,
-            "finalExam": 30,
-            "total": 100,
+            "coursework": 67,
+            "finalExam": 27,
+            "total": 94,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -13136,18 +13136,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 66,
-            "finalExam": 27,
-            "total": 93,
+            "coursework": 65,
+            "finalExam": 26,
+            "total": 91,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 67,
-            "finalExam": 27,
-            "total": 94,
+            "coursework": 66,
+            "finalExam": 26,
+            "total": 92,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -13273,18 +13273,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 65,
-            "finalExam": 26,
-            "total": 91,
+            "coursework": 70,
+            "finalExam": 30,
+            "total": 100,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 66,
-            "finalExam": 26,
-            "total": 92,
+            "coursework": 70,
+            "finalExam": 30,
+            "total": 100,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -13410,18 +13410,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 70,
-            "finalExam": 30,
-            "total": 100,
+            "coursework": 64,
+            "finalExam": 23,
+            "total": 87,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 70,
-            "finalExam": 30,
-            "total": 100,
+            "coursework": 65,
+            "finalExam": 23,
+            "total": 88,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -13547,18 +13547,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 64,
-            "finalExam": 23,
-            "total": 87,
+            "coursework": 66,
+            "finalExam": 28,
+            "total": 94,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 65,
-            "finalExam": 23,
-            "total": 88,
+            "coursework": 67,
+            "finalExam": 28,
+            "total": 95,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -13684,18 +13684,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 66,
-            "finalExam": 28,
-            "total": 94,
+            "coursework": 64,
+            "finalExam": 26,
+            "total": 90,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 67,
-            "finalExam": 28,
-            "total": 95,
+            "coursework": 64,
+            "finalExam": 26,
+            "total": 90,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
@@ -13821,18 +13821,18 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
             "readThinkScore": 3
           },
           "ว23103": {
-            "coursework": 64,
-            "finalExam": 26,
-            "total": 90,
+            "coursework": 66,
+            "finalExam": 30,
+            "total": 96,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
             "readThinkScore": 3
           },
           "ว23104": {
-            "coursework": 64,
-            "finalExam": 26,
-            "total": 90,
+            "coursework": 66,
+            "finalExam": 30,
+            "total": 96,
             "grade": "4",
             "attendedHours": 20,
             "traitScore": 3,
