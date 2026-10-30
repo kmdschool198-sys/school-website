@@ -12,6 +12,7 @@
     "test:db": "node scripts/test_all_ops.mjs && node scripts/verify_all_crud.mjs",
     "setup:staff-auth": "node scripts/setup_staff_auth.mjs",
     "upload:student-details": "node scripts/upload_student_details.mjs",
+    "backup:firestore": "node scripts/backup_firestore.mjs",
     "pdpa:retention-review": "node scripts/pdpa_retention_review.mjs"
   },
   "dependencies": {
