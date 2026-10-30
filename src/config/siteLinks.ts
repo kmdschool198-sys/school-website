@@ -9,6 +9,8 @@ export const googleSitesButtonText = 'ระบบโรงเรียน';
 export const SCHOOL_NAME = 'โรงเรียนบ้านคลองมดแดง';
 export const SCHOOL_AFFILIATION = 'สังกัดสำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2';
 export const SCHOOL_ADDRESS = '198 หมู่ 3 ตำบลโป่งน้ำร้อน อำเภอคลองลาน จังหวัดกำแพงเพชร 62180';
+export const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
+export const DIRECTOR_POSITION = `ผู้อำนวยการ${SCHOOL_NAME}`;
 
 // ─── ข้อมูลติดต่อโรงเรียน ───
 // โรงเรียนไม่มีเบอร์กลาง จึงใช้เบอร์ผู้อำนวยการเป็นเบอร์ติดต่อของโรงเรียน

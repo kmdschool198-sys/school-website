@@ -5,11 +5,12 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { collection, onSnapshot, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
-import { ChevronLeft, Printer, Calendar, Download } from 'lucide-react';
+import { ChevronLeft, Printer, Download } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
-import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
+import { SCHOOL_NAME } from '../config/siteLinks';
+import { OfficialDocument, OfficialHeader, SignatureBlock, DIRECTOR_SIGNER, officialTh, officialTd, officialTdLeft, SHADE } from '../components/print/Official';
 import {
   SCHOOL_CALENDAR_COLLECTION,
   resolveSchoolDay,
@@ -273,48 +274,33 @@ function App() {
       </header>
 
       {/* Print area */}
-      <div className="print-area" style={{ background: 'white', maxWidth: '297mm', margin: '14px auto', padding: '10mm 12mm', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-        {/* Form header */}
-        <div style={{ textAlign: 'center', marginBottom: 10 }}>
-          <img
-            src={`${import.meta.env.BASE_URL}images/school-logo.png`}
-            alt="ตราโรงเรียน"
-            style={{ width: 44, height: 44, objectFit: 'contain', marginBottom: 2 }}
-          />
-          <div style={{ fontWeight: 900, fontSize: '1.15rem' }}>{info.title}</div>
-          <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>{SCHOOL_NAME} &nbsp; {SCHOOL_AFFILIATION}</div>
-          <div style={{ fontSize: '0.9rem', marginTop: 2 }}>
-            ระดับชั้น <b>{current?.fullClassName || current?.label || '-'}</b> ·
-            ประจำเดือน <b>{THAI_MONTHS[monthNum - 1]} พ.ศ. {year + 543}</b> ·
-            จำนวนนักเรียน <b>{students.length}</b> คน (ชาย {current?.maleCount || 0} / หญิง {current?.femaleCount || 0})
-          </div>
-        </div>
+      <OfficialDocument landscape style={{ maxWidth: '297mm', margin: '14px auto', padding: '10mm 12mm', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+        <OfficialHeader
+          title={info.title}
+          lines={[
+            <>ชั้น{current?.fullClassName || current?.label || '-'} &nbsp; ประจำเดือน{THAI_MONTHS[monthNum - 1]} พ.ศ. {year + 543} &nbsp; จำนวนนักเรียน {students.length} คน (ชาย {current?.maleCount || 0} คน หญิง {current?.femaleCount || 0} คน)</>,
+          ]}
+        />
 
-        {/* Table */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', tableLayout: 'fixed' }}>
+        <table style={{ tableLayout: 'fixed', fontSize: '12pt' }}>
           <thead>
-            <tr style={{ background: '#F1F5F9' }}>
-              <th style={{ ...th, width: '4%' }}>ที่</th>
-              <th style={{ ...th, width: '20%', textAlign: 'left', paddingLeft: 6 }}>ชื่อ-สกุล</th>
+            <tr>
+              <th style={{ ...officialTh, width: '4%' }}>ที่</th>
+              <th style={{ ...officialTh, width: '20%' }}>ชื่อ - สกุล</th>
               {days.map(d => {
                 const dateStr = `${yearStr}-${monStr}-${String(d).padStart(2, '0')}`;
                 const dt = new Date(year, monthNum - 1, d);
                 const dayInfo = resolveSchoolDay(dateStr, schoolDays, holidays);
-                const isWeekend = dayInfo.reason === 'weekend';
-                const holiday = dayInfo.open ? '' : dayInfo.label;
                 const dayName = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][dt.getDay()];
                 return (
-                  <th key={d} title={holiday || ''} style={{
-                    ...th, width: `${66 / daysInMonth}%`,
-                    background: holiday ? '#FED7AA' : (isWeekend ? '#FEE2E2' : '#F1F5F9'),
-                    color: holiday ? '#7C2D12' : (isWeekend ? '#991B1B' : '#0F172A'),
-                  }}>
+                  <th key={d} title={dayInfo.open ? '' : dayInfo.label} className={dayInfo.open ? undefined : 'shade'}
+                    style={{ ...officialTh, width: `${66 / daysInMonth}%`, padding: '1px 0', background: dayInfo.open ? undefined : SHADE }}>
                     <div>{d}</div>
-                    <div style={{ fontSize: '8px', fontWeight: 600 }}>{dayName}</div>
+                    <div style={{ fontSize: '9pt', fontWeight: 400 }}>{dayName}</div>
                   </th>
                 );
               })}
-              <th style={{ ...th, width: '10%', background: '#FFEDD5' }}>สรุปผล</th>
+              <th style={{ ...officialTh, width: '10%' }}>รวม</th>
             </tr>
           </thead>
           <tbody>
@@ -322,28 +308,18 @@ function App() {
               const sum = summaryFor(s.id);
               return (
                 <tr key={s.id}>
-                  <td style={td}>{i + 1}</td>
-                  <td style={{ ...td, textAlign: 'left', paddingLeft: 6, fontSize: '11px' }}>{s.name}</td>
+                  <td style={officialTd}>{i + 1}</td>
+                  <td style={{ ...officialTdLeft, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</td>
                   {days.map(d => {
                     const status = statusFor(s.id, d);
                     const dateStr = `${yearStr}-${monStr}-${String(d).padStart(2, '0')}`;
                     const dayInfo = resolveSchoolDay(dateStr, schoolDays, holidays);
-                    const isWeekend = dayInfo.reason === 'weekend';
-                    const isHoliday = !dayInfo.open && dayInfo.reason !== 'weekend';
-                    let color = '#0F172A';
-                    if (status === info.missMark || status === '−') color = '#DC2626';
-                    else if (status === 'ล') color = '#D97706';
-                    else if (status === '/') color = '#94A3B8';
-                    else if (status === info.mark) color = '#16A34A';
                     return (
-                      <td key={d} title={holidays[dateStr] || ''} style={{
-                        ...td,
-                        background: isHoliday ? '#FED7AA' : (isWeekend ? '#FEF2F2' : (status ? 'white' : '#FAFAFA')),
-                        color, fontWeight: status ? 800 : 400, fontSize: '11px',
-                      }}>{status}</td>
+                      <td key={d} title={holidays[dateStr] || ''} className={dayInfo.open ? undefined : 'shade'}
+                        style={{ ...officialTd, padding: '1px 0', background: dayInfo.open ? undefined : SHADE }}>{status}</td>
                     );
                   })}
-                  <td style={{ ...td, background: '#FFFBEB', fontSize: '10px' }}>
+                  <td style={officialTd}>
                     {formType === 'attendance'
                       ? `${sum.present}/${sum.totalDays}`
                       : `${sum.present} ครั้ง`}
@@ -352,64 +328,38 @@ function App() {
               );
             })}
             {students.length === 0 && (
-              <tr><td colSpan={daysInMonth + 3} style={{ ...td, padding: 30, color: '#94A3B8' }}>ยังไม่มีรายชื่อ</td></tr>
+              <tr><td colSpan={daysInMonth + 3} style={{ ...officialTd, padding: 20 }}>ยังไม่มีรายชื่อนักเรียน</td></tr>
             )}
           </tbody>
         </table>
 
-        {/* Holidays list */}
-        {(() => {
-          const monthHolidays = Object.entries(holidays).filter(([d]) => d.startsWith(month));
-          if (monthHolidays.length === 0) return null;
-          return (
-            <div style={{ marginTop: 6, fontSize: '10px', color: '#7C2D12', background: '#FED7AA', padding: '4px 8px', borderRadius: 4 }}>
-              <b>🗓️ วันหยุดในเดือนนี้:</b> {monthHolidays
+        <div style={{ marginTop: 6, fontSize: '13pt' }}>
+          <div><b>คำอธิบาย</b> {info.legendDesc} &nbsp; ช่องแรเงา = วันหยุด (เสาร์-อาทิตย์ / วันหยุดราชการ / ปิดเรียน)</div>
+          {(() => {
+            const monthHolidays = Object.entries(holidays).filter(([d]) => d.startsWith(month));
+            if (monthHolidays.length === 0) return null;
+            return (
+              <div><b>วันหยุดในเดือนนี้</b> {monthHolidays
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([d, name]) => `${Number(d.split('-')[2])} ${name}`)
-                .join(' · ')}
-            </div>
-          );
-        })()}
-
-        {/* Legend */}
-        <div style={{ marginTop: 8, fontSize: '10px', color: '#475569', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <div><Calendar size={11} style={{ verticalAlign: 'middle' }} /> {info.legendDesc}</div>
-          <div>
-            <span style={{ background: '#FEE2E2', padding: '0 6px', marginRight: 4 }}>⬛</span> เสาร์-อาทิตย์ ·
-            <span style={{ background: '#FED7AA', padding: '0 6px', marginLeft: 6, marginRight: 4 }}>⬛</span> วันหยุดราชการ
-          </div>
-          <div>จำนวนนักเรียน: <b>{students.length}</b> คน</div>
+                .join(', ')}
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Signature */}
-        <div style={{ marginTop: 22, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, textAlign: 'center', fontSize: '11px' }}>
-          <div>
-            <div style={{ marginTop: 18 }}>
-              ลงชื่อ ....................................................... ครูประจำชั้น/ผู้บันทึก
-            </div>
-            <div style={{ marginTop: 4 }}>
-              ({current?.homeroomTeacher || '.......................................................'})
-            </div>
-            <div style={{ marginTop: 2 }}>ครูประจำชั้น {current?.label}</div>
-          </div>
-          <div>
-            <div style={{ marginTop: 18 }}>
-              ลงชื่อ ....................................................... ผู้อำนวยการสถานศึกษา
-            </div>
-            <div style={{ marginTop: 4 }}>
-              (นายปรัชญา ปรางค์ชัยภูมิ)
-            </div>
-            <div style={{ marginTop: 2 }}>ผู้อำนวยการ{SCHOOL_NAME}</div>
-          </div>
-        </div>
-      </div>
+        <SignatureBlock signers={[
+          { role: 'ครูประจำชั้น', name: current?.homeroomTeacher, position: `ครูประจำชั้น${current?.fullClassName || current?.label || ''}` },
+          DIRECTOR_SIGNER,
+        ]} />
+      </OfficialDocument>
 
       <style>{`
         @media print {
-          @page { size: A4 landscape; margin: 8mm; }
+          @page { size: A4 landscape; margin: 10mm; }
           body { background: white !important; }
           .no-print { display: none !important; }
-          .print-area { box-shadow: none !important; margin: 0 !important; padding: 4mm !important; max-width: 100% !important; }
+          .print-area { padding: 0 !important; }
         }
       `}</style>
     </div>
@@ -425,5 +375,3 @@ const lnk: React.CSSProperties = { color: 'white', display: 'inline-flex', align
 const inp: React.CSSProperties = { padding: '6px 10px', borderRadius: 8, border: 'none', fontSize: '0.85rem', fontWeight: 700 };
 const btnPrint: React.CSSProperties = { background: 'white', color: '#7C2D12', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 };
 const btnCsv: React.CSSProperties = { background: 'white', color: '#15803D', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 };
-const th: React.CSSProperties = { border: '1px solid #94A3B8', padding: '4px 2px', fontSize: '11px', textAlign: 'center', fontWeight: 800 };
-const td: React.CSSProperties = { border: '1px solid #CBD5E1', padding: '3px 2px', textAlign: 'center' };

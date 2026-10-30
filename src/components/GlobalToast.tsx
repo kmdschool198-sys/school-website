@@ -43,7 +43,7 @@ export default function GlobalToast() {
 
   if (list.length === 0) return null;
   return (
-    <div style={{
+    <div className="no-print" style={{
       position: 'fixed', bottom: 20, right: 20, zIndex: 99999,
       display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 360,
     }}>

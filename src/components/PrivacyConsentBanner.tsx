@@ -24,7 +24,7 @@ export default function PrivacyConsentBanner() {
   if (!visible || sessionStorage.getItem(STORAGE_KEY) === 'dismissed') return null;
 
   return (
-    <div style={{
+    <div className="no-print" style={{
       position: 'fixed',
       left: 16,
       right: 16,
