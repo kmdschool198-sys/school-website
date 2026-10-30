@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Student personal data (PDPA) - uploaded to Firestore, never committed
+private/

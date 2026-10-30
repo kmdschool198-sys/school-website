@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
-import { findDmcStudent } from '../data/dmcStudentMaster';
+import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { ChevronLeft, Printer } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -29,6 +29,7 @@ export default function BodyMetricsPrintPage() {
 
 function App() {
   const { classes: availableClasses } = useSchoolRoster();
+  const studentDetails = useStudentDetails();
   const [classId, setClassId] = useState('');
   const [term, setTerm] = useState<1 | 2>(1);
   const [year, setYear] = useState(2569);
@@ -68,7 +69,7 @@ function App() {
       return { weight: latest.weight || '', height: latest.height || '', bmi: latest.bmi };
     }
     if ((term === 1 && m === 5) || (term === 2 && m === 11)) {
-      const dmc = findDmcStudent(studentCode, studentName);
+      const dmc = findStudentDetails(studentDetails, studentCode, studentName);
       if (dmc) return { weight: dmc.weight || '', height: dmc.height || '', bmi: dmc.bmi };
     }
     return { weight: '', height: '', bmi: undefined };
@@ -142,7 +143,7 @@ function App() {
           <tbody>
             {students.map((s, i) => {
               // Latest available BMI in the term or DMC baseline
-              const dmc = findDmcStudent(s.code, s.name);
+              const dmc = findStudentDetails(studentDetails, s.code, s.name);
               let latestBmi = s.bmi ?? dmc?.bmi;
               termMonths.forEach(m => {
                 const mes = getMeasurement(s.code, s.name, current?.label || '', m);

@@ -204,9 +204,10 @@ export function useTeacherAuth(): AuthState & { logout: () => void } {
   useEffect(() => {
     let alive = true;
 
-    // Check local test session if present
+    // Local test session for `npm run dev` only; in production anyone could set this key in their
+    // own browser to skip the login screen, so real sessions always come from Firebase Auth
     try {
-      const raw = localStorage.getItem('kmd_teacher_auth_v1');
+      const raw = import.meta.env.DEV ? localStorage.getItem('kmd_teacher_auth_v1') : null;
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && parsed.authed) {

@@ -47,6 +47,32 @@ test('Suite 1: School Metadata & Branding Integrity', async (t) => {
     scanDir(srcDir);
     assert.deepEqual(foundFiles, [], `Found another school's name in files: ${foundFiles.join(', ')}`);
   });
+
+  // Everything under src/ ships in the public JS bundle; student personal data belongs in
+  // Firestore student_details (staff-only), uploaded from private/ by npm run upload:student-details
+  await t.test('No student personal data (PDPA) in src code', () => {
+    const forbidden = [
+      [/["']?citizenId["']?\s*:\s*["']\d{13}["']/, 'citizen ID'],
+      [/(?<![.\w])["']?(guardianName|fatherName|motherName)["']?\s*:\s*["'][^"'\-.]{2,}["']/, 'guardian/parent name'],
+      [/บ้านเลขที่\s*\S+\s*หมู่/, 'home address'],
+      [/["']?disadvantage["']?\s*:\s*["'][^"'\-]{2,}["']/, 'disadvantage status'],
+    ];
+    const hits = [];
+    function scan(dir) {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) scan(fullPath);
+        else if (/\.(tsx?|jsx?|json)$/.test(entry.name)) {
+          const text = fs.readFileSync(fullPath, 'utf-8');
+          for (const [re, label] of forbidden) {
+            if (re.test(text)) hits.push(`${path.relative(rootDir, fullPath)} (${label})`);
+          }
+        }
+      }
+    }
+    scan(path.join(rootDir, 'src'));
+    assert.deepEqual(hits, [], `Student personal data found in src: ${hits.join(', ')}`);
+  });
 });
 
 // -------------------------------------------------------------

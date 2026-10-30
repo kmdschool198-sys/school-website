@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
-import { findDmcStudent } from '../data/dmcStudentMaster';
+import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { ChevronLeft, LogOut, Printer, Download, ClipboardPaste, Sparkles } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -29,6 +29,7 @@ export default function BodyMetricsGridPage() {
 
 function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
   const { classes: availableClasses } = useSchoolRoster();
+  const studentDetails = useStudentDetails();
   const [classId, setClassId] = useState('');
   const [month, setMonth] = useState(thisMonth());
   const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
@@ -59,7 +60,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
     (l.studentId === s.id || (l.studentName && l.studentName.trim() === s.name.trim()));
 
   const dmcFallbackEntry = (s: Student, classLabel?: string): LogEntry | undefined => {
-    const dmc = findDmcStudent(s.code || s.id, s.name);
+    const dmc = findStudentDetails(studentDetails, s.code || s.id, s.name);
     const w = s.weight ?? dmc?.weight;
     const h = s.height ?? dmc?.height;
     if (!w && !h) return undefined;

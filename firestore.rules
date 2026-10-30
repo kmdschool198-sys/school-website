@@ -164,6 +164,12 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
+    // ข้อมูลส่วนบุคคลนักเรียนจาก DMC (เลขบัตร ที่อยู่ ผู้ปกครอง สุขภาพ) — เฉพาะครู
+    match /student_details/{documentId} {
+      allow read: if isStaff();
+      allow write: if isStaffAdmin();
+    }
+
     match /results/{documentId} {
       allow read, write: if isStaff();
     }

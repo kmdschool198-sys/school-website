@@ -18,7 +18,7 @@ interface Student { id: string; code?: string; name: string; emoji?: string; }
 interface AttDoc {
   classId: string;
   date: string; // YYYY-MM-DD
-  records: Record<string, { status: Status; note?: string; noMilk?: boolean; noBrush?: boolean }>;
+  records: Record<string, { status: Status; note?: string; noMilk?: boolean; noBrush?: boolean; noLunch?: boolean; noDuty?: boolean }>;
   updatedAt?: number;
 }
 interface ClassRoster { classId: string; label: string; students: Student[]; }
@@ -244,10 +244,11 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
     const out: AttDoc['records'] = {};
     students.forEach(s => {
       const v = recs[s.id] || { status: 'present' };
-      const item: any = { status: v.status || 'present' };
-      if (v.note !== undefined && v.note !== '') item.note = v.note;
-      if (v.noMilk !== undefined) item.noMilk = v.noMilk;
-      if (v.noBrush !== undefined) item.noBrush = v.noBrush;
+      // Keep fields other pages store in the same record (noLunch from LunchPage, noDuty from
+      // DutyPage), or saving attendance would wipe them; Firestore rejects undefined values
+      const item: any = { ...v, status: v.status || 'present' };
+      Object.keys(item).forEach(k => { if (item[k] === undefined) delete item[k]; });
+      if (item.note === '') delete item.note;
       out[s.id] = item;
     });
     return out;

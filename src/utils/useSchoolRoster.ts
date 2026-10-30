@@ -7,6 +7,7 @@ import {
   findDmcStudent,
   type DmcStudentMaster,
 } from '../data/dmcStudentMaster';
+import { useStudentDetails, type StudentDetailsMap } from '../data/studentDetails';
 
 export interface UnifiedStudent {
   id: string;
@@ -53,7 +54,7 @@ function inferGender(name: string, emoji?: string, dmc?: DmcStudentMaster): 'mal
   return 'male';
 }
 
-export function buildSeedRosters(): UnifiedClassRoster[] {
+export function buildSeedRosters(details: StudentDetailsMap = {}): UnifiedClassRoster[] {
   return DMC_CLASS_METADATA.map(meta => {
     const dmcList = DMC_STUDENTS_MASTER.filter(s => s.roomId === meta.roomId);
     const students: UnifiedStudent[] = dmcList.map((s, idx) => ({
@@ -63,20 +64,7 @@ export function buildSeedRosters(): UnifiedClassRoster[] {
       emoji: s.emoji,
       gender: s.gender,
       no: idx + 1,
-      weight: s.weight,
-      height: s.height,
-      bmi: s.bmi,
-      birthDate: s.birthDate,
-      age: s.age,
-      bloodGroup: s.bloodGroup,
-      guardianName: s.guardianName,
-      guardianRelation: s.guardianRelation,
-      guardianOccupation: s.guardianOccupation,
-      fatherName: s.fatherName,
-      motherName: s.motherName,
-      address: s.address,
-      disadvantage: s.disadvantage,
-      citizenId: s.citizenId,
+      ...details[s.id],
     }));
     const maleCount = students.filter(s => s.gender === 'male').length;
     const femaleCount = students.filter(s => s.gender === 'female').length;
@@ -98,9 +86,10 @@ export function buildSeedRosters(): UnifiedClassRoster[] {
 }
 
 export function mergeWithFirestoreClasses(
-  cloudClasses?: Array<{ classId: string; label: string; students?: Array<{ id: string; code?: string; name: string; emoji?: string }> }>
+  cloudClasses?: Array<{ classId: string; label: string; students?: Array<{ id: string; code?: string; name: string; emoji?: string }> }>,
+  details: StudentDetailsMap = {}
 ): UnifiedClassRoster[] {
-  const seed = buildSeedRosters();
+  const seed = buildSeedRosters(details);
   if (!cloudClasses || cloudClasses.length === 0) return seed;
 
   return seed.map(base => {
@@ -121,20 +110,7 @@ export function mergeWithFirestoreClasses(
         emoji: st.emoji || dmc?.emoji || (gender === 'male' ? '👦' : '👧'),
         gender,
         no: idx + 1,
-        weight: dmc?.weight,
-        height: dmc?.height,
-        bmi: dmc?.bmi,
-        birthDate: dmc?.birthDate,
-        age: dmc?.age,
-        bloodGroup: dmc?.bloodGroup,
-        guardianName: dmc?.guardianName,
-        guardianRelation: dmc?.guardianRelation,
-        guardianOccupation: dmc?.guardianOccupation,
-        fatherName: dmc?.fatherName,
-        motherName: dmc?.motherName,
-        address: dmc?.address,
-        disadvantage: dmc?.disadvantage,
-        citizenId: dmc?.citizenId,
+        ...(dmc ? details[dmc.id] : undefined),
       };
     });
 
@@ -171,7 +147,8 @@ export function useSchoolRoster() {
     );
   }, []);
 
-  const classes = useMemo(() => mergeWithFirestoreClasses(cloudClasses), [cloudClasses]);
+  const details = useStudentDetails();
+  const classes = useMemo(() => mergeWithFirestoreClasses(cloudClasses, details), [cloudClasses, details]);
 
   const summary = useMemo(() => {
     const totalStudents = classes.reduce((sum, c) => sum + c.totalCount, 0);

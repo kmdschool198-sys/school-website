@@ -8,12 +8,13 @@ import { normalizeResultCode, resultLookupDocId, totalScore, pctColor } from '..
 import ShareBar from '../components/ShareBar';
 import { useAcademicData } from '../utils/academicStorage';
 import { calculateStudentGPA, calculateClassRanks } from '../data/academicData';
-import { findDmcStudent } from '../data/dmcStudentMaster';
+import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 const BRAND = '#FF6A01';
 
 export default function ResultsPage() {
+  const studentDetails = useStudentDetails();
   const [announcements, setAnnouncements] = useState<PublicResultAnnouncement[]>([]);
   const [selected, setSelected] = useState<PublicResultAnnouncement | null>(null);
   const [code, setCode] = useState('');
@@ -41,7 +42,7 @@ export default function ResultsPage() {
       if (found) {
         const gpaInfo = calculateStudentGPA(found, cls.subjects, true);
         const ranks = calculateClassRanks(cls.students, cls.subjects);
-        const dmcInfo = findDmcStudent(found.code, found.name);
+        const dmcInfo = findStudentDetails(studentDetails, found.code, found.name);
         setStudent360({
           student: found,
           classData: cls,
