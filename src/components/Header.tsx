@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -12,6 +12,9 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  // desktop dropdown opened by click or keyboard (hover still opens it through CSS)
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
   const [schoolInfo, setSchoolInfo] = useState({
     name: SCHOOL_NAME,
     logoUrl: ''
@@ -45,12 +48,26 @@ export default function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    if (!openMenu) return;
+    const closeOnOutside = (e: MouseEvent) => {
+      if (!navRef.current?.contains(e.target as Node)) setOpenMenu(null);
+    };
+    const closeOnEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenu(null); };
+    document.addEventListener('mousedown', closeOnOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [openMenu]);
+
   const closeMobile = () => { setMobileOpen(false); setOpenSection(null); };
 
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container nav-container">
-        <Link to="/" className="logo-link" style={{ display: 'flex', alignItems: 'center', gap: '14px', textDecoration: 'none', minWidth: 0, flex: 1 }}>
+        <Link to="/" className="logo-link" style={{ display: 'flex', alignItems: 'center', gap: '14px', textDecoration: 'none', minWidth: 0, flex: '1 0 auto' }}>
           <div style={{
             width: '48px', height: '48px', borderRadius: '50%',
             background: 'linear-gradient(135deg, #FFF7ED, #FFEDD5)',
@@ -66,29 +83,39 @@ export default function Header() {
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, minWidth: 0 }}>
-            <span style={{ fontSize: 'clamp(0.92rem, 3.5vw, 1.15rem)', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span style={{ fontSize: 'clamp(0.92rem, 3.5vw, 1.15rem)', fontWeight: 900, color: '#0F172A', letterSpacing: '-0.3px', lineHeight: 1.3 }}>
               {schoolInfo.name}
             </span>
-            <span style={{ fontSize: '0.62rem', fontWeight: 600, color: '#FF6A01', letterSpacing: '1.5px', textTransform: 'uppercase', marginTop: '2px', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#C2410C', letterSpacing: '1px', textTransform: 'uppercase', marginTop: '2px', whiteSpace: 'nowrap' }}>
               Ban Klong Mod Daeng School
             </span>
           </div>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="nav-links">
+        <nav className="nav-links" ref={navRef} aria-label="เมนูหลัก">
           <Link to="/" className="nav-item">หน้าแรก</Link>
 
           {Object.entries(sidebarMenus).map(([title, menu]) => (
-            <div key={title} className="dropdown">
-              <span className="nav-item flex items-center gap-1 cursor-pointer">
-                {title} <ChevronDown size={14} />
-              </span>
+            <div
+              key={title}
+              className={`dropdown ${openMenu === title ? 'open' : ''}`}
+              onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpenMenu(null); }}
+            >
+              <button
+                type="button"
+                className="nav-item nav-trigger"
+                aria-expanded={openMenu === title}
+                aria-haspopup="true"
+                onClick={() => setOpenMenu(current => current === title ? null : title)}
+              >
+                {title} <ChevronDown size={14} aria-hidden="true" />
+              </button>
               <div className="dropdown-content">
                 {menu.links.map((link, idx) => {
                   const fullPath = link.path.startsWith('/') ? link.path : `/page/${link.path}`;
                   return (
-                    <Link key={idx} to={fullPath} className="dropdown-item">
+                    <Link key={idx} to={fullPath} className="dropdown-item" onClick={() => setOpenMenu(null)}>
                       {link.label}
                     </Link>
                   );
@@ -145,7 +172,7 @@ export default function Header() {
                 </div>
                 <div style={{ fontSize: '0.7rem', opacity: 0.9, letterSpacing: 1 }}>เมนูทั้งหมด</div>
               </div>
-              <button onClick={closeMobile} style={{
+              <button onClick={closeMobile} aria-label="ปิดเมนู" style={{
                 background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8,
                 width: 36, height: 36, color: 'white', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -187,7 +214,7 @@ export default function Header() {
                             <Link key={idx} to={fullPath} onClick={closeMobile}
                               style={{
                                 ...mobItem, fontSize: '0.9rem', padding: '10px 14px',
-                                borderLeft: '3px solid #FFEDD5', color: '#475569',
+                                borderLeft: '1px solid #FED7AA', color: '#475569',
                               }}>
                               {link.label}
                             </Link>

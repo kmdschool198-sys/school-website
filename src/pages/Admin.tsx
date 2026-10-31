@@ -116,6 +116,8 @@ interface Highlight {
   buttonText: string;
   imageUrl: string;
   imageType?: 'image' | 'pdf';
+  buttonLink?: string;
+  endDate?: string;
   order: number;
 }
 
@@ -320,6 +322,8 @@ function Admin() {
   const [hBtn, setHBtn] = useState('อ่านรายละเอียด');
   const [hImg, setHImg] = useState('');
   const [hImgType, setHImgType] = useState<'image' | 'pdf'>('image');
+  const [hLink, setHLink] = useState('');
+  const [hEnd, setHEnd] = useState('');
 
   // Activities
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -1021,6 +1025,7 @@ function Admin() {
   const resetHighlightForm = () => {
     setHId(null); setHBadge('Excellence'); setHTitle(''); setHAccent('');
     setHDesc(''); setHBtn('อ่านรายละเอียด'); setHImg(''); setHImgType('image');
+    setHLink(''); setHEnd('');
   };
 
   const handleSubmitHighlight = async (e: FormEvent) => {
@@ -1035,6 +1040,8 @@ function Admin() {
         buttonText: (hBtn || 'อ่านรายละเอียด').trim(),
         imageUrl: (hImg || '').trim(),
         imageType: hImgType || 'image',
+        buttonLink: hLink.trim(),
+        endDate: hEnd,
         order: Number(hId ? highlights.find(x => x.id === hId)?.order ?? (highlights.length + 1) : (highlights.length + 1)) || 1
       };
       if (hId) {
@@ -1059,6 +1066,7 @@ function Admin() {
     setHId(h.id); setHBadge(h.badge || 'Excellence'); setHTitle(h.title || ''); setHAccent(h.titleAccent || '');
     setHDesc(h.description || ''); setHBtn(h.buttonText || 'อ่านรายละเอียด'); setHImg(h.imageUrl || '');
     setHImgType(h.imageType || 'image');
+    setHLink(h.buttonLink || ''); setHEnd(h.endDate || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1706,6 +1714,14 @@ function Admin() {
                   <div className="mb-3">
                     <label className="form-label small fw-bold">ข้อความปุ่ม</label>
                     <input type="text" className="form-control" value={hBtn} onChange={e => setHBtn(e.target.value)} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold">ลิงก์ของปุ่ม (ไม่ใส่ = ไม่แสดงปุ่ม)</label>
+                    <input type="text" className="form-control" value={hLink} onChange={e => setHLink(e.target.value)} placeholder="/page/pr-news หรือ https://..." />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold">แสดงถึงวันที่ (ไม่ใส่ = แสดงตลอด)</label>
+                    <input type="date" className="form-control" value={hEnd} onChange={e => setHEnd(e.target.value)} />
                   </div>
                   <DriveImageInput label="รูปภาพประกอบ / PDF (Google Drive)" value={hImg} onChange={setHImg} fileType={hImgType} onFileTypeChange={setHImgType} />
                   <div className="mb-3">
