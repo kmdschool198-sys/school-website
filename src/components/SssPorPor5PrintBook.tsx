@@ -26,6 +26,12 @@ export const PP5_PRINT_STYLES = `
     page-break-after: auto;
     break-after: auto;
   }
+  /* A sheet too wide for 186mm of A4 portrait prints on its own landscape page.
+     Named pages need Chrome or Edge 110+; Firefox ignores them and keeps the sheet portrait. */
+  .pp5-landscape {
+    width: 297mm;
+    min-height: 206mm;
+  }
   .pp5-table {
     width: 100%;
     border-collapse: collapse;
@@ -46,6 +52,14 @@ export const PP5_PRINT_STYLES = `
     @page {
       size: A4 portrait;
       margin: 8mm;
+    }
+    @page pp5-landscape {
+      size: A4 landscape;
+      margin: 8mm;
+    }
+    .pp5-landscape {
+      page: pp5-landscape;
+      width: 100% !important;
     }
     body {
       background: #FFFFFF !important;
@@ -581,7 +595,8 @@ export default function SssPorPor5PrintBook({
           ชีตที่ 3 (แผ่นที่ 2): ปพ.5 การวัดและประเมินผล: คุณลักษณะ 8 ข้อ + สมรรถนะ 5 ข้อ + อ่านคิดเขียน (Cols AL-BQ)
           ===================================================================== */}
       {showPp5Eval && (
-        <div className="pp5-sheet">
+        /* 27 คอลัมน์ กว้าง 262mm — แผ่นเดียวในเล่มที่ต้องพิมพ์แนวนอน */
+        <div className="pp5-sheet pp5-landscape">
           <div style={{ textAlign: 'center', marginBottom: 6 }}>
             <div style={{ fontSize: '11.5pt', fontWeight: 900 }}>
               การวัดและประเมินผล (คุณลักษณะอันพึงประสงค์ · สมรรถนะสำคัญ · อ่าน คิดวิเคราะห์ และเขียนสื่อความ)
