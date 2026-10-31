@@ -14,9 +14,10 @@ import {
   type ClassAcademicData,
   type AcademicStudentRecord,
 } from '../data/academicData';
+import SssPorPor6PrintBook, { type SssPp6SheetKey } from '../components/SssPorPor6PrintBook';
 
 type PrintMode = 'none' | 'single' | 'batch';
-type FormTemplate = 'smartschool' | 'kmd_excel' | 'elective';
+type FormTemplate = 'sss_excel' | 'smartschool' | 'kmd_excel' | 'elective';
 
 export default function PorPor6Page() {
   const auth = useTeacherAuth();
@@ -37,7 +38,8 @@ function PorPor6Content() {
   const [inspectStudentCode, setInspectStudentCode] = useState<string | null>(null);
   const [printMode, setPrintMode] = useState<PrintMode>('none');
   const [printStudentCode, setPrintStudentCode] = useState<string | null>(null);
-  const [formTemplate, setFormTemplate] = useState<FormTemplate>('smartschool');
+  const [formTemplate, setFormTemplate] = useState<FormTemplate>('sss_excel');
+  const [defaultSssSheet, setDefaultSssSheet] = useState<SssPp6SheetKey>('all_workbook');
 
   const currentClass = useMemo(
     () => classesData.find(c => c.classId === selectedClassId) || classesData[0],
@@ -64,12 +66,14 @@ function PorPor6Content() {
 
   const triggerSinglePrint = (code: string) => {
     setPrintStudentCode(code);
+    setDefaultSssSheet('student_reports');
     setPrintMode('single');
     setTimeout(() => window.print(), 250);
   };
 
-  const triggerBatchPrint = () => {
+  const triggerBatchPrint = (sheetKey: SssPp6SheetKey = 'all_workbook') => {
     setPrintStudentCode(null);
+    setDefaultSssSheet(sheetKey);
     setPrintMode('batch');
     setTimeout(() => window.print(), 300);
   };
@@ -110,6 +114,18 @@ function PorPor6Content() {
           <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.08)', padding: 4, borderRadius: 10, flexWrap: 'wrap' }}>
             <button
               type="button"
+              onClick={() => setFormTemplate('sss_excel')}
+              style={{
+                padding: '6px 12px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                fontWeight: 800, fontSize: '0.78rem',
+                background: formTemplate === 'sss_excel' ? '#FF6A01' : 'transparent',
+                color: 'white',
+              }}
+            >
+              📘 SSS ปพ.6 ครบทุกหน้าตามไฟล์ปพ6.xlsx (8 ชีตห้อง + รายบุคคล 2 หน้า)
+            </button>
+            <button
+              type="button"
               onClick={() => setFormTemplate('smartschool')}
               style={{
                 padding: '6px 12px', borderRadius: 7, border: 'none', cursor: 'pointer',
@@ -130,7 +146,7 @@ function PorPor6Content() {
                 color: 'white',
               }}
             >
-              📋 ฟอร์ม ปพ.6 {SCHOOL_NAME} (ตามไฟล์ Excel)
+              📋 ฟอร์ม ปพ.6 {SCHOOL_NAME} (หน้าเดียว)
             </button>
             <button
               type="button"
@@ -149,7 +165,7 @@ function PorPor6Content() {
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: '0.82rem', color: '#CBD5E1', fontWeight: 700 }}>
               {printMode === 'batch'
-                ? `พิมพ์ทั้งห้อง ${currentClass.shortName}/1 (${targetStudents.length} แผ่น)`
+                ? `พิมพ์ทั้งห้อง ${currentClass.shortName}/1 (${targetStudents.length} คน)`
                 : `นักเรียน: ${targetStudents[0]?.name || ''}`}
             </span>
             <button
@@ -162,31 +178,41 @@ function PorPor6Content() {
                 boxShadow: '0 4px 12px rgba(220,38,38,0.45)',
               }}
             >
-              <Printer size={16} /> สั่งพิมพ์ฟอร์ม ปพ.6 ({targetStudents.length} แผ่น)
+              <Printer size={16} /> สั่งพิมพ์ ปพ.6 ทันที
             </button>
           </div>
         </div>
 
         {/* Printable A4 Pages */}
         <div className="porpor6-print-container print-area" style={{ maxWidth: '210mm', margin: '20px auto', padding: '0 8px' }}>
-          {targetStudents.map((st, idx) =>
-            formTemplate === 'kmd_excel' ? (
-              <KmdExcelPorPor6Form
-                key={st.code}
-                classData={currentClass}
-                student={st}
-                rankInfo={ranksMap[st.code] || { rank: idx + 1, total: currentClass.students.length, gpa: 0 }}
-                isLast={idx === targetStudents.length - 1}
-              />
-            ) : (
-              <OfficialPorPor6Form
-                key={st.code}
-                classData={currentClass}
-                student={st}
-                rankInfo={ranksMap[st.code] || { rank: idx + 1, total: currentClass.students.length, gpa: 0 }}
-                variant={formTemplate === 'elective' ? 'elective' : 'core'}
-                isLast={idx === targetStudents.length - 1}
-              />
+          {formTemplate === 'sss_excel' ? (
+            <SssPorPor6PrintBook
+              key={`${currentClass.classId}_${defaultSssSheet}_${targetStudents.length}`}
+              classData={currentClass}
+              targetStudents={targetStudents}
+              ranksMap={ranksMap}
+              defaultSheet={defaultSssSheet}
+            />
+          ) : (
+            targetStudents.map((st, idx) =>
+              formTemplate === 'kmd_excel' ? (
+                <KmdExcelPorPor6Form
+                  key={st.code}
+                  classData={currentClass}
+                  student={st}
+                  rankInfo={ranksMap[st.code] || { rank: idx + 1, total: currentClass.students.length, gpa: 0 }}
+                  isLast={idx === targetStudents.length - 1}
+                />
+              ) : (
+                <OfficialPorPor6Form
+                  key={st.code}
+                  classData={currentClass}
+                  student={st}
+                  rankInfo={ranksMap[st.code] || { rank: idx + 1, total: currentClass.students.length, gpa: 0 }}
+                  variant={formTemplate === 'elective' ? 'elective' : 'core'}
+                  isLast={idx === targetStudents.length - 1}
+                />
+              )
             )
           )}
         </div>
@@ -344,26 +370,55 @@ function PorPor6Content() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={triggerBatchPrint}
-              style={{
-                background: '#DC2626',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: 999,
-                padding: '10px 20px',
-                fontWeight: 900,
-                fontSize: '0.88rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                boxShadow: '0 4px 14px rgba(220,38,38,0.3)',
-              }}
-            >
-              <Printer size={16} /> พิมพ์ทั้งห้อง (Batch Print)
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormTemplate('sss_excel');
+                  triggerBatchPrint('all_workbook');
+                }}
+                style={{
+                  background: '#1D4ED8',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 999,
+                  padding: '10px 18px',
+                  fontWeight: 900,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  boxShadow: '0 4px 14px rgba(29,78,216,0.3)',
+                }}
+              >
+                <Printer size={16} /> พิมพ์เล่ม SSS ปพ.6 ทุกหน้า (8 ชีตห้อง + รายบุคคล)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFormTemplate('sss_excel');
+                  triggerBatchPrint('student_reports');
+                }}
+                style={{
+                  background: '#DC2626',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 999,
+                  padding: '10px 18px',
+                  fontWeight: 900,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  boxShadow: '0 4px 14px rgba(220,38,38,0.3)',
+                }}
+              >
+                <Printer size={16} /> พิมพ์ ปพ.6 รายบุคคลทั้งห้อง (แผ่นที่ 1+2)
+              </button>
+            </div>
           </div>
 
           {/* Table Controls */}
@@ -520,18 +575,14 @@ function PorPor6Content() {
         </div>
       </div>
 
-      {/* Print-Only Fallback: if user presses Ctrl+P directly on the list page, print all official PorPor 6 forms! */}
+      {/* Print-Only Fallback: if user presses Ctrl+P directly on the list page, print all official SSS PorPor 6 sheets! */}
       <div className="only-print-batch">
-        {currentClass.students.map((st, idx) => (
-          <OfficialPorPor6Form
-            key={st.code}
-            classData={currentClass}
-            student={st}
-            rankInfo={ranksMap[st.code] || { rank: idx + 1, total: currentClass.students.length, gpa: 0 }}
-            variant="core"
-            isLast={idx === currentClass.students.length - 1}
-          />
-        ))}
+        <SssPorPor6PrintBook
+          classData={currentClass}
+          targetStudents={currentClass.students}
+          ranksMap={ranksMap}
+          defaultSheet="all_workbook"
+        />
       </div>
 
       {/* Modal: ดูข้อมูล/ตรวจสอบและแก้ไขเกรดรายบุคคล */}

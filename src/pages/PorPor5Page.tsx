@@ -17,6 +17,7 @@ import { toast } from '../components/GlobalToast';
 import { normalizeResultCode, resultLookupDocId } from '../data/results';
 import type { BehaviorLogEntry } from './BehaviorPage';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
+import SssPorPor5PrintBook from '../components/SssPorPor5PrintBook';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const DEPUTY_DIRECTOR_NAME = 'นางสาวเจนจีรา บุญเกตุ';
@@ -74,6 +75,7 @@ function PorPor5Content() {
   const [savedToast, setSavedToast] = useState(false);
   const [printMode, setPrintMode] = useState(false);
   const [printFullBook, setPrintFullBook] = useState(true);
+  const [pp5Template, setPp5Template] = useState<'sss_excel' | 'obec_7sheets'>('sss_excel');
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [syncingAtt, setSyncingAtt] = useState(false);
   const [publishingOnline, setPublishingOnline] = useState(false);
@@ -144,8 +146,9 @@ function PorPor5Content() {
     return { trait, read };
   }, [currentClass.students, currentSubject.code]);
 
-  const handleOpenPrint = (fullBook: boolean) => {
+  const handleOpenPrint = (fullBook: boolean, template: 'sss_excel' | 'obec_7sheets' = 'sss_excel') => {
     setPrintFullBook(fullBook);
+    setPp5Template(template);
     setPrintMode(true);
     setTimeout(() => {
       window.print();
@@ -506,7 +509,7 @@ function PorPor5Content() {
           className="no-print"
           style={{
             maxWidth: '210mm',
-            margin: '0 auto 20px',
+            margin: '0 auto 14px',
             background: '#FFFFFF',
             borderRadius: 14,
             padding: '14px 20px',
@@ -532,7 +535,9 @@ function PorPor5Content() {
             </button>
             <div>
               <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.95rem' }}>
-                โหมดพิมพ์เล่ม ปพ.5 มาตรฐานราชการ ({printFullBook ? 'ครบทั้งเล่ม 7 ชีต' : 'เฉพาะปกและสรุปคะแนน 2 หน้า'})
+                {pp5Template === 'sss_excel'
+                  ? 'โหมดพิมพ์เล่ม SSS ปพ.5 ครบทุกหน้าตามไฟล์ปพ5.xlsx (20 แผ่น / เลือกชีตได้)'
+                  : `โหมดพิมพ์เล่ม ปพ.5 มาตรฐาน สพฐ. (${printFullBook ? 'ครบทั้งเล่ม 7 ชีต' : 'เฉพาะปกและสรุปคะแนน 2 หน้า'})`}
               </div>
               <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
                 วิชา {currentSubject.code} {currentSubject.name} · ชั้น {currentClass.className} ({currentClass.students.length} คน)
@@ -541,19 +546,49 @@ function PorPor5Content() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setPrintFullBook(prev => !prev)}
-              style={{
-                background: printFullBook ? '#FEF3C7' : '#E0F2FE',
-                color: printFullBook ? '#92400E' : '#0369A1',
-                border: '1px solid #CBD5E1', borderRadius: 8, padding: '8px 14px',
-                fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              <Layers size={15} /> {printFullBook ? 'กำลังแสดง: ครบเล่ม 7 ชีต (คลิกเพื่อสลับแบบย่อ)' : 'กำลังแสดง: แบบย่อ 2 หน้า (คลิกเพื่อดูครบเล่ม 7 ชีต)'}
-            </button>
+            {/* Template Switcher */}
+            <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: 3, borderRadius: 8, border: '1px solid #CBD5E1' }}>
+              <button
+                type="button"
+                onClick={() => setPp5Template('sss_excel')}
+                style={{
+                  background: pp5Template === 'sss_excel' ? '#0F172A' : 'transparent',
+                  color: pp5Template === 'sss_excel' ? '#FFFFFF' : '#334155',
+                  border: 'none', borderRadius: 6, padding: '6px 12px',
+                  fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
+                }}
+              >
+                📋 SSS ปพ.5 (ตามไฟล์ Excel ทุกหน้า)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPp5Template('obec_7sheets')}
+                style={{
+                  background: pp5Template === 'obec_7sheets' ? '#0F172A' : 'transparent',
+                  color: pp5Template === 'obec_7sheets' ? '#FFFFFF' : '#334155',
+                  border: 'none', borderRadius: 6, padding: '6px 12px',
+                  fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
+                }}
+              >
+                🏛️ สพฐ. 7 ชีต
+              </button>
+            </div>
+
+            {pp5Template === 'obec_7sheets' && (
+              <button
+                type="button"
+                onClick={() => setPrintFullBook(prev => !prev)}
+                style={{
+                  background: printFullBook ? '#FEF3C7' : '#E0F2FE',
+                  color: printFullBook ? '#92400E' : '#0369A1',
+                  border: '1px solid #CBD5E1', borderRadius: 8, padding: '8px 14px',
+                  fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <Layers size={15} /> {printFullBook ? 'ครบเล่ม 7 ชีต' : 'แบบย่อ 2 หน้า'}
+              </button>
+            )}
 
             <button
               type="button"
@@ -565,20 +600,31 @@ function PorPor5Content() {
                 boxShadow: '0 4px 14px rgba(29,78,216,0.35)',
               }}
             >
-              <Printer size={18} /> สั่งพิมพ์เล่ม ปพ.5 ({printFullBook ? '7 แผ่น' : '2 แผ่น'})
+              <Printer size={18} /> สั่งพิมพ์ทันที
             </button>
           </div>
         </div>
 
-        <PorPor5OfficialPrintSheets
-          currentClass={currentClass}
-          currentSubject={currentSubject}
-          semesterLabel={semesterLabel}
-          academicHeadName={academicHeadName}
-          gradeDistribution={gradeDistribution}
-          traitAndReadSummary={traitAndReadSummary}
-          fullBook={printFullBook}
-        />
+        {pp5Template === 'sss_excel' ? (
+          <SssPorPor5PrintBook
+            currentClass={currentClass}
+            currentSubject={currentSubject}
+            semesterLabel={semesterLabel}
+            academicHeadName={academicHeadName}
+            gradeDistribution={gradeDistribution}
+            traitAndReadSummary={traitAndReadSummary}
+          />
+        ) : (
+          <PorPor5OfficialPrintSheets
+            currentClass={currentClass}
+            currentSubject={currentSubject}
+            semesterLabel={semesterLabel}
+            academicHeadName={academicHeadName}
+            gradeDistribution={gradeDistribution}
+            traitAndReadSummary={traitAndReadSummary}
+            fullBook={printFullBook}
+          />
+        )}
       </div>
     );
   }
@@ -592,7 +638,7 @@ function PorPor5Content() {
               <BookOpen size={24} color="#0284C7" /> วิชาที่ฉันสอน / บันทึกคะแนน & พิมพ์เล่ม ปพ.5 ครบวงจร
             </h1>
             <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: 2 }}>
-              กรอกครั้งเดียว ซิงค์เข้าสมุดพก ปพ.6, แดชบอร์ด ผอ., และหน้าประกาศผลสอบออนไลน์ พร้อมพิมพ์เล่ม ปพ.5 ครบ 7 ชีต
+              กรอกครั้งเดียว ซิงค์เข้าสมุดพก ปพ.6, แดชบอร์ด ผอ., และหน้าประกาศผลสอบออนไลน์ พร้อมพิมพ์เล่ม SSS ปพ.5 ครบทุกหน้าตามไฟล์ปพ5.xlsx
             </div>
           </div>
 
@@ -633,7 +679,7 @@ function PorPor5Content() {
 
             <button
               type="button"
-              onClick={() => handleOpenPrint(true)}
+              onClick={() => handleOpenPrint(true, 'sss_excel')}
               style={{
                 background: '#1D4ED8', color: 'white', border: 'none', borderRadius: 999,
                 padding: '9px 18px', fontWeight: 900, fontSize: '0.84rem', cursor: 'pointer',
@@ -641,7 +687,7 @@ function PorPor5Content() {
                 boxShadow: '0 4px 12px rgba(29,78,216,0.25)',
               }}
             >
-              <Printer size={15} /> พิมพ์เล่ม ปพ.5 (ครบ 7 ชีต)
+              <Printer size={15} /> พิมพ์เล่ม SSS ปพ.5 ทุกหน้า (ตามไฟล์ Excel)
             </button>
 
             <button
@@ -908,15 +954,26 @@ function PorPor5Content() {
 
       {/* Fallback when pressing Ctrl+P directly on the PorPor5 page */}
       <div className="only-print-pp5 print-area">
-        <PorPor5OfficialPrintSheets
-          currentClass={currentClass}
-          currentSubject={currentSubject}
-          semesterLabel={semesterLabel}
-          academicHeadName={academicHeadName}
-          gradeDistribution={gradeDistribution}
-          traitAndReadSummary={traitAndReadSummary}
-          fullBook={printFullBook}
-        />
+        {pp5Template === 'sss_excel' ? (
+          <SssPorPor5PrintBook
+            currentClass={currentClass}
+            currentSubject={currentSubject}
+            semesterLabel={semesterLabel}
+            academicHeadName={academicHeadName}
+            gradeDistribution={gradeDistribution}
+            traitAndReadSummary={traitAndReadSummary}
+          />
+        ) : (
+          <PorPor5OfficialPrintSheets
+            currentClass={currentClass}
+            currentSubject={currentSubject}
+            semesterLabel={semesterLabel}
+            academicHeadName={academicHeadName}
+            gradeDistribution={gradeDistribution}
+            traitAndReadSummary={traitAndReadSummary}
+            fullBook={printFullBook}
+          />
+        )}
       </div>
 
       <style>{`
