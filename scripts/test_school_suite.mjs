@@ -389,3 +389,18 @@ test('Suite 8: Site-wide CSS is imported once, at the entry, in cascade order', 
   const offenders = fs.readdirSync(pagesDir).filter(f => /import\s+['"][^'"]+\.css['"]/.test(fs.readFileSync(path.join(pagesDir, f), 'utf-8')));
   assert.deepEqual(offenders, [], `pages importing CSS: ${offenders.join(', ')}`);
 });
+
+// -------------------------------------------------------------
+// Test Suite 9: Term start dates match the school calendar
+// -------------------------------------------------------------
+test('Suite 9: Each term opens on a school day', async () => {
+  const { DEFAULT_ACTIVITIES } = await import('../src/data/defaultActivities.ts');
+  const openings = DEFAULT_ACTIVITIES.filter(a => a.id.startsWith('d-open-'));
+  assert.ok(openings.length >= 2, 'both term openings are listed');
+  for (const a of openings) {
+    const weekday = new Date(`${a.date}T00:00:00`).getDay();
+    assert.ok(weekday >= 1 && weekday <= 5, `${a.title} (${a.date}) falls on a weekend`);
+  }
+  // ปฏิทินโรงเรียน 2569: 2 พ.ย. 2569 = เปิดเทอมภาคเรียนที่ 2 วันเรียนที่ 1
+  assert.equal(openings.find(a => a.id === 'd-open-2-69')?.date, '2026-11-02');
+});
