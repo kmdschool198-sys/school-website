@@ -22,6 +22,7 @@ import { normalizeResultCode, resultLookupDocId } from '../data/results';
 import type { BehaviorLogEntry } from './BehaviorPage';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 import SssPorPor5PrintBook, { PP5_PRINT_STYLES } from '../components/SssPorPor5PrintBook';
+import SgsPorPor5PrintBook from '../components/SgsPorPor5PrintBook';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const DEPUTY_DIRECTOR_NAME = 'นางสาวเจนจีรา บุญเกตุ';
@@ -95,7 +96,7 @@ function PorPor5Content() {
   const [savedToast, setSavedToast] = useState(false);
   const [printMode, setPrintMode] = useState(false);
   const [printFullBook, setPrintFullBook] = useState(true);
-  const [pp5Template, setPp5Template] = useState<'sss_excel' | 'obec_7sheets'>('sss_excel');
+  const [pp5Template, setPp5Template] = useState<'sgs' | 'sss_excel' | 'obec_7sheets'>('sgs');
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [syncingAtt, setSyncingAtt] = useState(false);
   const [publishingOnline, setPublishingOnline] = useState(false);
@@ -175,7 +176,7 @@ function PorPor5Content() {
     return { trait, read };
   }, [currentClass.students, currentSubject.code]);
 
-  const handleOpenPrint = (fullBook: boolean, template: 'sss_excel' | 'obec_7sheets' = 'sss_excel') => {
+  const handleOpenPrint = (fullBook: boolean, template: 'sgs' | 'sss_excel' | 'obec_7sheets' = 'sgs') => {
     setPrintFullBook(fullBook);
     setPp5Template(template);
     setPrintMode(true);
@@ -539,7 +540,9 @@ function PorPor5Content() {
             </button>
             <div>
               <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.95rem' }}>
-                {pp5Template === 'sss_excel'
+                {pp5Template === 'sgs'
+                  ? 'โหมดพิมพ์ ปพ.5 แบบ SGS (รูปแบบเอกสารราชการ)'
+                  : pp5Template === 'sss_excel'
                   ? 'โหมดพิมพ์เล่ม SSS ปพ.5 ครบทุกหน้าตามไฟล์ปพ5.xlsx (20 แผ่น / เลือกชีตได้)'
                   : `โหมดพิมพ์เล่ม ปพ.5 มาตรฐาน สพฐ. (${printFullBook ? 'ครบทั้งเล่ม 7 ชีต' : 'เฉพาะปกและสรุปคะแนน 2 หน้า'})`}
               </div>
@@ -552,6 +555,18 @@ function PorPor5Content() {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Template Switcher */}
             <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: 3, borderRadius: 8, border: '1px solid #CBD5E1' }}>
+              <button
+                type="button"
+                onClick={() => setPp5Template('sgs')}
+                style={{
+                  background: pp5Template === 'sgs' ? '#0F172A' : 'transparent',
+                  color: pp5Template === 'sgs' ? '#FFFFFF' : '#334155',
+                  border: 'none', borderRadius: 6, padding: '6px 12px',
+                  fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
+                }}
+              >
+                📘 SGS (ราชการ)
+              </button>
               <button
                 type="button"
                 onClick={() => setPp5Template('sss_excel')}
@@ -609,7 +624,16 @@ function PorPor5Content() {
           </div>
         </div>
 
-        {pp5Template === 'sss_excel' ? (
+        {pp5Template === 'sgs' ? (
+          <SgsPorPor5PrintBook
+            currentClass={currentClass}
+            currentSubject={currentSubject}
+            semesterLabel={semesterLabel}
+            plan={subjectPlan}
+            measurementHeadName={academicHeadName}
+            deputyDirectorName={DEPUTY_DIRECTOR_NAME}
+          />
+        ) : pp5Template === 'sss_excel' ? (
           <SssPorPor5PrintBook
             currentClass={currentClass}
             currentSubject={currentSubject}
@@ -683,7 +707,7 @@ function PorPor5Content() {
 
             <button
               type="button"
-              onClick={() => handleOpenPrint(true, 'sss_excel')}
+              onClick={() => handleOpenPrint(true, 'sgs')}
               style={{
                 background: '#1D4ED8', color: 'white', border: 'none', borderRadius: 999,
                 padding: '9px 18px', fontWeight: 900, fontSize: '0.84rem', cursor: 'pointer',
@@ -691,7 +715,7 @@ function PorPor5Content() {
                 boxShadow: '0 4px 12px rgba(29,78,216,0.25)',
               }}
             >
-              <Printer size={15} /> พิมพ์เล่ม SSS ปพ.5 ทุกหน้า (ตามไฟล์ Excel)
+              <Printer size={15} /> พิมพ์ ปพ.5 (แบบ SGS)
             </button>
 
             <button
@@ -1046,7 +1070,16 @@ function PorPor5Content() {
 
       {/* Fallback when pressing Ctrl+P directly on the PorPor5 page */}
       <div className="only-print-pp5 print-area">
-        {pp5Template === 'sss_excel' ? (
+        {pp5Template === 'sgs' ? (
+          <SgsPorPor5PrintBook
+            currentClass={currentClass}
+            currentSubject={currentSubject}
+            semesterLabel={semesterLabel}
+            plan={subjectPlan}
+            measurementHeadName={academicHeadName}
+            deputyDirectorName={DEPUTY_DIRECTOR_NAME}
+          />
+        ) : pp5Template === 'sss_excel' ? (
           <SssPorPor5PrintBook
             currentClass={currentClass}
             currentSubject={currentSubject}
