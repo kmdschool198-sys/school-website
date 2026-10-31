@@ -1,148 +1,85 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
   INITIAL_ACADEMIC_DATA,
   scoreToGrade,
   type ClassAcademicData,
   type AcademicStudentRecord,
+  type StudentSubjectScore,
 } from '../data/academicData';
 import { useSchoolRoster } from './useSchoolRoster';
+import {
+  applyScoreOverrides,
+  evaluationWrite,
+  mergeWrite,
+  scoreWrite,
+  type RosterByClass,
+  type ScoreOverrides,
+} from './academicScores';
 
-const STORAGE_KEY = 'kmd_academic_data_v1_2569';
+// Teachers' entered scores (see academicScores.ts for the storage model). The local copy is
+// only a cache for showing scores while offline; it is never written back as a whole.
+const SCORES_DOC = doc(db, 'config', 'academic_scores_2569');
+const CACHE_KEY = 'kmd_academic_scores_cache_v2_2569';
 
-export function loadAcademicData(): ClassAcademicData[] {
+function readCache(): ScoreOverrides {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return INITIAL_ACADEMIC_DATA;
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    return INITIAL_ACADEMIC_DATA;
+    return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') as ScoreOverrides;
   } catch {
-    return INITIAL_ACADEMIC_DATA;
+    return {};
   }
 }
 
-export async function saveAcademicData(data: ClassAcademicData[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new Event('kmd-academic-updated'));
-  } catch (e) {
-    console.error('Failed to save academic data locally', e);
-  }
-
-  try {
-    await setDoc(doc(db, 'config', 'academic_data_2569'), {
-      classes: data,
-      updatedAt: Date.now(),
-    }, { merge: true });
-  } catch (err) {
-    console.error('Failed to save academic data to Firestore:', err);
-  }
+function writeCache(overrides: ScoreOverrides) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(overrides)); } catch { /* storage full or blocked */ }
 }
 
-export async function resetAcademicData(): Promise<ClassAcademicData[]> {
-  localStorage.removeItem(STORAGE_KEY);
-  window.dispatchEvent(new Event('kmd-academic-updated'));
+async function saveCell(write: ScoreOverrides) {
   try {
-    await setDoc(doc(db, 'config', 'academic_data_2569'), {
-      classes: INITIAL_ACADEMIC_DATA,
-      updatedAt: Date.now(),
-    }, { merge: true });
+    await setDoc(SCORES_DOC, { ...write, updatedAt: Date.now() }, { merge: true });
   } catch (err) {
-    console.error('Failed to reset academic data on Firestore:', err);
+    console.error('Failed to save score to Firestore:', err);
   }
-  return INITIAL_ACADEMIC_DATA;
 }
 
 export function useAcademicData() {
-  const [rawClassesData, setRawClassesData] = useState<ClassAcademicData[]>(loadAcademicData);
+  const [overrides, setOverrides] = useState<ScoreOverrides>(readCache);
   const { classes: unifiedRosters } = useSchoolRoster();
 
-  // Listen to Firestore config/academic_data_2569 in realtime
-  useEffect(() => {
-    return onSnapshot(doc(db, 'config', 'academic_data_2569'), snap => {
-      if (snap.exists()) {
-        const d = snap.data();
-        if (Array.isArray(d.classes) && d.classes.length > 0) {
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(d.classes));
-          } catch { /* ignore */ }
-          setRawClassesData(d.classes);
-        }
-      }
-    });
-  }, []);
+  useEffect(() => onSnapshot(SCORES_DOC, snap => {
+    const server = (snap.exists() ? snap.data() : {}) as ScoreOverrides;
+    const next = { scores: server.scores || {}, evaluations: server.evaluations || {} };
+    writeCache(next);
+    setOverrides(next);
+  }), []);
 
-  useEffect(() => {
-    const handler = () => setRawClassesData(loadAcademicData());
-    window.addEventListener('kmd-academic-updated', handler);
-    return () => window.removeEventListener('kmd-academic-updated', handler);
-  }, []);
+  // live roster order per academic class (classId 'm1' etc.), so new or moved students show up
+  const rosterByClass = useMemo<RosterByClass>(() => {
+    const map: RosterByClass = {};
+    for (const cls of INITIAL_ACADEMIC_DATA) {
+      const roster = unifiedRosters.find(r => r.acadId === cls.classId || r.shortClass === cls.shortName);
+      if (roster?.students.length) map[cls.classId] = roster.students.map(s => ({ code: s.code, name: s.name, gender: s.gender }));
+    }
+    return map;
+  }, [unifiedRosters]);
 
-  // Dynamically synchronize each class's student list with the live unified roster
-  // while preserving every student's real PorPor 5 / PorPor 6 scores!
-  const classesData = useMemo<ClassAcademicData[]>(() => {
-    return rawClassesData.map(cls => {
-      const roster = unifiedRosters.find(
-        r => r.acadId === cls.classId || r.shortClass === cls.shortName
-      );
-      if (!roster || roster.students.length === 0) return cls;
+  const classesData = useMemo<ClassAcademicData[]>(
+    () => applyScoreOverrides(INITIAL_ACADEMIC_DATA, overrides, rosterByClass),
+    [overrides, rosterByClass],
+  );
 
-      const syncedStudents: AcademicStudentRecord[] = roster.students.map((rs, idx) => {
-        const existing =
-          cls.students.find(s => s.code === rs.code) ||
-          cls.students.find(s => s.name.trim() === rs.name.trim());
+  // callbacks read the latest view through a ref so a quick series of edits never uses stale data
+  const viewRef = useRef(classesData);
+  useEffect(() => { viewRef.current = classesData; }, [classesData]);
 
-        if (existing) {
-          return {
-            ...existing,
-            no: idx + 1,
-            code: rs.code || existing.code,
-            name: rs.name || existing.name,
-            gender: rs.gender,
-          };
-        }
-
-        // If a new student was added in ManageRoster/Firestore, build default passing scores
-        const defaultScores: AcademicStudentRecord['scores'] = {};
-        for (const subj of cls.subjects) {
-          defaultScores[subj.code] = {
-            coursework: 55,
-            finalExam: 20,
-            total: 75,
-            grade: '3.5',
-            attendedHours: subj.hours,
-            traitScore: 3,
-            readThinkScore: 3,
-          };
-        }
-
-        return {
-          no: idx + 1,
-          code: rs.code,
-          name: rs.name,
-          gender: rs.gender,
-          scores: defaultScores,
-          traitResult: 'ดีเยี่ยม',
-          readThinkResult: 'ดีเยี่ยม',
-          activityResult: 'ผ่าน',
-        };
-      });
-
-      return {
-        ...cls,
-        students: syncedStudents,
-      };
-    });
-  }, [rawClassesData, unifiedRosters]);
-
-  const updateClassData = useCallback((classId: string, updater: (prev: ClassAcademicData) => ClassAcademicData) => {
-    setRawClassesData(prev => {
-      const next = prev.map(c => (c.classId === classId ? updater(c) : c));
-      saveAcademicData(next);
+  const applyLocally = useCallback((write: ScoreOverrides) => {
+    setOverrides(prev => {
+      const next = mergeWrite(prev, write);
+      writeCache(next);
       return next;
     });
+    void saveCell(write);
   }, []);
 
   const updateStudentScore = useCallback((
@@ -156,43 +93,20 @@ export function useAcademicData() {
     readThinkScore?: number,
     attendedHours?: number,
   ) => {
-    updateClassData(classId, cls => {
-      const total = Math.max(0, Math.min(100, Math.round(coursework + finalExam)));
-      const grade = scoreToGrade(total, specialGrade);
-      return {
-        ...cls,
-        students: cls.students.map((st: AcademicStudentRecord) => {
-          if (st.code !== studentCode) return st;
-          // no previous score: start from zero marks, not an assumed pass
-          const prevSubj = st.scores[subjectCode] || {
-            coursework: 0,
-            finalExam: 0,
-            total: 0,
-            grade: '',
-            attendedHours: 40,
-            traitScore: 3,
-            readThinkScore: 3,
-          };
-          return {
-            ...st,
-            scores: {
-              ...st.scores,
-              [subjectCode]: {
-                ...prevSubj,
-                coursework,
-                finalExam,
-                total,
-                grade,
-                traitScore: traitScore ?? prevSubj.traitScore,
-                readThinkScore: readThinkScore ?? prevSubj.readThinkScore,
-                attendedHours: attendedHours ?? prevSubj.attendedHours,
-              },
-            },
-          };
-        }),
-      };
-    });
-  }, [updateClassData]);
+    const cls = viewRef.current.find(c => c.classId === classId);
+    const prev: Partial<StudentSubjectScore> = cls?.students.find(s => s.code === studentCode)?.scores[subjectCode] || {};
+    const hours = cls?.subjects.find(s => s.code === subjectCode)?.hours ?? 40;
+    const total = Math.max(0, Math.min(100, Math.round(coursework + finalExam)));
+    applyLocally(scoreWrite(classId, studentCode, subjectCode, {
+      coursework,
+      finalExam,
+      total,
+      grade: scoreToGrade(total, specialGrade),
+      traitScore: traitScore ?? prev.traitScore ?? 3,
+      readThinkScore: readThinkScore ?? prev.readThinkScore ?? 3,
+      attendedHours: attendedHours ?? prev.attendedHours ?? hours,
+    }));
+  }, [applyLocally]);
 
   const updateStudentEvaluation = useCallback((
     classId: string,
@@ -201,28 +115,20 @@ export function useAcademicData() {
     readThinkResult: AcademicStudentRecord['readThinkResult'],
     activityResult: AcademicStudentRecord['activityResult'],
   ) => {
-    updateClassData(classId, cls => ({
-      ...cls,
-      students: cls.students.map(st =>
-        st.code === studentCode
-          ? { ...st, traitResult, readThinkResult, activityResult }
-          : st
-      ),
-    }));
-  }, [updateClassData]);
+    applyLocally(evaluationWrite(classId, studentCode, { traitResult, readThinkResult, activityResult }));
+  }, [applyLocally]);
 
   return {
     classesData,
-    setClassesData: (next: ClassAcademicData[]) => {
-      saveAcademicData(next);
-      setRawClassesData(next);
-    },
-    updateClassData,
     updateStudentScore,
     updateStudentEvaluation,
+    /** Re-read every entered score from the server. Never deletes or overwrites anyone's data. */
     resetToDefault: async () => {
-      const d = await resetAcademicData();
-      setRawClassesData(d);
+      const snap = await getDoc(SCORES_DOC);
+      const server = (snap.exists() ? snap.data() : {}) as ScoreOverrides;
+      const next = { scores: server.scores || {}, evaluations: server.evaluations || {} };
+      writeCache(next);
+      setOverrides(next);
     },
   };
 }

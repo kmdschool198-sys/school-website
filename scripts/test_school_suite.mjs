@@ -328,3 +328,49 @@ test('Suite 6: Student record matching', async (t) => {
     assert.equal(normalizeThaiName('ด.ญ. สมหญิง  รักเรียน'), 'สมหญิงรักเรียน');
   });
 });
+
+// -------------------------------------------------------------
+// Test Suite 7: Concurrent score entry must not lose another teacher's work
+// -------------------------------------------------------------
+test('Suite 7: Score saves are per cell, not whole-school overwrites', async (t) => {
+  const { scoreWrite, applyScoreOverrides, mergeWrite } = await import('../src/utils/academicScores.ts');
+  const base = [
+    { classId: 'm1', subjects: [{ code: 'ว21103', hours: 40 }], students: [{ code: '2536', name: 'ก', scores: {} }] },
+    { classId: 'm2', subjects: [{ code: 'ว22103', hours: 40 }], students: [{ code: '2403', name: 'ข', scores: {} }] },
+  ];
+  const score = (cw, fin) => ({ coursework: cw, finalExam: fin, total: cw + fin, grade: '4', attendedHours: 40, traitScore: 3, readThinkScore: 3 });
+
+  await t.test('two teachers saving different classes at the same time both keep their scores', () => {
+    let server = {};
+    // both teachers start from the same (empty) server copy, then each saves one cell
+    const fromA = scoreWrite('m1', '2536', 'ว21103', score(60, 25));
+    const fromB = scoreWrite('m2', '2403', 'ว22103', score(55, 20));
+    server = mergeWrite(server, fromA);
+    server = mergeWrite(server, fromB);
+    const view = applyScoreOverrides(base, server);
+    assert.equal(view[0].students[0].scores['ว21103'].total, 85);
+    assert.equal(view[1].students[0].scores['ว22103'].total, 75);
+  });
+
+  await t.test('a save only contains the edited cell', () => {
+    const w = scoreWrite('m1', '2536', 'ว21103', score(60, 25));
+    assert.deepEqual(Object.keys(w.scores), ['m1']);
+    assert.deepEqual(Object.keys(w.scores.m1), ['2536']);
+    assert.deepEqual(Object.keys(w.scores.m1['2536']), ['ว21103']);
+  });
+
+  await t.test('scores for a student who is not in the bundled list are kept, not dropped', () => {
+    const view = applyScoreOverrides(base, mergeWrite({}, scoreWrite('m1', '9999', 'ว21103', score(50, 10))), {
+      m1: [{ code: '9999', name: 'นักเรียนย้ายเข้า' }],
+    });
+    const added = view[0].students.find(s => s.code === '9999');
+    assert.ok(added, 'roster student added to the class');
+    assert.equal(added.scores['ว21103'].total, 60);
+  });
+
+  await t.test('a student with no score has no grade, not a made-up pass', () => {
+    const view = applyScoreOverrides(base, {}, { m1: [{ code: '9999', name: 'นักเรียนย้ายเข้า' }] });
+    const added = view[0].students.find(s => s.code === '9999');
+    assert.deepEqual(added.scores, {});
+  });
+});

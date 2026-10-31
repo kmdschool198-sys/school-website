@@ -257,7 +257,7 @@ function PorPor6Content() {
             <button
               type="button"
               onClick={() => {
-                if (window.confirm('ต้องการรีเซ็ตข้อมูลคะแนนกลับเป็นค่าเริ่มต้นจากไฟล์งานวัดผลหรือไม่?')) {
+                if (window.confirm('โหลดคะแนนล่าสุดที่ครูทุกคนบันทึกไว้ในระบบใหม่? (ไม่ลบหรือเขียนทับข้อมูลของใคร)')) {
                   resetToDefault();
                 }
               }}
@@ -267,7 +267,7 @@ function PorPor6Content() {
                 cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
               }}
             >
-              <RotateCcw size={14} /> รีเซ็ตข้อมูลเริ่มต้น
+              <RotateCcw size={14} /> โหลดคะแนนล่าสุด
             </button>
           </div>
         </div>
