@@ -21,7 +21,7 @@ import { toast } from '../components/GlobalToast';
 import { normalizeResultCode, resultLookupDocId } from '../data/results';
 import type { BehaviorLogEntry } from './BehaviorPage';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
-import SssPorPor5PrintBook from '../components/SssPorPor5PrintBook';
+import SssPorPor5PrintBook, { PP5_PRINT_STYLES } from '../components/SssPorPor5PrintBook';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const DEPUTY_DIRECTOR_NAME = 'นางสาวเจนจีรา บุญเกตุ';
@@ -1704,62 +1704,7 @@ function PorPor5OfficialPrintSheets({
         </div>
       )}
 
-      <style>{`
-        .pp5-sheet {
-          width: 210mm;
-          min-height: 296mm;
-          margin: 0 auto 24px;
-          background: #FFFFFF;
-          color: #000000;
-          padding: 10mm 12mm;
-          box-sizing: border-box;
-          font-family: 'Sarabun', 'TH SarabunPSK', sans-serif;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-          page-break-after: always;
-          break-after: page;
-        }
-        .pp5-sheet:last-child {
-          page-break-after: auto;
-          break-after: auto;
-        }
-        .pp5-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 9.5pt;
-        }
-        .pp5-table th,
-        .pp5-table td {
-          border: 1px solid #000000;
-          padding: 3px 4px;
-          line-height: 1.25;
-        }
-        .pp5-table th {
-          background: #F8FAFC;
-          font-weight: 800;
-          text-align: center;
-        }
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 8mm;
-          }
-          body {
-            background: #FFFFFF !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .pp5-sheet {
-            width: 100% !important;
-            min-height: auto !important;
-            margin: 0 !important;
-            padding: 2mm 4mm !important;
-            box-shadow: none !important;
-          }
-        }
-      `}</style>
+      <style>{PP5_PRINT_STYLES}</style>
     </div>
   );
 }

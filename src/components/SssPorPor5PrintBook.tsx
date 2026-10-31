@@ -3,6 +3,68 @@ import type { ClassAcademicData, AcademicSubject } from '../data/academicData';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
+/**
+ * Paper rules for every ปพ.5 sheet (A4 portrait, one sheet per page, ruled tables).
+ * The print book and the ObEC sheet set both use .pp5-sheet / .pp5-table, so both render this;
+ * without it a printed sheet has no borders, no page break and falls back to Letter paper.
+ */
+export const PP5_PRINT_STYLES = `
+  .pp5-sheet {
+    width: 210mm;
+    min-height: 296mm;
+    margin: 0 auto 24px;
+    background: #FFFFFF;
+    color: #000000;
+    padding: 10mm 12mm;
+    box-sizing: border-box;
+    font-family: 'Sarabun', 'TH SarabunPSK', sans-serif;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    page-break-after: always;
+    break-after: page;
+  }
+  .pp5-sheet:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  .pp5-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+  }
+  .pp5-table th,
+  .pp5-table td {
+    border: 1px solid #000000;
+    padding: 3px 4px;
+    line-height: 1.25;
+  }
+  .pp5-table th {
+    background: #F8FAFC;
+    font-weight: 800;
+    text-align: center;
+  }
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 8mm;
+    }
+    body {
+      background: #FFFFFF !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .no-print {
+      display: none !important;
+    }
+    .pp5-sheet {
+      width: 100% !important;
+      min-height: auto !important;
+      margin: 0 !important;
+      padding: 2mm 4mm !important;
+      box-shadow: none !important;
+    }
+  }
+`;
+
 export type SssPp5SheetKey =
   | 'all_full'        // พิมพ์ทุกหน้าครบทั้งเล่ม (รวม 12 เดือน)
   | 'all_core'        // พิมพ์ชุดหลัก (ข้อมูลพื้นฐาน + ปก + ปพ.5 + สรุปคะแนน + สรุปผลการเรียน + สรุปการมาเรียน)
@@ -152,6 +214,8 @@ export default function SssPorPor5PrintBook({
 
   return (
     <div>
+      <style>{PP5_PRINT_STYLES}</style>
+
       {/* แถบเลือกชีตตามไฟล์ SSS ปพ.5 - 6\ปพ5.xlsx (ซ่อนตอนสั่งปริ้น) */}
       <div
         className="no-print"
