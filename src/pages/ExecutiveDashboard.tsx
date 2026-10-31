@@ -286,7 +286,7 @@ function Dashboard() {
 
 function Stat({ label, value, sub, warn }: { label: string; value: string; sub?: string; warn?: boolean }) {
   return (
-    <div style={{ background: 'white', borderRadius: 12, padding: '12px 14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', borderLeft: `4px solid ${warn ? '#DC2626' : '#7C3AED'}` }}>
+    <div style={{ background: 'white', borderRadius: 12, padding: '12px 14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: `1px solid ${warn ? '#FCA5A5' : '#E2E8F0'}` }}>
       <div style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>{label}</div>
       <div style={{ fontSize: '1.5rem', fontWeight: 900, color: warn ? '#B91C1C' : '#0F172A' }}>{value}</div>
       {sub && <div style={{ fontSize: '0.78rem', color: '#64748B' }}>{sub}</div>}
