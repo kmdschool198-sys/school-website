@@ -3,7 +3,7 @@ import { collection, doc, getDocs, onSnapshot, query, where, writeBatch } from '
 import { db } from '../firebase';
 import {
   Download, Printer, BookOpen, CheckCircle2, ArrowLeft,
-  ClipboardPaste, Sparkles, RefreshCw, ShieldCheck, Megaphone, Layers,
+  ClipboardPaste, Sparkles, RefreshCw, ShieldCheck, Megaphone,
 } from 'lucide-react';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
@@ -13,46 +13,20 @@ import PlanEditor from '../components/sgs/PlanEditor';
 import IndicatorGrid from '../components/sgs/IndicatorGrid';
 import ItemsGrid from '../components/sgs/ItemsGrid';
 import { useAcademicData } from '../utils/academicStorage';
-import { calculateClassRanks, scoreScheme, type ScoreScheme, type StudentSubjectScore } from '../data/academicData';
+import { calculateClassRanks, scoreScheme, type ScoreScheme } from '../data/academicData';
 import { downloadCsvReport } from '../utils/csvReport';
 import ExcelPasteModal from '../components/ExcelPasteModal';
 import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
 import { toast } from '../components/GlobalToast';
 import { normalizeResultCode, resultLookupDocId } from '../data/results';
 import type { BehaviorLogEntry } from './BehaviorPage';
-import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
-import SssPorPor5PrintBook, { PP5_PRINT_STYLES } from '../components/SssPorPor5PrintBook';
 import SgsPorPor5PrintBook from '../components/SgsPorPor5PrintBook';
 
-const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const DEPUTY_DIRECTOR_NAME = 'นางสาวเจนจีรา บุญเกตุ';
 
 // แปลงรหัสชั้นวิชาการ (เช่น m1, p1) เป็นรหัสห้องเช็คชื่อ (เช่น m1_1, p1_1)
 const toRosterClassId = (acadClassId: string) =>
   acadClassId.includes('_') ? acadClassId : `${acadClassId}_1`;
-
-// แปลงคะแนนระหว่างเรียน (เต็ม 70) เป็น: ก่อนกลางภาค (25) | กลางภาค (20) | หลังกลางภาค (25)
-function splitCoursework3Parts(cw: number): { preMid: number; mid: number; postMid: number } {
-  const safe = Math.min(70, Math.max(0, Math.round(cw)));
-  const preMid = Math.min(25, Math.round((safe * 25) / 70));
-  const mid = Math.min(20, Math.round((safe * 20) / 70));
-  const postMid = Math.max(0, safe - preMid - mid);
-  return { preMid, mid, postMid };
-}
-
-// แปลงคะแนนระหว่างเรียน (เต็ม 70) เป็น 5 ตัวชี้วัดย่อย (ตัวชี้วัดละ 14 คะแนน รวม 70) สำหรับชีต "คะแนน"
-function splitIndicators5(cw: number): [number, number, number, number, number] {
-  const safe = Math.min(70, Math.max(0, Math.round(cw)));
-  const base = Math.floor(safe / 5);
-  const rem = safe - base * 5;
-  return [
-    base + (rem > 0 ? 1 : 0),
-    base + (rem > 1 ? 1 : 0),
-    base + (rem > 2 ? 1 : 0),
-    base + (rem > 3 ? 1 : 0),
-    base,
-  ];
-}
 
 export default function PorPor5Page() {
   const auth = useTeacherAuth();
@@ -95,8 +69,6 @@ function PorPor5Content() {
   const [semesterLabel, setSemesterLabel] = useState<string>('ภาคเรียนที่ 1 ปีการศึกษา 2569');
   const [savedToast, setSavedToast] = useState(false);
   const [printMode, setPrintMode] = useState(false);
-  const [printFullBook, setPrintFullBook] = useState(true);
-  const [pp5Template, setPp5Template] = useState<'sgs' | 'sss_excel' | 'obec_7sheets'>('sgs');
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [syncingAtt, setSyncingAtt] = useState(false);
   const [publishingOnline, setPublishingOnline] = useState(false);
@@ -163,22 +135,7 @@ function PorPor5Content() {
     return dist;
   }, [currentClass.students, currentSubject.code]);
 
-  const traitAndReadSummary = useMemo(() => {
-    const trait = { 3: 0, 2: 0, 1: 0, 0: 0 };
-    const read = { 3: 0, 2: 0, 1: 0, 0: 0 };
-    for (const st of currentClass.students) {
-      const sc = st.scores[currentSubject.code];
-      const t = (sc?.traitScore ?? 3) as 0 | 1 | 2 | 3;
-      const r = (sc?.readThinkScore ?? 3) as 0 | 1 | 2 | 3;
-      trait[t] = (trait[t] || 0) + 1;
-      read[r] = (read[r] || 0) + 1;
-    }
-    return { trait, read };
-  }, [currentClass.students, currentSubject.code]);
-
-  const handleOpenPrint = (fullBook: boolean, template: 'sgs' | 'sss_excel' | 'obec_7sheets' = 'sgs') => {
-    setPrintFullBook(fullBook);
-    setPp5Template(template);
+  const handleOpenPrint = () => {
     setPrintMode(true);
     setTimeout(() => {
       window.print();
@@ -480,7 +437,7 @@ function PorPor5Content() {
         ...(scheme.yearly
           ? [`ภาค 1 เก็บ (${scheme.courseworkMax})`, `ภาค 1 ปลายภาค (${scheme.finalMax})`, 'รวมภาค 1 (50)',
              `ภาค 2 เก็บ (${scheme.courseworkMax})`, `ภาค 2 ปลายภาค (${scheme.finalMax})`, 'รวมภาค 2 (50)', 'รวมทั้งปี (100)']
-          : ['ก่อนกลางภาค (25)', 'กลางภาค (20)', 'หลังกลางภาค (25)', 'รวมระหว่างเรียน (70)', 'ปลายภาค (30)', 'รวมคะแนน (100)']),
+          : [`ระหว่างภาค (${scheme.courseworkMax})`, `ปลายภาค (${scheme.finalMax})`, 'รวมคะแนน (100)']),
         'ระดับผลการเรียน', 'ผลการแก้ไข',
         'คุณลักษณะอันพึงประสงค์ (0-3)', 'การอ่านคิดวิเคราะห์และเขียน (0-3)',
       ],
@@ -492,19 +449,16 @@ function PorPor5Content() {
           ? [sc.coursework, sc.finalExam, sc.coursework + sc.finalExam,
              sc.term2Coursework ?? '', sc.term2FinalExam ?? '',
              hasTerm2 ? (sc.term2Coursework ?? 0) + (sc.term2FinalExam ?? 0) : '', hasTerm2 ? sc.total : '']
-          : (() => {
-            const { preMid, mid, postMid } = splitCoursework3Parts(sc.coursework);
-            return [preMid, mid, postMid, sc.coursework, sc.finalExam, sc.total];
-          })();
+          : [sc.coursework, sc.finalExam, sc.total];
         return [
           st.no, st.code, st.name,
           currentSubject.hours, sc.attendedHours, `${attPct}%`,
-          ...scoreCells, sc.grade, '',
+          ...scoreCells, sc.grade, sc.remedial?.grade ?? '',
           sc.traitScore, sc.readThinkScore,
         ];
       }),
     ];
-    downloadCsvReport(`ปพ5_7ชีต_${currentClass.shortName}_${currentSubject.code}_${currentSubject.name}.csv`, rows);
+    downloadCsvReport(`ปพ5_${currentClass.shortName}_${currentSubject.code}_${currentSubject.name}.csv`, rows);
   };
 
   if (printMode) {
@@ -540,11 +494,7 @@ function PorPor5Content() {
             </button>
             <div>
               <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.95rem' }}>
-                {pp5Template === 'sgs'
-                  ? 'โหมดพิมพ์ ปพ.5 แบบ SGS (รูปแบบเอกสารราชการ)'
-                  : pp5Template === 'sss_excel'
-                  ? 'โหมดพิมพ์เล่ม SSS ปพ.5 ครบทุกหน้าตามไฟล์ปพ5.xlsx (20 แผ่น / เลือกชีตได้)'
-                  : `โหมดพิมพ์เล่ม ปพ.5 มาตรฐาน สพฐ. (${printFullBook ? 'ครบทั้งเล่ม 7 ชีต' : 'เฉพาะปกและสรุปคะแนน 2 หน้า'})`}
+                โหมดพิมพ์ ปพ.5 แบบ SGS (รูปแบบเอกสารราชการ)
               </div>
               <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
                 วิชา {currentSubject.code} {currentSubject.name} · ชั้น {currentClass.className} ({currentClass.students.length} คน)
@@ -553,62 +503,6 @@ function PorPor5Content() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Template Switcher */}
-            <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: 3, borderRadius: 8, border: '1px solid #CBD5E1' }}>
-              <button
-                type="button"
-                onClick={() => setPp5Template('sgs')}
-                style={{
-                  background: pp5Template === 'sgs' ? '#0F172A' : 'transparent',
-                  color: pp5Template === 'sgs' ? '#FFFFFF' : '#334155',
-                  border: 'none', borderRadius: 6, padding: '6px 12px',
-                  fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
-                }}
-              >
-                📘 SGS (ราชการ)
-              </button>
-              <button
-                type="button"
-                onClick={() => setPp5Template('sss_excel')}
-                style={{
-                  background: pp5Template === 'sss_excel' ? '#0F172A' : 'transparent',
-                  color: pp5Template === 'sss_excel' ? '#FFFFFF' : '#334155',
-                  border: 'none', borderRadius: 6, padding: '6px 12px',
-                  fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
-                }}
-              >
-                📋 SSS ปพ.5 (ตามไฟล์ Excel ทุกหน้า)
-              </button>
-              <button
-                type="button"
-                onClick={() => setPp5Template('obec_7sheets')}
-                style={{
-                  background: pp5Template === 'obec_7sheets' ? '#0F172A' : 'transparent',
-                  color: pp5Template === 'obec_7sheets' ? '#FFFFFF' : '#334155',
-                  border: 'none', borderRadius: 6, padding: '6px 12px',
-                  fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
-                }}
-              >
-                🏛️ สพฐ. 7 ชีต
-              </button>
-            </div>
-
-            {pp5Template === 'obec_7sheets' && (
-              <button
-                type="button"
-                onClick={() => setPrintFullBook(prev => !prev)}
-                style={{
-                  background: printFullBook ? '#FEF3C7' : '#E0F2FE',
-                  color: printFullBook ? '#92400E' : '#0369A1',
-                  border: '1px solid #CBD5E1', borderRadius: 8, padding: '8px 14px',
-                  fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}
-              >
-                <Layers size={15} /> {printFullBook ? 'ครบเล่ม 7 ชีต' : 'แบบย่อ 2 หน้า'}
-              </button>
-            )}
-
             <button
               type="button"
               onClick={() => window.print()}
@@ -624,35 +518,14 @@ function PorPor5Content() {
           </div>
         </div>
 
-        {pp5Template === 'sgs' ? (
-          <SgsPorPor5PrintBook
-            currentClass={currentClass}
-            currentSubject={currentSubject}
-            semesterLabel={semesterLabel}
-            plan={subjectPlan}
-            measurementHeadName={academicHeadName}
-            deputyDirectorName={DEPUTY_DIRECTOR_NAME}
-          />
-        ) : pp5Template === 'sss_excel' ? (
-          <SssPorPor5PrintBook
-            currentClass={currentClass}
-            currentSubject={currentSubject}
-            semesterLabel={semesterLabel}
-            academicHeadName={academicHeadName}
-            gradeDistribution={gradeDistribution}
-            traitAndReadSummary={traitAndReadSummary}
-          />
-        ) : (
-          <PorPor5OfficialPrintSheets
-            currentClass={currentClass}
-            currentSubject={currentSubject}
-            semesterLabel={semesterLabel}
-            academicHeadName={academicHeadName}
-            gradeDistribution={gradeDistribution}
-            traitAndReadSummary={traitAndReadSummary}
-            fullBook={printFullBook}
-          />
-        )}
+        <SgsPorPor5PrintBook
+          currentClass={currentClass}
+          currentSubject={currentSubject}
+          semesterLabel={semesterLabel}
+          plan={subjectPlan}
+          measurementHeadName={academicHeadName}
+          deputyDirectorName={DEPUTY_DIRECTOR_NAME}
+        />
       </div>
     );
   }
@@ -707,7 +580,7 @@ function PorPor5Content() {
 
             <button
               type="button"
-              onClick={() => handleOpenPrint(true, 'sgs')}
+              onClick={handleOpenPrint}
               style={{
                 background: '#1D4ED8', color: 'white', border: 'none', borderRadius: 999,
                 padding: '9px 18px', fontWeight: 900, fontSize: '0.84rem', cursor: 'pointer',
@@ -1070,35 +943,14 @@ function PorPor5Content() {
 
       {/* Fallback when pressing Ctrl+P directly on the PorPor5 page */}
       <div className="only-print-pp5 print-area">
-        {pp5Template === 'sgs' ? (
-          <SgsPorPor5PrintBook
-            currentClass={currentClass}
-            currentSubject={currentSubject}
-            semesterLabel={semesterLabel}
-            plan={subjectPlan}
-            measurementHeadName={academicHeadName}
-            deputyDirectorName={DEPUTY_DIRECTOR_NAME}
-          />
-        ) : pp5Template === 'sss_excel' ? (
-          <SssPorPor5PrintBook
-            currentClass={currentClass}
-            currentSubject={currentSubject}
-            semesterLabel={semesterLabel}
-            academicHeadName={academicHeadName}
-            gradeDistribution={gradeDistribution}
-            traitAndReadSummary={traitAndReadSummary}
-          />
-        ) : (
-          <PorPor5OfficialPrintSheets
-            currentClass={currentClass}
-            currentSubject={currentSubject}
-            semesterLabel={semesterLabel}
-            academicHeadName={academicHeadName}
-            gradeDistribution={gradeDistribution}
-            traitAndReadSummary={traitAndReadSummary}
-            fullBook={printFullBook}
-          />
-        )}
+        <SgsPorPor5PrintBook
+          currentClass={currentClass}
+          currentSubject={currentSubject}
+          semesterLabel={semesterLabel}
+          plan={subjectPlan}
+          measurementHeadName={academicHeadName}
+          deputyDirectorName={DEPUTY_DIRECTOR_NAME}
+        />
       </div>
 
       <style>{`
@@ -1108,637 +960,6 @@ function PorPor5Content() {
         }
       `}</style>
     </SmartSchoolLayout>
-  );
-}
-
-/* =========================================================================
-   OFFICIAL PORPOR 5 PRINT SHEETS (ครบ 7 ชีตตามไฟล์ Excel สพฐ.)
-   1. ปก ปพ.5 & อนุมัติผลการเรียน
-   2. เวลาเรียน 20 สัปดาห์
-   3. คะแนนตัวชี้วัด (14 x 5 = 70)
-   4. สรุปคะแนน (25/20/25/70/30/100/เกรด)
-   5. คุณลักษณะอันพึงประสงค์ & อ่านคิดเขียน (ในแผ่นเดียว)
-   6. สรุปคุณลักษณะอันพึงประสงค์
-   7. สรุปการอ่านคิดวิเคราะห์และเขียน
-   ========================================================================= */
-function PorPor5OfficialPrintSheets({
-  currentClass,
-  currentSubject,
-  semesterLabel,
-  academicHeadName,
-  gradeDistribution,
-  traitAndReadSummary,
-  fullBook,
-}: {
-  currentClass: ReturnType<typeof useAcademicData>['classesData'][number];
-  currentSubject: ReturnType<typeof useAcademicData>['classesData'][number]['subjects'][number];
-  semesterLabel: string;
-  academicHeadName: string;
-  gradeDistribution: Record<string, number>;
-  traitAndReadSummary: {
-    trait: Record<0 | 1 | 2 | 3, number>;
-    read: Record<0 | 1 | 2 | 3, number>;
-  };
-  fullBook: boolean;
-}) {
-  const scheme = scoreScheme(currentClass.level);
-  const totalStudents = currentClass.students.length || 1;
-  const pct = (count: number) => ((count / totalStudents) * 100).toFixed(2);
-  const gradeCols = ['4', '3.5', '3', '2.5', '2', '1.5', '1', '0', 'ร', 'มส'] as const;
-  const failCount = (gradeDistribution['0'] || 0) + (gradeDistribution['ร'] || 0) + (gradeDistribution['มส'] || 0);
-  const passCount = currentClass.students.length - failCount;
-
-  const traitPassCount = traitAndReadSummary.trait[3] + traitAndReadSummary.trait[2] + traitAndReadSummary.trait[1];
-  const traitFailCount = traitAndReadSummary.trait[0];
-  const readPassCount = traitAndReadSummary.read[3] + traitAndReadSummary.read[2] + traitAndReadSummary.read[1];
-  const readFailCount = traitAndReadSummary.read[0];
-
-  const hoursPerWeek = Math.max(1, Math.round(currentSubject.hours / 20));
-  const isBasic = currentSubject.type === 'พื้นฐาน';
-  const isSecondary = currentClass.level === 'มัธยม';
-
-  return (
-    <div>
-      {/* ================= ชีตที่ 1: ปก (ตรงตามชีต 'ปก' ในไฟล์ Excel) ================= */}
-      <div className="pp5-sheet">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ width: 70 }} />
-          <div style={{ textAlign: 'center', flex: 1 }}>
-            <img
-              src={`${import.meta.env.BASE_URL}school_logo_kmd.png`}
-              alt="ตราโรงเรียน"
-              style={{ width: 58, height: 58, objectFit: 'contain', margin: '0 auto 4px' }}
-            />
-            <div style={{ fontSize: '15pt', fontWeight: 900 }}>{SCHOOL_NAME}</div>
-            <div style={{ fontSize: '11.5pt', fontWeight: 700 }}>
-              {SCHOOL_AFFILIATION}
-            </div>
-          </div>
-          <div style={{
-            width: 70, textAlign: 'center', fontWeight: 900, fontSize: '15pt',
-            border: '2px solid #000', padding: '4px 8px',
-          }}>
-            ปพ.5
-          </div>
-        </div>
-
-        {/* ข้อมูลรายวิชาตามบรรทัด Row 5 - 12 ของชีต 'ปก' */}
-        <div style={{ marginTop: 8, border: '1px solid #000', padding: '8px 12px', fontSize: '10.5pt', lineHeight: 1.65 }}>
-          <div>
-            <b>กลุ่มสาระการเรียนรู้:</b> {currentSubject.group} &nbsp;&nbsp;&nbsp;&nbsp;
-            <b>สาระการเรียนรู้:</b> [{isBasic ? '✓' : ' '}] พื้นฐาน &nbsp; [{!isBasic ? '✓' : ' '}] เพิ่มเติม
-          </div>
-          <div>
-            <b>ระดับชั้น:</b> [{!isSecondary ? '✓' : ' '}] ประถมศึกษา &nbsp; [{isSecondary ? '✓' : ' '}] มัธยมศึกษาตอนต้น &nbsp;&nbsp;|&nbsp;&nbsp;
-            <b>ชั้น:</b> {currentClass.className} ({currentClass.shortName}/{currentClass.room}) &nbsp;&nbsp;|&nbsp;&nbsp;
-            <b>{semesterLabel}</b>
-          </div>
-          <div>
-            <b>รายวิชา:</b> {currentSubject.name} &nbsp;&nbsp;&nbsp;&nbsp;
-            <b>รหัสวิชา:</b> {currentSubject.code} &nbsp;&nbsp;&nbsp;&nbsp;
-            <b>{scheme.yearly ? 'น้ำหนัก' : 'จำนวนหน่วยกิต'}:</b> {currentSubject.credits} {scheme.weightLabel} &nbsp;&nbsp;
-            <b>เวลาเรียน:</b> {hoursPerWeek} ชม./สัปดาห์ &nbsp; รวม <b>{currentSubject.hours}</b> ชม./ภาคเรียน
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <div><b>ครูผู้สอน:</b> {currentSubject.teacher}</div>
-            <div><b>ครูที่ปรึกษา/ประจำชั้น:</b> {currentClass.homeroomTeachers.join(' / ')}</div>
-          </div>
-        </div>
-
-        {/* ตารางที่ 1: สรุปผลการเรียน (Row 14 - 18 ของชีต 'ปก') */}
-        <div style={{ marginTop: 8 }}>
-          <table className="pp5-table">
-            <thead>
-              <tr>
-                <th rowSpan={3} style={{ width: '13%' }}>จำนวนนักเรียน</th>
-                <th colSpan={12}>สรุปผลการเรียน</th>
-              </tr>
-              <tr>
-                <th colSpan={10}>จำนวนนักเรียนที่ได้ระดับผลการเรียน</th>
-                <th rowSpan={2} style={{ width: '8%' }}>ผ่าน<br />การประเมิน</th>
-                <th rowSpan={2} style={{ width: '8%' }}>ไม่ผ่าน<br />การประเมิน</th>
-              </tr>
-              <tr>
-                {gradeCols.map(g => (
-                  <th key={g} style={{ width: '6.5%' }}>{g === '3' ? '3.0' : g}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ textAlign: 'center', fontWeight: 800 }}>จำนวน {currentClass.students.length} คน</td>
-                {gradeCols.map(g => (
-                  <td key={g} style={{ textAlign: 'center', fontWeight: 800 }}>{gradeDistribution[g] || 0}</td>
-                ))}
-                <td style={{ textAlign: 'center', fontWeight: 900 }}>{passCount}</td>
-                <td style={{ textAlign: 'center', fontWeight: 900 }}>{failCount}</td>
-              </tr>
-              <tr>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>คิดเป็นร้อยละ</td>
-                {gradeCols.map(g => (
-                  <td key={g} style={{ textAlign: 'center' }}>{gradeDistribution[g] ? pct(gradeDistribution[g]) : '0.00'}</td>
-                ))}
-                <td style={{ textAlign: 'center', fontWeight: 800 }}>{pct(passCount)}</td>
-                <td style={{ textAlign: 'center', fontWeight: 800 }}>{pct(failCount)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* ตารางที่ 2: สรุปคุณลักษณะและอ่านคิดวิเคราะห์ (Row 20 - 24 ของชีต 'ปก') */}
-        <div style={{ marginTop: 8 }}>
-          <table className="pp5-table">
-            <thead>
-              <tr>
-                <th rowSpan={2} style={{ width: '13%' }}>สรุปผล<br />การประเมิน</th>
-                <th colSpan={6}>คุณลักษณะอันพึงประสงค์ของสถานศึกษา</th>
-                <th colSpan={6}>การอ่านคิดวิเคราะห์และเขียนสื่อความ</th>
-              </tr>
-              <tr>
-                <th>3</th><th>2</th><th>1</th><th>0</th><th>ผ่าน</th><th>ไม่ผ่าน</th>
-                <th>3</th><th>2</th><th>1</th><th>0</th><th>ผ่าน</th><th>ไม่ผ่าน</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ textAlign: 'center', fontWeight: 800 }}>จำนวนนักเรียน</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{traitAndReadSummary.trait[3]}</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{traitAndReadSummary.trait[2]}</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{traitAndReadSummary.trait[1]}</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{traitAndReadSummary.trait[0]}</td>
-                <td style={{ textAlign: 'center', fontWeight: 900 }}>{traitPassCount}</td>
-                <td style={{ textAlign: 'center', fontWeight: 900 }}>{traitFailCount}</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{traitAndReadSummary.read[3]}</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{traitAndReadSummary.read[2]}</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{traitAndReadSummary.read[1]}</td>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>{traitAndReadSummary.read[0]}</td>
-                <td style={{ textAlign: 'center', fontWeight: 900 }}>{readPassCount}</td>
-                <td style={{ textAlign: 'center', fontWeight: 900 }}>{readFailCount}</td>
-              </tr>
-              <tr>
-                <td style={{ textAlign: 'center', fontWeight: 700 }}>ร้อยละ</td>
-                <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.trait[3])}</td>
-                <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.trait[2])}</td>
-                <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.trait[1])}</td>
-                <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.trait[0])}</td>
-                <td style={{ textAlign: 'center', fontWeight: 800 }}>{pct(traitPassCount)}</td>
-                <td style={{ textAlign: 'center', fontWeight: 800 }}>{pct(traitFailCount)}</td>
-                <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.read[3])}</td>
-                <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.read[2])}</td>
-                <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.read[1])}</td>
-                <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.read[0])}</td>
-                <td style={{ textAlign: 'center', fontWeight: 800 }}>{pct(readPassCount)}</td>
-                <td style={{ textAlign: 'center', fontWeight: 800 }}>{pct(readFailCount)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* การอนุมัติผลการเรียน 5 ตำแหน่ง (Row 26 - 33 ของชีต 'ปก') */}
-        <div style={{ marginTop: 10, border: '1px solid #000', padding: '10px 14px', fontSize: '10pt', lineHeight: 1.55 }}>
-          <div style={{ fontWeight: 900, textDecoration: 'underline', marginBottom: 6, textAlign: 'center', fontSize: '11pt' }}>
-            การอนุมัติผลการเรียน
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div>ลงชื่อ .......................................................... ครูผู้สอน</div>
-              <div>({currentSubject.teacher})</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div>ลงชื่อ .......................................................... หัวหน้ากลุ่มสาระการเรียนรู้</div>
-              <div>({currentSubject.teacher})</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div>ลงชื่อ .......................................................... หัวหน้างานวัดและประเมินผล</div>
-              <div>({academicHeadName})</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div>เสนอเพื่อพิจารณา &nbsp; ลงชื่อ ..........................................................</div>
-              <div>({DEPUTY_DIRECTOR_NAME}) รองผู้อำนวยการโรงเรียน</div>
-            </div>
-          </div>
-          <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px dashed #000', textAlign: 'center' }}>
-            <div style={{ fontWeight: 800 }}>
-              ผลการพิจารณา: &nbsp;&nbsp; [ ✓ ] อนุมัติ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ &nbsp; ] ไม่อนุมัติ
-            </div>
-            <div style={{ marginTop: 6 }}>
-              ลงชื่อ .......................................................... &nbsp;&nbsp; (<b>{DIRECTOR_NAME}</b>) &nbsp;&nbsp; ผู้อำนวยการ{SCHOOL_NAME}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ================= ชีตที่ 2: เวลาเรียน (ตรงตามชีต 'เวลาเรียน' แบ่งสัปดาห์ 1-6, 7-12, 13-18, 19-20 + ป่วย/ลา/ขาด) ================= */}
-      {fullBook && (
-        <div className="pp5-sheet">
-          <div style={{ textAlign: 'center', marginBottom: 6 }}>
-            <div style={{ fontSize: '12.5pt', fontWeight: 900 }}>
-              บันทึกเวลาเรียน 20 สัปดาห์ ({semesterLabel}) — รหัสวิชา {currentSubject.code} {currentSubject.name}
-            </div>
-            <div style={{ fontSize: '9.5pt', fontWeight: 700 }}>
-              ชั้น {currentClass.className} ({currentClass.shortName}/{currentClass.room}) &nbsp;|&nbsp;
-              เวลาเรียน {hoursPerWeek} ชม./สัปดาห์ &nbsp;|&nbsp; รวมเวลาเรียนเต็ม {currentSubject.hours} ชั่วโมง &nbsp;|&nbsp;
-              สูตรคำนวณ: (เวลามาเรียน × 100) / เวลาเรียนเต็ม
-            </div>
-          </div>
-
-          <table className="pp5-table" style={{ fontSize: '8pt' }}>
-            <thead>
-              <tr>
-                <th rowSpan={3} style={{ width: '3.5%' }}>เลขที่</th>
-                <th rowSpan={3} style={{ width: '6.5%' }}>เลข<br />ประจำตัว</th>
-                <th rowSpan={3} style={{ width: '18%' }}>ชื่อ - สกุล</th>
-                <th colSpan={6}>สัปดาห์ที่ 1 – 6</th>
-                <th colSpan={6}>สัปดาห์ที่ 7 – 12</th>
-                <th colSpan={6}>สัปดาห์ที่ 13 – 18</th>
-                <th colSpan={2}>สัปดาห์ 19–20</th>
-                <th colSpan={7}>สรุปเวลาเรียน ({currentSubject.hours} ชม.)</th>
-              </tr>
-              <tr>
-                {Array.from({ length: 20 }, (_, i) => (
-                  <th key={i} style={{ width: '2.1%', padding: '1px' }}>{i + 1}</th>
-                ))}
-                <th rowSpan={2} style={{ width: '3.5%' }}>ป่วย</th>
-                <th rowSpan={2} style={{ width: '3.5%' }}>ลา</th>
-                <th rowSpan={2} style={{ width: '3.5%' }}>ขาด</th>
-                <th rowSpan={2} style={{ width: '4.5%' }}>รวมไม่<br />มาเรียน</th>
-                <th rowSpan={2} style={{ width: '4.5%' }}>รวมเวลา<br />มาเรียน</th>
-                <th rowSpan={2} style={{ width: '5%' }}>ร้อยละ<br />ที่มาเรียน</th>
-                <th rowSpan={2} style={{ width: '5.5%' }}>หมายเหตุ</th>
-              </tr>
-              <tr>
-                {Array.from({ length: 20 }, (_, i) => (
-                  <th key={i} style={{ fontSize: '6.5pt', padding: '1px', color: '#475569' }}>{hoursPerWeek}ชม.</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {currentClass.students.map(st => {
-                const sc = st.scores[currentSubject.code] || { attendedHours: currentSubject.hours };
-                const attHrs = sc.attendedHours ?? currentSubject.hours;
-                const absentHours = Math.max(0, currentSubject.hours - attHrs);
-                const sickCount = absentHours > 0 ? Math.floor(absentHours / 2) : 0;
-                const leaveCount = absentHours > 0 ? Math.ceil(absentHours / 2) : 0;
-                const truantCount = 0;
-                const missedWeeks = Math.max(0, Math.round(absentHours / hoursPerWeek));
-                const attPct = currentSubject.hours > 0 ? ((attHrs * 100) / currentSubject.hours).toFixed(1) : '100.0';
-                const passAtt = Number(attPct) >= 80;
-
-                return (
-                  <tr key={st.code}>
-                    <td style={{ textAlign: 'center' }}>{st.no}</td>
-                    <td style={{ textAlign: 'center' }}>{st.code}</td>
-                    <td>{st.name}</td>
-                    {Array.from({ length: 20 }, (_, idx) => {
-                      const w = idx + 1;
-                      const isMissed = missedWeeks > 0 && w > 20 - missedWeeks;
-                      return (
-                        <td key={w} style={{ textAlign: 'center', fontWeight: 700, padding: '1px' }}>
-                          {isMissed ? 'ล' : '✓'}
-                        </td>
-                      );
-                    })}
-                    <td style={{ textAlign: 'center' }}>{sickCount}</td>
-                    <td style={{ textAlign: 'center' }}>{leaveCount}</td>
-                    <td style={{ textAlign: 'center' }}>{truantCount}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 700 }}>{absentHours}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 800 }}>{attHrs}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 700 }}>{attPct}%</td>
-                    <td style={{ textAlign: 'center', fontWeight: 800 }}>{passAtt ? 'ปกติ' : 'มส'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ================= ชีตที่ 3: คะแนน (ตรงตามชีต 'คะแนน' ประเมินตัวชี้วัด 5 ข้อ x 14 คะแนน = 70) ================= */}
-      {fullBook && (
-        <div className="pp5-sheet">
-          <div style={{ textAlign: 'center', marginBottom: 6 }}>
-            <div style={{ fontSize: '12.5pt', fontWeight: 900 }}>
-              ผลการประเมินตัวชี้วัด / ผลการเรียนรู้ — กลุ่มสาระการเรียนรู้ {currentSubject.group}
-            </div>
-            <div style={{ fontSize: '10pt', fontWeight: 700 }}>
-              ชั้น {currentClass.className} ({currentClass.shortName}/{currentClass.room}) &nbsp;|&nbsp;
-              รหัสวิชา {currentSubject.code} รายวิชา {currentSubject.name} &nbsp;|&nbsp; {semesterLabel}
-            </div>
-          </div>
-
-          <table className="pp5-table" style={{ fontSize: '8.5pt' }}>
-            <thead>
-              <tr>
-                <th rowSpan={4} style={{ width: '4.5%' }}>เลขที่</th>
-                <th rowSpan={4} style={{ width: '23.5%' }}>ชื่อ - สกุล</th>
-                {[1, 2, 3, 4, 5].map(ind => (
-                  <th key={ind} colSpan={3}>ตัวชี้วัดที่ / ผลการเรียนรู้ที่ {ind}</th>
-                ))}
-              </tr>
-              <tr>
-                {[1, 2, 3, 4, 5].map(ind => (
-                  <th key={ind} colSpan={3} style={{ fontSize: '7.5pt' }}>เครื่องมือ: แบบฝึก/ชิ้นงาน/ทดสอบ</th>
-                ))}
-              </tr>
-              <tr>
-                {[1, 2, 3, 4, 5].map(ind => [
-                  <th key={`m_${ind}`} style={{ width: '5%' }}>คะแนนเต็ม<br />(14)</th>,
-                  <th key={`r_${ind}`} colSpan={2}>สรุปผล</th>,
-                ])}
-              </tr>
-              <tr>
-                {[1, 2, 3, 4, 5].map(ind => [
-                  <th key={`s_${ind}`}>คะแนนที่ได้</th>,
-                  <th key={`p_${ind}`} style={{ width: '4%' }}>ผ่าน</th>,
-                  <th key={`f_${ind}`} style={{ width: '4.5%' }}>ไม่ผ่าน</th>,
-                ])}
-              </tr>
-            </thead>
-            <tbody>
-              {currentClass.students.map(st => {
-                const sc = st.scores[currentSubject.code] || { coursework: 0 };
-                const indScores = splitIndicators5(sc.coursework);
-                return (
-                  <tr key={st.code}>
-                    <td style={{ textAlign: 'center' }}>{st.no}</td>
-                    <td>{st.name}</td>
-                    {indScores.map((val, idx) => {
-                      const passed = val >= 7;
-                      return [
-                        <td key={`v_${idx}`} style={{ textAlign: 'center', fontWeight: 700 }}>{val}</td>,
-                        <td key={`ok_${idx}`} style={{ textAlign: 'center', fontWeight: 800 }}>{passed ? '✓' : ''}</td>,
-                        <td key={`no_${idx}`} style={{ textAlign: 'center', color: '#DC2626', fontWeight: 800 }}>{!passed ? '✗' : ''}</td>,
-                      ];
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ================= ชีตที่ 4: สรุปคะแนน (ตรงตามชีต 'สรุปคะแนน' ก่อนกลางภาค 25 | กลางภาค 20 | หลังกลางภาค 25 | ปลายภาค 30) ================= */}
-      <div className="pp5-sheet">
-        <div style={{ textAlign: 'center', marginBottom: 8 }}>
-          <div style={{ fontSize: '12.5pt', fontWeight: 900 }}>
-            ผลการประเมินกลุ่มสาระการเรียนรู้ {currentSubject.group} &nbsp; รายวิชา {currentSubject.name} &nbsp; รหัสวิชา {currentSubject.code}
-          </div>
-          <div style={{ fontSize: '10.5pt', fontWeight: 700 }}>
-            ชั้น {currentClass.className} ({currentClass.shortName}/{currentClass.room}) &nbsp;&nbsp; {semesterLabel} &nbsp;&nbsp; ครูผู้สอน: {currentSubject.teacher}
-          </div>
-        </div>
-
-        <table className="pp5-table" style={{ fontSize: '9.5pt' }}>
-          <thead>
-            <tr>
-              <th rowSpan={2} style={{ width: '5%' }}>เลขที่</th>
-              <th rowSpan={2} style={{ width: '9%' }}>เลขประจำตัว</th>
-              <th rowSpan={2} style={{ width: '28%' }}>ชื่อ - สกุล</th>
-              {scheme.yearly ? (
-                <>
-                  <th colSpan={3}>ภาคเรียนที่ 1</th>
-                  <th colSpan={3}>ภาคเรียนที่ 2</th>
-                  <th rowSpan={2} style={{ width: '7%' }}>รวม<br />ทั้งปี<br />(100)</th>
-                </>
-              ) : (
-                <>
-                  <th colSpan={4}>ระหว่างเรียน (70 คะแนน)</th>
-                  <th rowSpan={2} style={{ width: '8.5%' }}>ปลายภาค<br />(30)</th>
-                  <th rowSpan={2} style={{ width: '8.5%' }}>รวม<br />คะแนน<br />(100)</th>
-                </>
-              )}
-              <th rowSpan={2} style={{ width: '8.5%' }}>ระดับผล<br />การเรียน</th>
-              <th rowSpan={2} style={{ width: '8.5%' }}>ผลการ<br />แก้ไข</th>
-            </tr>
-            <tr>
-              {scheme.yearly ? (
-                <>
-                  <th style={{ width: '6%' }}>เก็บ<br />({scheme.courseworkMax})</th>
-                  <th style={{ width: '6%' }}>ปลายภาค<br />({scheme.finalMax})</th>
-                  <th style={{ width: '6%' }}>รวม<br />(50)</th>
-                  <th style={{ width: '6%' }}>เก็บ<br />({scheme.courseworkMax})</th>
-                  <th style={{ width: '6%' }}>ปลายภาค<br />({scheme.finalMax})</th>
-                  <th style={{ width: '6%' }}>รวม<br />(50)</th>
-                </>
-              ) : (
-                <>
-                  <th style={{ width: '8%' }}>ก่อนกลางภาค<br />(25)</th>
-                  <th style={{ width: '8%' }}>กลางภาค<br />(20)</th>
-                  <th style={{ width: '8%' }}>หลังกลางภาค<br />(25)</th>
-                  <th style={{ width: '8%' }}>รวมเก็บ<br />(70)</th>
-                </>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {currentClass.students.map(st => {
-              const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
-              if (scheme.yearly) {
-                const hasTerm2 = sc.term2Coursework !== undefined || sc.term2FinalExam !== undefined;
-                return (
-                  <tr key={st.code}>
-                    <td style={{ textAlign: 'center' }}>{st.no}</td>
-                    <td style={{ textAlign: 'center' }}>{st.code}</td>
-                    <td>{st.name}</td>
-                    <td style={{ textAlign: 'center' }}>{sc.coursework}</td>
-                    <td style={{ textAlign: 'center' }}>{sc.finalExam}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{sc.coursework + sc.finalExam}</td>
-                    <td style={{ textAlign: 'center' }}>{sc.term2Coursework ?? ''}</td>
-                    <td style={{ textAlign: 'center' }}>{sc.term2FinalExam ?? ''}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{hasTerm2 ? (sc.term2Coursework ?? 0) + (sc.term2FinalExam ?? 0) : ''}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 800 }}>{hasTerm2 ? sc.total : ''}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
-                    <td style={{ textAlign: 'center' }}>{sc.remedial?.grade ?? '-'}</td>
-                  </tr>
-                );
-              }
-              const { preMid, mid, postMid } = splitCoursework3Parts(sc.coursework);
-              return (
-                <tr key={st.code}>
-                  <td style={{ textAlign: 'center' }}>{st.no}</td>
-                  <td style={{ textAlign: 'center' }}>{st.code}</td>
-                  <td>{st.name}</td>
-                  <td style={{ textAlign: 'center' }}>{preMid}</td>
-                  <td style={{ textAlign: 'center' }}>{mid}</td>
-                  <td style={{ textAlign: 'center' }}>{postMid}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{sc.coursework}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 700 }}>{sc.finalExam}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{sc.total}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
-                  <td style={{ textAlign: 'center' }}>{sc.remedial?.grade ?? '-'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ================= ชีตที่ 5: คุณลักษณะ อ่าน คิด วิเคราะห์ (รวม 8 คุณลักษณะ + 5 อ่านคิดเขียน ในแผ่นเดียว) ================= */}
-      {fullBook && (
-        <div className="pp5-sheet">
-          <div style={{ textAlign: 'center', marginBottom: 6 }}>
-            <div style={{ fontSize: '12pt', fontWeight: 900 }}>
-              แบบประเมินคุณลักษณะอันพึงประสงค์ และการอ่าน คิด วิเคราะห์และเขียน — รหัสวิชา {currentSubject.code} {currentSubject.name}
-            </div>
-            <div style={{ fontSize: '9.5pt', fontWeight: 700 }}>
-              ชั้น {currentClass.className} ({currentClass.shortName}/{currentClass.room}) &nbsp;|&nbsp; {semesterLabel} &nbsp;|&nbsp; ระดับคุณภาพ: 3 = ดีเยี่ยม, 2 = ดี, 1 = ผ่าน, 0 = ไม่ผ่าน
-            </div>
-          </div>
-
-          <table className="pp5-table" style={{ fontSize: '8pt' }}>
-            <thead>
-              <tr>
-                <th rowSpan={2} style={{ width: '4%' }}>เลขที่</th>
-                <th rowSpan={2} style={{ width: '19%' }}>ชื่อ - สกุล</th>
-                <th colSpan={10}>คุณลักษณะอันพึงประสงค์ (0-3)</th>
-                <th colSpan={7}>การอ่าน คิด วิเคราะห์และเขียน (0-3)</th>
-              </tr>
-              <tr>
-                <th>1.รักชาติฯ</th>
-                <th>2.ซื่อสัตย์</th>
-                <th>3.มีวินัย</th>
-                <th>4.ใฝ่เรียนรู้</th>
-                <th>5.พอเพียง</th>
-                <th>6.มุ่งมั่นฯ</th>
-                <th>7.รักไทย</th>
-                <th>8.จิตอาสา</th>
-                <th>สรุปผล</th>
-                <th>ผ / มผ</th>
-                <th>1.อ่านค้นคว้า</th>
-                <th>2.จับประเด็น</th>
-                <th>3.วิเคราะห์</th>
-                <th>4.ประเมินค่า</th>
-                <th>5.เขียนสื่อสาร</th>
-                <th>สรุปผล</th>
-                <th>ผ / มผ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentClass.students.map(st => {
-                const sc: Partial<StudentSubjectScore> = st.scores[currentSubject.code] || { traitScore: 3, readThinkScore: 3 };
-                const t = sc.traitScore ?? 3;
-                const r = sc.readThinkScore ?? 3;
-                return (
-                  <tr key={st.code}>
-                    <td style={{ textAlign: 'center' }}>{st.no}</td>
-                    <td>{st.name}</td>
-                    {[0, 1, 2, 3, 4, 5, 6, 7].map(k => (
-                      <td key={`t_${k}`} style={{ textAlign: 'center' }}>{sc.traitItems?.[k] ?? ''}</td>
-                    ))}
-                    <td style={{ textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{t}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 800 }}>{t > 0 ? 'ผ่าน' : 'ไม่ผ่าน'}</td>
-                    {[0, 1, 2, 3, 4].map(k => (
-                      <td key={`r_${k}`} style={{ textAlign: 'center' }}>{sc.readItems?.[k] ?? ''}</td>
-                    ))}
-                    <td style={{ textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{r}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 800 }}>{r > 0 ? 'ผ่าน' : 'ไม่ผ่าน'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ================= ชีตที่ 6 & 7: สรุปคุณลักษณะ และ สรุปอ่าน คิด เขียน พร้อมเกณฑ์การประเมิน ================= */}
-      {fullBook && (
-        <div className="pp5-sheet">
-          {/* ชีตสรุปคุณลักษณะ */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: '12.5pt', fontWeight: 900, textAlign: 'center', marginBottom: 6 }}>
-              สรุปผลการประเมินคุณลักษณะอันพึงประสงค์ — รายวิชา {currentSubject.code} {currentSubject.name} (ชั้น {currentClass.className})
-            </div>
-            <table className="pp5-table" style={{ marginBottom: 8 }}>
-              <thead>
-                <tr>
-                  <th style={{ width: '20%' }}>ผลการประเมิน</th>
-                  <th style={{ width: '16%' }}>ดีเยี่ยม (3)</th>
-                  <th style={{ width: '16%' }}>ดี (2)</th>
-                  <th style={{ width: '16%' }}>ผ่านเกณฑ์การประเมิน (1)</th>
-                  <th style={{ width: '16%' }}>ไม่ผ่านเกณฑ์การประเมิน (0)</th>
-                  <th style={{ width: '16%' }}>หมายเหตุ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>จำนวนคน</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>{traitAndReadSummary.trait[3]}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>{traitAndReadSummary.trait[2]}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>{traitAndReadSummary.trait[1]}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>{traitAndReadSummary.trait[0]}</td>
-                  <td style={{ textAlign: 'center' }}>รวม {currentClass.students.length} คน</td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center', fontWeight: 700 }}>ร้อยละ</td>
-                  <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.trait[3])}</td>
-                  <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.trait[2])}</td>
-                  <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.trait[1])}</td>
-                  <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.trait[0])}</td>
-                  <td style={{ textAlign: 'center' }}>100.00%</td>
-                </tr>
-              </tbody>
-            </table>
-            <div style={{ border: '1px solid #000', padding: '6px 10px', fontSize: '8.8pt', lineHeight: 1.45 }}>
-              <div><b>คุณลักษณะอันพึงประสงค์ 8 ประการ:</b> ข้อ 1 รักชาติ ศาสน์ กษัตริย์ · ข้อ 2 ซื่อสัตย์ สุจริต · ข้อ 3 มีวินัย · ข้อ 4 ใฝ่เรียนรู้ · ข้อ 5 อยู่อย่างพอเพียง · ข้อ 6 มุ่งมั่นในการทำงาน · ข้อ 7 รักความเป็นไทย · ข้อ 8 มีจิตสาธารณะ</div>
-              <div style={{ marginTop: 3 }}><b>เกณฑ์การประเมินคุณลักษณะอันพึงประสงค์ แบ่งเป็น 4 ระดับ คือ:</b></div>
-              <div>• <b>ระดับ 3 (ดีเยี่ยม):</b> ผู้เรียนปฏิบัติตนตามคุณลักษณะจนเป็นนิสัยและนำไปใช้ในชีวิตประจำวัน โดยได้ระดับดีเยี่ยม จำนวน 5-8 คุณลักษณะ และไม่มีคุณลักษณะใดต่ำกว่าระดับดี</div>
-              <div>• <b>ระดับ 2 (ดี):</b> ผู้เรียนปฏิบัติตามกฎเกณฑ์ โดยได้ระดับดีเยี่ยม 1-4 คุณลักษณะ และไม่มีคุณลักษณะใดต่ำกว่าระดับดี หรือได้ระดับดีครบทุกคุณลักษณะ</div>
-              <div>• <b>ระดับ 1 (ผ่าน):</b> ผู้เรียนรับรู้และปฏิบัติตามกฎเกณฑ์ที่สถานศึกษากำหนด โดยได้ระดับผ่านขึ้นไปครบทุกคุณลักษณะ</div>
-              <div>• <b>ระดับ 0 (ไม่ผ่าน):</b> ได้ผลการประเมินระดับไม่ผ่าน ตั้งแต่ 1 คุณลักษณะขึ้นไป</div>
-            </div>
-          </div>
-
-          {/* ชีตสรุปอ่าน คิด เขียน */}
-          <div style={{ paddingTop: 10, borderTop: '2px dashed #000' }}>
-            <div style={{ fontSize: '12.5pt', fontWeight: 900, textAlign: 'center', marginBottom: 6 }}>
-              สรุปผลการประเมินการอ่าน คิด วิเคราะห์และเขียน — รายวิชา {currentSubject.code} {currentSubject.name} (ชั้น {currentClass.className})
-            </div>
-            <table className="pp5-table" style={{ marginBottom: 8 }}>
-              <thead>
-                <tr>
-                  <th style={{ width: '20%' }}>ผลการประเมิน</th>
-                  <th style={{ width: '16%' }}>ดีเยี่ยม (3)</th>
-                  <th style={{ width: '16%' }}>ดี (2)</th>
-                  <th style={{ width: '16%' }}>ผ่านเกณฑ์การประเมิน (1)</th>
-                  <th style={{ width: '16%' }}>ไม่ผ่านเกณฑ์การประเมิน (0)</th>
-                  <th style={{ width: '16%' }}>หมายเหตุ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>จำนวนคน</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>{traitAndReadSummary.read[3]}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>{traitAndReadSummary.read[2]}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>{traitAndReadSummary.read[1]}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 800 }}>{traitAndReadSummary.read[0]}</td>
-                  <td style={{ textAlign: 'center' }}>รวม {currentClass.students.length} คน</td>
-                </tr>
-                <tr>
-                  <td style={{ textAlign: 'center', fontWeight: 700 }}>ร้อยละ</td>
-                  <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.read[3])}</td>
-                  <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.read[2])}</td>
-                  <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.read[1])}</td>
-                  <td style={{ textAlign: 'center' }}>{pct(traitAndReadSummary.read[0])}</td>
-                  <td style={{ textAlign: 'center' }}>100.00%</td>
-                </tr>
-              </tbody>
-            </table>
-            <div style={{ border: '1px solid #000', padding: '6px 10px', fontSize: '8.8pt', lineHeight: 1.45 }}>
-              <div><b>ตัวชี้วัดความสามารถในการอ่าน คิด วิเคราะห์และเขียน (5 ข้อ):</b></div>
-              <div>1) สามารถอ่านเพื่อการศึกษา ค้นคว้า เพิ่มพูนความรู้ ประสบการณ์และการประยุกต์ใช้ในชีวิตประจำวัน</div>
-              <div>2) สามารถจับประเด็นสำคัญ ลำดับเหตุการณ์จากการอ่านที่มีความซับซ้อน</div>
-              <div>3) สามารถวิเคราะห์สิ่งที่ผู้เขียนต้องการสื่อสารกับผู้อ่านและสามารถวิพากษ์ให้ข้อเสนอแนะในแง่มุมต่างๆ ได้</div>
-              <div>4) สามารถประเมินความน่าเชื่อถือ คุณค่า แนวคิดที่ได้จากการอ่านอย่างหลากหลาย</div>
-              <div>5) สามารถเขียนแสดงความคิดเห็น โต้แย้ง สรุป โดยมีข้อมูลอธิบายสนับสนุนอย่างเพียงพอและสมเหตุสมผล</div>
-              <div style={{ marginTop: 3 }}><b>เกณฑ์การประเมิน (4 ระดับ):</b> ระดับ 3 = ดีเยี่ยม · ระดับ 2 = ดี · ระดับ 1 = ผ่าน · ระดับ 0 = ไม่ผ่าน</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{PP5_PRINT_STYLES}</style>
-    </div>
   );
 }
 
