@@ -471,3 +471,33 @@ test('Suite 11: Facebook sync writes only new posts and never overwrites news', 
   assert.deepEqual(calls, [['create', 'fb_9_100000002'], ['update', 'fb_9_100000001', 'imageUrl,syncedAt']]);
   assert.equal(docs.get('teacher1').title, 'ข่าวที่ครูลงเอง', "a teacher's news is untouched");
 });
+
+// -------------------------------------------------------------
+// Test Suite 12: ประถม and มัธยม are scored differently (แบบ ปพ.5 ของโรงเรียน)
+// -------------------------------------------------------------
+test('Suite 12: ประถม grades the year (50 + 50), มัธยม grades each semester (100)', async () => {
+  const { scoreScheme, scoreFromParts, scorePercents, INITIAL_ACADEMIC_DATA } = await import('../src/data/academicData.ts');
+
+  assert.deepEqual(scoreScheme('ประถม'), { courseworkMax: 35, finalMax: 15, yearly: true, weightLabel: 'น้ำหนัก' });
+  assert.deepEqual(scoreScheme('มัธยม'), { courseworkMax: 70, finalMax: 30, yearly: false, weightLabel: 'หน่วยกิต' });
+
+  // มัธยม: one semester out of 100
+  assert.deepEqual(scoreFromParts('มัธยม', { coursework: 60, finalExam: 22 }), { total: 82, grade: '4' });
+  // ประถม term 1 only: total out of 50 shown, no grade yet
+  assert.deepEqual(scoreFromParts('ประถม', { coursework: 30, finalExam: 12 }), { total: 42, grade: '' });
+  // ประถม both terms: year total out of 100 graded
+  assert.deepEqual(scoreFromParts('ประถม', { coursework: 30, finalExam: 12, term2Coursework: 28, term2FinalExam: 10 }), { total: 80, grade: '4' });
+  // ร / มส apply even before term 2
+  assert.equal(scoreFromParts('ประถม', { coursework: 30, finalExam: 12 }, 'มส').grade, 'มส');
+
+  assert.deepEqual(scorePercents('ประถม', { coursework: 35, finalExam: 7.5 }), { courseworkPct: 100, finalPct: 50 });
+  assert.deepEqual(scorePercents('มัธยม', { coursework: 35, finalExam: 15 }), { courseworkPct: 50, finalPct: 50 });
+
+  // built-in ประถม term-1 data fits the 35/15 scale and waits for term 2
+  for (const cls of INITIAL_ACADEMIC_DATA.filter(c => c.level === 'ประถม')) {
+    for (const st of cls.students) for (const sc of Object.values(st.scores)) {
+      assert.ok(sc.coursework <= 35 && sc.finalExam <= 15, `${cls.classId} ${st.code} over the ประถม term maximum`);
+      assert.ok(sc.grade === '' || sc.grade === 'ร' || sc.grade === 'มส', `${cls.classId} ${st.code} graded before term 2`);
+    }
+  }
+});

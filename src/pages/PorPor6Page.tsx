@@ -11,6 +11,7 @@ import { useAcademicData } from '../utils/academicStorage';
 import {
   calculateStudentGPA,
   calculateClassRanks,
+  scoreScheme,
   type ClassAcademicData,
   type AcademicStudentRecord,
 } from '../data/academicData';
@@ -598,7 +599,7 @@ function PorPor6Content() {
             triggerSinglePrint(c);
           }}
           onUpdateScore={(subjCode, cw, fin, spec, tr, rt, hrs) =>
-            updateStudentScore(currentClass.classId, inspectStudent.code, subjCode, cw, fin, spec, tr, rt, hrs)
+            updateStudentScore(currentClass.classId, inspectStudent.code, subjCode, { coursework: cw, finalExam: fin, specialGrade: spec === undefined ? undefined : spec || null, traitScore: tr, readThinkScore: rt, attendedHours: hrs })
           }
           onUpdateEval={(tr, rt, act) =>
             updateStudentEvaluation(currentClass.classId, inspectStudent.code, tr, rt, act)
@@ -1128,6 +1129,7 @@ function StudentGradeInspectModal({
     activityResult: AcademicStudentRecord['activityResult']
   ) => void;
 }) {
+  const scheme = scoreScheme(classData.level);
   const [editMode, setEditMode] = useState(false);
   const gpaInfo = calculateStudentGPA(student, classData.subjects, true);
 
@@ -1269,11 +1271,11 @@ function StudentGradeInspectModal({
                 <th style={thStyle}>รหัสวิชา</th>
                 <th style={{ ...thStyle, textAlign: 'left' }}>ชื่อรายวิชา</th>
                 <th style={thStyle}>ประเภท</th>
-                <th style={thStyle}>หน่วยกิต</th>
+                <th style={thStyle}>{scheme.weightLabel}</th>
                 <th style={thStyle}>เวลาเรียน</th>
-                <th style={thStyle}>ระหว่างภาค (70)</th>
-                <th style={thStyle}>ปลายภาค (30)</th>
-                <th style={thStyle}>รวม (100)</th>
+                <th style={thStyle}>{scheme.yearly ? 'ภาค 1 เก็บ' : 'ระหว่างภาค'} ({scheme.courseworkMax})</th>
+                <th style={thStyle}>{scheme.yearly ? 'ภาค 1 ปลายภาค' : 'ปลายภาค'} ({scheme.finalMax})</th>
+                <th style={thStyle}>{scheme.yearly ? 'รวม (ปี/100)' : 'รวม (100)'}</th>
                 <th style={thStyle}>เกรด</th>
                 <th style={thStyle}>คุณลักษณะ</th>
                 <th style={thStyle}>อ่านคิดฯ</th>
@@ -1308,7 +1310,7 @@ function StudentGradeInspectModal({
                         <input
                           type="number"
                           min={0}
-                          max={70}
+                          max={scheme.courseworkMax}
                           value={sc.coursework}
                           onChange={e => onUpdateScore(subj.code, Number(e.target.value), sc.finalExam, undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours)}
                           style={numInput}
@@ -1320,7 +1322,7 @@ function StudentGradeInspectModal({
                         <input
                           type="number"
                           min={0}
-                          max={30}
+                          max={scheme.finalMax}
                           value={sc.finalExam}
                           onChange={e => onUpdateScore(subj.code, sc.coursework, Number(e.target.value), undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours)}
                           style={numInput}

@@ -3,7 +3,7 @@ import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
   INITIAL_ACADEMIC_DATA,
-  scoreToGrade,
+  scoreFromParts,
   type ClassAcademicData,
   type AcademicStudentRecord,
   type StudentSubjectScore,
@@ -82,30 +82,41 @@ export function useAcademicData() {
     void saveCell(write);
   }, []);
 
+  /**
+   * Save one subject cell. Fields left out of `patch` keep their current value; total and grade
+   * are always recomputed for the class level (ประถม: from both terms, มัธยม: this semester).
+   * specialGrade: 'ร' / 'มส' to set one, null to clear it, undefined to keep the current one.
+   */
   const updateStudentScore = useCallback((
     classId: string,
     studentCode: string,
     subjectCode: string,
-    coursework: number,
-    finalExam: number,
-    specialGrade?: string,
-    traitScore?: number,
-    readThinkScore?: number,
-    attendedHours?: number,
+    patch: Partial<Omit<StudentSubjectScore, 'total' | 'grade'>> & { specialGrade?: string | null },
   ) => {
     const cls = viewRef.current.find(c => c.classId === classId);
     const prev: Partial<StudentSubjectScore> = cls?.students.find(s => s.code === studentCode)?.scores[subjectCode] || {};
     const hours = cls?.subjects.find(s => s.code === subjectCode)?.hours ?? 40;
-    const total = Math.max(0, Math.min(100, Math.round(coursework + finalExam)));
-    applyLocally(scoreWrite(classId, studentCode, subjectCode, {
-      coursework,
-      finalExam,
-      total,
-      grade: scoreToGrade(total, specialGrade),
-      traitScore: traitScore ?? prev.traitScore ?? 3,
-      readThinkScore: readThinkScore ?? prev.readThinkScore ?? 3,
-      attendedHours: attendedHours ?? prev.attendedHours ?? hours,
-    }));
+    const { specialGrade, ...fields } = patch;
+    const keptSpecial = prev.grade === 'ร' || prev.grade === 'มส' ? prev.grade : undefined;
+    const special = specialGrade === undefined ? keptSpecial : specialGrade ?? undefined;
+    const next = { ...prev, ...fields };
+    const parts = {
+      coursework: next.coursework ?? 0,
+      finalExam: next.finalExam ?? 0,
+      term2Coursework: next.term2Coursework,
+      term2FinalExam: next.term2FinalExam,
+    };
+    const write: StudentSubjectScore = {
+      ...parts,
+      ...scoreFromParts(cls?.level ?? 'มัธยม', parts, special),
+      traitScore: next.traitScore ?? 3,
+      readThinkScore: next.readThinkScore ?? 3,
+      attendedHours: next.attendedHours ?? hours,
+    };
+    // Firestore rejects undefined; a term-2 field that was never entered is simply left out
+    if (write.term2Coursework === undefined) delete write.term2Coursework;
+    if (write.term2FinalExam === undefined) delete write.term2FinalExam;
+    applyLocally(scoreWrite(classId, studentCode, subjectCode, write));
   }, [applyLocally]);
 
   const updateStudentEvaluation = useCallback((

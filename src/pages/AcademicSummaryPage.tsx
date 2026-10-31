@@ -7,7 +7,7 @@ import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { useAcademicData } from '../utils/academicStorage';
-import { SUBJECT_GROUPS, calculateStudentGPA } from '../data/academicData';
+import { SUBJECT_GROUPS, calculateStudentGPA, scorePercents } from '../data/academicData';
 import { downloadCsvReport } from '../utils/csvReport';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
@@ -36,8 +36,8 @@ interface SubjectDistRow {
   };
   avgGrade: number;
   pct3Up: number;
-  avgCourseworkPct: number; // % คะแนนเก็บเฉลี่ย (เทียบเต็ม 70)
-  avgFinalExamPct: number;  // % คะแนนสอบปลายภาคเฉลี่ย (เทียบเต็ม 30)
+  avgCourseworkPct: number; // % คะแนนเก็บเฉลี่ย (เทียบคะแนนเต็มของระดับชั้น)
+  avgFinalExamPct: number;  // % คะแนนสอบปลายภาคเฉลี่ย (เทียบคะแนนเต็มของระดับชั้น)
   avgTotalScore: number;    // คะแนนรวมเฉลี่ย (เต็ม 100)
   consistencyGap: number;   // ส่วนต่างระหว่าง % คะแนนเก็บ กับ % สอบปลายภาค
   teachingStatus: 'ดีเยี่ยม (วัดผลเที่ยงตรง)' | 'มาตรฐานดี' | 'ควรนิเทศ/ซ่อมเสริม';
@@ -115,8 +115,9 @@ function AcademicSummaryContent() {
             gradeSum += gNum;
             gradedCount += 1;
           }
-          cwSum += Number(sc.coursework) || 0;
-          finSum += Number(sc.finalExam) || 0;
+          const pctOf = scorePercents(cls.level, { coursework: Number(sc.coursework) || 0, finalExam: Number(sc.finalExam) || 0, term2Coursework: sc.term2Coursework, term2FinalExam: sc.term2FinalExam });
+          cwSum += pctOf.courseworkPct;
+          finSum += pctOf.finalPct;
           totalScoreSum += Number(sc.total) || 0;
         }
 
@@ -124,10 +125,9 @@ function AcademicSummaryContent() {
         const count3Up = counts['4'] + counts['3.5'] + counts['3'];
         const avgGrade = gradedCount > 0 ? gradeSum / gradedCount : 0;
         const pct3Up = total > 0 ? (count3Up / total) * 100 : 0;
-        const avgCw = total > 0 ? cwSum / total : 0;
-        const avgFin = total > 0 ? finSum / total : 0;
-        const avgCourseworkPct = (avgCw / 70) * 100;
-        const avgFinalExamPct = (avgFin / 30) * 100;
+        // percentages, so ประถม (35/15 per term) and มัธยม (70/30) compare on one scale
+        const avgCourseworkPct = total > 0 ? cwSum / total : 0;
+        const avgFinalExamPct = total > 0 ? finSum / total : 0;
         const avgTotalScore = total > 0 ? totalScoreSum / total : 0;
         const consistencyGap = Math.abs(avgCourseworkPct - avgFinalExamPct);
         const failOrIncomplete = counts['0'] + counts['ร'] + counts['มส'];
@@ -351,8 +351,9 @@ function AcademicSummaryContent() {
           if (sc.grade === '0' || sc.grade === 'ร' || sc.grade === 'มส') {
             hasFail = true;
           }
-          cwPctSum += (sc.coursework / 70) * 100;
-          finPctSum += (sc.finalExam / 30) * 100;
+          const pctOf = scorePercents(cls.level, sc);
+          cwPctSum += pctOf.courseworkPct;
+          finPctSum += pctOf.finalPct;
           subjCount += 1;
         }
 
@@ -719,7 +720,7 @@ function AcademicSummaryContent() {
               <TrendingUp size={20} color="#16A34A" /> 3. วิเคราะห์คุณภาพการสอนรายวิชา & ดัชนีความสอดคล้องของคะแนน (ระหว่างภาค 70 : ปลายภาค 30)
             </h3>
             <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: 14 }}>
-              วิชาที่สอนดีและวัดผลได้มาตรฐาน คือวิชาที่นักเรียนทำข้อสอบปลายภาค (30) ได้สัดส่วนใกล้เคียงกับคะแนนเก็บ (70) และมีอัตราได้เกรด 3 ขึ้นไปสูง
+              วิชาที่สอนดีและวัดผลได้มาตรฐาน คือวิชาที่นักเรียนทำข้อสอบปลายภาคได้สัดส่วนใกล้เคียงกับคะแนนเก็บ และมีอัตราได้เกรด 3 ขึ้นไปสูง
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem' }}>
@@ -730,8 +731,8 @@ function AcademicSummaryContent() {
                     <th style={{ ...thDark, width: 85 }}>รหัสวิชา</th>
                     <th style={{ ...thDark, textAlign: 'left' }}>ชื่อรายวิชา</th>
                     <th style={{ ...thDark, textAlign: 'left', width: 170 }}>ครูผู้สอน</th>
-                    <th style={{ ...thDark, width: 85 }}>% คะแนนเก็บ<br />(เต็ม 70)</th>
-                    <th style={{ ...thDark, width: 85 }}>% ปลายภาค<br />(เต็ม 30)</th>
+                    <th style={{ ...thDark, width: 85 }}>% คะแนนเก็บ<br />(ของคะแนนเต็ม)</th>
+                    <th style={{ ...thDark, width: 85 }}>% ปลายภาค<br />(ของคะแนนเต็ม)</th>
                     <th style={{ ...thDark, width: 80, background: '#0284C7' }}>GPA วิชา</th>
                     <th style={{ ...thDark, width: 90, background: '#15803D' }}>% เกรด 3+</th>
                     <th style={{ ...thDark, width: 165 }}>การประเมินคุณภาพการสอน</th>

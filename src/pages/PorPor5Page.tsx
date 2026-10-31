@@ -9,7 +9,7 @@ import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { useAcademicData } from '../utils/academicStorage';
-import { calculateClassRanks } from '../data/academicData';
+import { calculateClassRanks, scoreScheme, type ScoreScheme } from '../data/academicData';
 import { downloadCsvReport } from '../utils/csvReport';
 import ExcelPasteModal from '../components/ExcelPasteModal';
 import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
@@ -58,9 +58,17 @@ export default function PorPor5Page() {
 }
 
 // Spreadsheet-style score grid (see handleGridPaste / gridInput)
-type GridCol = 'attendedHours' | 'coursework' | 'finalExam' | 'traitScore' | 'readThinkScore';
-const GRID_COLS: GridCol[] = ['attendedHours', 'coursework', 'finalExam', 'traitScore', 'readThinkScore'];
-const GRID_MAX: Record<GridCol, number> = { attendedHours: 999, coursework: 70, finalExam: 30, traitScore: 3, readThinkScore: 3 };
+// ประถม enters both terms on one sheet (grade from the year), มัธยม one semester.
+type GridCol = 'attendedHours' | 'coursework' | 'finalExam' | 'term2Coursework' | 'term2FinalExam' | 'traitScore' | 'readThinkScore';
+const gridColsFor = (scheme: ScoreScheme): GridCol[] => scheme.yearly
+  ? ['attendedHours', 'coursework', 'finalExam', 'term2Coursework', 'term2FinalExam', 'traitScore', 'readThinkScore']
+  : ['attendedHours', 'coursework', 'finalExam', 'traitScore', 'readThinkScore'];
+const gridMaxFor = (scheme: ScoreScheme, col: GridCol, hours: number) => ({
+  attendedHours: hours,
+  coursework: scheme.courseworkMax, term2Coursework: scheme.courseworkMax,
+  finalExam: scheme.finalMax, term2FinalExam: scheme.finalMax,
+  traitScore: 3, readThinkScore: 3,
+})[col];
 
 /** A subject the student has no score for yet: zero marks and no grade, never a made-up pass */
 function blankScore(hours: number) {
@@ -112,6 +120,9 @@ function PorPor5Content() {
     () => currentClass.subjects.find(s => s.code === selectedSubjectCode) || currentClass.subjects[0],
     [currentClass, selectedSubjectCode]
   );
+
+  const scheme = scoreScheme(currentClass.level);
+  const GRID_COLS = gridColsFor(scheme);
 
   const handleClassChange = (cid: string) => {
     setSelectedClassId(cid);
@@ -194,17 +205,11 @@ function PorPor5Content() {
         const specialGrade = calcHours < currentSubject.hours * 0.8 ? 'มส' : undefined;
         if (specialGrade === 'มส') lowAttendanceCount += 1;
 
-        updateStudentScore(
-          currentClass.classId,
-          st.code,
-          currentSubject.code,
-          sc.coursework,
-          sc.finalExam,
-          specialGrade,
-          sc.traitScore,
-          sc.readThinkScore,
-          calcHours
-        );
+        // set มส when attendance is under 80%, lift an earlier มส once it is not; ร stays
+        updateStudentScore(currentClass.classId, st.code, currentSubject.code, {
+          attendedHours: calcHours,
+          specialGrade: specialGrade ?? (sc.grade === 'มส' ? null : undefined),
+        });
       });
 
       setSavedToast(true);
@@ -228,19 +233,7 @@ function PorPor5Content() {
       const deducted = stLogs.filter(l => l.type === 'deduct').reduce((s, l) => s + l.points, 0);
       const net = 100 + added - deducted;
       const autoTrait: 0 | 1 | 2 | 3 = net >= 95 ? 3 : net >= 80 ? 2 : net >= 60 ? 1 : 0;
-      const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
-
-      updateStudentScore(
-        currentClass.classId,
-        st.code,
-        currentSubject.code,
-        sc.coursework,
-        sc.finalExam,
-        undefined,
-        autoTrait,
-        sc.readThinkScore,
-        sc.attendedHours
-      );
+      updateStudentScore(currentClass.classId, st.code, currentSubject.code, { traitScore: autoTrait });
     });
 
     setSavedToast(true);
@@ -261,7 +254,8 @@ function PorPor5Content() {
 
       const subjectsMeta = currentClass.subjects.map(s => ({
         name: `${s.code} ${s.name}`,
-        maxScore: 100,
+        // ประถม before term 2 is out of 50 (term 1 only)
+        maxScore: scheme.yearly && !currentClass.students.some(st => st.scores[s.code]?.term2Coursework !== undefined) ? 50 : 100,
         teacher: s.teacher,
       }));
 
@@ -279,7 +273,8 @@ function PorPor5Content() {
         const normalizedCode = normalizeResultCode(st.code);
         const scoresObj: Record<string, number> = {};
         for (const s of currentClass.subjects) {
-          scoresObj[`${s.code} ${s.name}`] = st.scores[s.code]?.total ?? 70;
+          const total = st.scores[s.code]?.total;
+          if (total !== undefined) scoresObj[`${s.code} ${s.name}`] = total;
         }
         const rInfo = ranksMap[st.code];
         const lookupId = resultLookupDocId(announcementId, normalizedCode);
@@ -303,16 +298,9 @@ function PorPor5Content() {
   };
 
   const bulkSetSubjectField = (mode: 'full_hours' | 'trait_3' | 'read_3') => {
-    currentClass.students.forEach(st => {
-      const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
-      if (mode === 'full_hours') {
-        updateStudentScore(currentClass.classId, st.code, currentSubject.code, sc.coursework, sc.finalExam, undefined, sc.traitScore, sc.readThinkScore, currentSubject.hours);
-      } else if (mode === 'trait_3') {
-        updateStudentScore(currentClass.classId, st.code, currentSubject.code, sc.coursework, sc.finalExam, undefined, 3, sc.readThinkScore, sc.attendedHours);
-      } else if (mode === 'read_3') {
-        updateStudentScore(currentClass.classId, st.code, currentSubject.code, sc.coursework, sc.finalExam, undefined, sc.traitScore, 3, sc.attendedHours);
-      }
-    });
+    const patch = mode === 'full_hours' ? { attendedHours: currentSubject.hours }
+      : mode === 'trait_3' ? { traitScore: 3 } : { readThinkScore: 3 };
+    currentClass.students.forEach(st => updateStudentScore(currentClass.classId, st.code, currentSubject.code, patch));
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2000);
     toast.success('ตั้งค่าทั้งห้องเรียบร้อยแล้ว');
@@ -331,17 +319,7 @@ function PorPor5Content() {
     byRow.forEach((vals, row) => {
       const st = currentClass.students[row];
       if (!st) return;
-      const sc = scoreOf(st);
-      const special = sc.grade === 'ร' || sc.grade === 'มส' ? sc.grade : undefined;
-      updateStudentScore(
-        currentClass.classId, st.code, currentSubject.code,
-        vals.coursework ?? sc.coursework,
-        vals.finalExam ?? sc.finalExam,
-        special,
-        vals.traitScore ?? sc.traitScore,
-        vals.readThinkScore ?? sc.readThinkScore,
-        vals.attendedHours ?? sc.attendedHours,
-      );
+      updateStudentScore(currentClass.classId, st.code, currentSubject.code, vals);
     });
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 1800);
@@ -349,8 +327,7 @@ function PorPor5Content() {
   };
 
   const clampFor = (col: GridCol, v: number) => {
-    const max = col === 'attendedHours' ? currentSubject.hours : GRID_MAX[col];
-    return Math.min(max, Math.max(0, v));
+    return Math.min(gridMaxFor(scheme, col, currentSubject.hours), Math.max(0, v));
   };
 
   const handleGridPaste = (e: React.ClipboardEvent<HTMLInputElement>, startRow: number, startCol: GridCol) => {
@@ -395,7 +372,7 @@ function PorPor5Content() {
       if (fill.to === fill.from) return;
       const src = currentClass.students[fill.from];
       if (!src) return;
-      const value = Number(scoreOf(src)[fill.col]);
+      const value = Number(scoreOf(src)[fill.col] ?? 0);
       const [a, b] = fill.to > fill.from ? [fill.from + 1, fill.to] : [fill.to, fill.from - 1];
       const changes = [];
       for (let r = a; r <= b; r++) changes.push({ row: r, col: fill.col, value });
@@ -418,8 +395,8 @@ function PorPor5Content() {
         <input
           type="number"
           min={0}
-          max={col === 'attendedHours' ? currentSubject.hours : GRID_MAX[col]}
-          value={sc[col]}
+          max={gridMaxFor(scheme, col, currentSubject.hours)}
+          value={sc[col] ?? ''}
           data-grid-row={row}
           data-grid-col={col}
           onPaste={ev => handleGridPaste(ev, row, col)}
@@ -443,15 +420,12 @@ function PorPor5Content() {
     for (const rec of records) {
       const st = currentClass.students.find(s => s.code === rec.studentId);
       if (!st) continue;
-      const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
-      const cw = rec.values.coursework !== null && rec.values.coursework !== undefined
-        ? Math.min(70, Math.max(0, rec.values.coursework))
-        : sc.coursework;
-      const fin = rec.values.finalExam !== null && rec.values.finalExam !== undefined
-        ? Math.min(30, Math.max(0, rec.values.finalExam))
-        : sc.finalExam;
-
-      updateStudentScore(currentClass.classId, st.code, currentSubject.code, cw, fin, undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours);
+      const patch: Partial<Record<GridCol, number>> = {};
+      for (const col of ['coursework', 'finalExam', 'term2Coursework', 'term2FinalExam'] as const) {
+        const v = rec.values[col];
+        if (v !== null && v !== undefined) patch[col] = clampFor(col, v);
+      }
+      updateStudentScore(currentClass.classId, st.code, currentSubject.code, patch);
       count++;
     }
     setSavedToast(true);
@@ -467,12 +441,13 @@ function PorPor5Content() {
         code: st.code,
         name: st.name,
         currentValues: {
-          coursework: sc?.coursework ?? 50,
-          finalExam: sc?.finalExam ?? 20,
+          coursework: sc?.coursework ?? 0,
+          finalExam: sc?.finalExam ?? 0,
+          ...(scheme.yearly ? { term2Coursework: sc?.term2Coursework ?? 0, term2FinalExam: sc?.term2FinalExam ?? 0 } : {}),
         },
       };
     });
-  }, [currentClass.students, currentSubject.code]);
+  }, [currentClass.students, currentSubject.code, scheme.yearly]);
 
   const exportSubjectCsv = () => {
     const rows: Array<Array<string | number>> = [
@@ -482,19 +457,29 @@ function PorPor5Content() {
       [
         'เลขที่', 'เลขประจำตัว', 'ชื่อ-สกุล',
         'เวลาเรียนเต็ม', 'เวลามาเรียน', 'ร้อยละเวลาเรียน',
-        'ก่อนกลางภาค (25)', 'กลางภาค (20)', 'หลังกลางภาค (25)', 'รวมระหว่างเรียน (70)',
-        'ปลายภาค (30)', 'รวมคะแนน (100)', 'ระดับผลการเรียน', 'ผลการแก้ไข',
+        ...(scheme.yearly
+          ? [`ภาค 1 เก็บ (${scheme.courseworkMax})`, `ภาค 1 ปลายภาค (${scheme.finalMax})`, 'รวมภาค 1 (50)',
+             `ภาค 2 เก็บ (${scheme.courseworkMax})`, `ภาค 2 ปลายภาค (${scheme.finalMax})`, 'รวมภาค 2 (50)', 'รวมทั้งปี (100)']
+          : ['ก่อนกลางภาค (25)', 'กลางภาค (20)', 'หลังกลางภาค (25)', 'รวมระหว่างเรียน (70)', 'ปลายภาค (30)', 'รวมคะแนน (100)']),
+        'ระดับผลการเรียน', 'ผลการแก้ไข',
         'คุณลักษณะอันพึงประสงค์ (0-3)', 'การอ่านคิดวิเคราะห์และเขียน (0-3)',
       ],
       ...currentClass.students.map(st => {
         const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
-        const { preMid, mid, postMid } = splitCoursework3Parts(sc.coursework);
         const attPct = currentSubject.hours > 0 ? ((sc.attendedHours / currentSubject.hours) * 100).toFixed(1) : '100.0';
+        const hasTerm2 = sc.term2Coursework !== undefined || sc.term2FinalExam !== undefined;
+        const scoreCells = scheme.yearly
+          ? [sc.coursework, sc.finalExam, sc.coursework + sc.finalExam,
+             sc.term2Coursework ?? '', sc.term2FinalExam ?? '',
+             hasTerm2 ? (sc.term2Coursework ?? 0) + (sc.term2FinalExam ?? 0) : '', hasTerm2 ? sc.total : '']
+          : (() => {
+            const { preMid, mid, postMid } = splitCoursework3Parts(sc.coursework);
+            return [preMid, mid, postMid, sc.coursework, sc.finalExam, sc.total];
+          })();
         return [
           st.no, st.code, st.name,
           currentSubject.hours, sc.attendedHours, `${attPct}%`,
-          preMid, mid, postMid, sc.coursework,
-          sc.finalExam, sc.total, sc.grade, '',
+          ...scoreCells, sc.grade, '',
           sc.traitScore, sc.readThinkScore,
         ];
       }),
@@ -770,7 +755,7 @@ function PorPor5Content() {
               {currentSubject.code} {currentSubject.name} ({currentSubject.type})
             </div>
             <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>
-              ครูผู้สอน: <b>{currentSubject.teacher}</b> · น้ำหนัก: <b>{currentSubject.credits} หน่วยกิต</b> · เวลาเรียน: <b>{currentSubject.hours} ชั่วโมง/ภาค</b>
+              ครูผู้สอน: <b>{currentSubject.teacher}</b> · {scheme.weightLabel}: <b>{currentSubject.credits}</b> · เวลาเรียน: <b>{currentSubject.hours} ชั่วโมง/ภาค</b>{scheme.yearly ? ' · ตัดเกรดจากผลรวม 2 ภาคเรียน' : ''}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -866,9 +851,21 @@ function PorPor5Content() {
                   <th style={{ ...thP5, width: 88 }}>รหัส</th>
                   <th style={{ ...thP5, textAlign: 'left' }}>ชื่อ-นามสกุล</th>
                   <th style={{ ...thP5, width: 88 }}>เวลาเรียน<br />({currentSubject.hours} ชม.)</th>
-                  <th style={{ ...thP5, width: 115, background: '#0369A1' }}>ระหว่างภาค<br />(เต็ม 70)</th>
-                  <th style={{ ...thP5, width: 115, background: '#0369A1' }}>สอบปลายภาค<br />(เต็ม 30)</th>
-                  <th style={{ ...thP5, width: 85, background: '#0F172A' }}>รวม<br />(100)</th>
+                  {scheme.yearly ? (
+                    <>
+                      <th style={{ ...thP5, width: 100, background: '#0369A1' }}>ภาค 1 เก็บ<br />(เต็ม {scheme.courseworkMax})</th>
+                      <th style={{ ...thP5, width: 100, background: '#0369A1' }}>ภาค 1 ปลายภาค<br />(เต็ม {scheme.finalMax})</th>
+                      <th style={{ ...thP5, width: 100, background: '#075985' }}>ภาค 2 เก็บ<br />(เต็ม {scheme.courseworkMax})</th>
+                      <th style={{ ...thP5, width: 100, background: '#075985' }}>ภาค 2 ปลายภาค<br />(เต็ม {scheme.finalMax})</th>
+                      <th style={{ ...thP5, width: 85, background: '#0F172A' }}>รวมทั้งปี<br />(100)</th>
+                    </>
+                  ) : (
+                    <>
+                      <th style={{ ...thP5, width: 115, background: '#0369A1' }}>ระหว่างภาค<br />(เต็ม {scheme.courseworkMax})</th>
+                      <th style={{ ...thP5, width: 115, background: '#0369A1' }}>สอบปลายภาค<br />(เต็ม {scheme.finalMax})</th>
+                      <th style={{ ...thP5, width: 85, background: '#0F172A' }}>รวม<br />(100)</th>
+                    </>
+                  )}
                   <th style={{ ...thP5, width: 80, background: '#15803D' }}>เกรด</th>
                   <th style={{ ...thP5, width: 88 }}>สถานะพิเศษ<br />(ปกติ/ร/มส)</th>
                   <th style={{ ...thP5, width: 95 }}>คุณลักษณะฯ<br />(0-3: ไม่ผ่าน-ดีเยี่ยม)</th>
@@ -880,8 +877,8 @@ function PorPor5Content() {
                   const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
                   const specialVal = sc.grade === 'ร' || sc.grade === 'มส' ? sc.grade : '';
 
-                  const triggerUpdate = (cw: number, fin: number, spec?: string, tr?: number, rt?: number, hrs?: number) => {
-                    updateStudentScore(currentClass.classId, st.code, currentSubject.code, cw, fin, spec, tr, rt, hrs);
+                  const setSpecial = (spec: string) => {
+                    updateStudentScore(currentClass.classId, st.code, currentSubject.code, { specialGrade: spec || null });
                     setSavedToast(true);
                     setTimeout(() => setSavedToast(false), 1800);
                   };
@@ -900,8 +897,21 @@ function PorPor5Content() {
                       <td style={{ ...tdP5, background: '#F0F9FF' }}>
                         {gridInput(st, idx, 'finalExam', { ...inpStyle, borderColor: '#38BDF8', fontWeight: 900 })}
                       </td>
+                      {scheme.yearly && (
+                        <>
+                          <td style={{ ...tdP5, background: '#E0F2FE' }}>
+                            {gridInput(st, idx, 'term2Coursework', { ...inpStyle, borderColor: '#0EA5E9', fontWeight: 900 })}
+                          </td>
+                          <td style={{ ...tdP5, background: '#E0F2FE' }}>
+                            {gridInput(st, idx, 'term2FinalExam', { ...inpStyle, borderColor: '#0EA5E9', fontWeight: 900 })}
+                          </td>
+                        </>
+                      )}
                       <td style={{ ...tdP5, fontWeight: 900, fontSize: '0.95rem', color: '#0F172A', background: '#F8FAFC' }}>
                         {sc.total}
+                        {scheme.yearly && sc.term2Coursework === undefined && sc.term2FinalExam === undefined && (
+                          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B' }}>ภาค 1 /50</div>
+                        )}
                       </td>
                       <td style={{
                         ...tdP5,
@@ -915,7 +925,7 @@ function PorPor5Content() {
                       <td style={tdP5}>
                         <select
                           value={specialVal}
-                          onChange={e => triggerUpdate(sc.coursework, sc.finalExam, e.target.value || undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours)}
+                          onChange={e => setSpecial(e.target.value)}
                           style={{ ...inpStyle, width: 76, color: specialVal ? '#DC2626' : '#475569' }}
                         >
                           <option value="">ปกติ</option>
@@ -941,12 +951,18 @@ function PorPor5Content() {
           isOpen={showPasteModal}
           onClose={() => setShowPasteModal(false)}
           title={`📋 วางคะแนน ปพ.5 จาก Excel (${currentSubject.code} ${currentSubject.name})`}
-          subtitle="คัดลอกคอลัมน์คะแนนระหว่างภาค (70) และ/หรือ สอบปลายภาค (30) จาก Excel แล้ววางลงด้านล่าง"
+          subtitle={scheme.yearly
+            ? `คัดลอกคอลัมน์คะแนนภาค 1 / ภาค 2 (เก็บ ${scheme.courseworkMax}, ปลายภาค ${scheme.finalMax}) จาก Excel แล้ววางลงด้านล่าง`
+            : `คัดลอกคอลัมน์คะแนนระหว่างภาค (${scheme.courseworkMax}) และ/หรือ สอบปลายภาค (${scheme.finalMax}) จาก Excel แล้ววางลงด้านล่าง`}
           themeColor="#0284C7"
           students={pasteStudentRows}
           columns={[
-            { key: 'coursework', label: 'คะแนนระหว่างภาค', unit: '70', min: 0, max: 70, placeholder: '50' },
-            { key: 'finalExam', label: 'สอบปลายภาค', unit: '30', min: 0, max: 30, placeholder: '20' },
+            { key: 'coursework', label: scheme.yearly ? 'ภาค 1 เก็บ' : 'คะแนนระหว่างภาค', unit: String(scheme.courseworkMax), min: 0, max: scheme.courseworkMax, placeholder: '' },
+            { key: 'finalExam', label: scheme.yearly ? 'ภาค 1 ปลายภาค' : 'สอบปลายภาค', unit: String(scheme.finalMax), min: 0, max: scheme.finalMax, placeholder: '' },
+            ...(scheme.yearly ? [
+              { key: 'term2Coursework', label: 'ภาค 2 เก็บ', unit: String(scheme.courseworkMax), min: 0, max: scheme.courseworkMax, placeholder: '' },
+              { key: 'term2FinalExam', label: 'ภาค 2 ปลายภาค', unit: String(scheme.finalMax), min: 0, max: scheme.finalMax, placeholder: '' },
+            ] : []),
           ]}
           onApply={handlePasteModalApply}
         />
@@ -1016,6 +1032,7 @@ function PorPor5OfficialPrintSheets({
   };
   fullBook: boolean;
 }) {
+  const scheme = scoreScheme(currentClass.level);
   const totalStudents = currentClass.students.length || 1;
   const pct = (count: number) => ((count / totalStudents) * 100).toFixed(2);
   const gradeCols = ['4', '3.5', '3', '2.5', '2', '1.5', '1', '0', 'ร', 'มส'] as const;
@@ -1070,7 +1087,7 @@ function PorPor5OfficialPrintSheets({
           <div>
             <b>รายวิชา:</b> {currentSubject.name} &nbsp;&nbsp;&nbsp;&nbsp;
             <b>รหัสวิชา:</b> {currentSubject.code} &nbsp;&nbsp;&nbsp;&nbsp;
-            <b>จำนวนหน่วยกิต:</b> {currentSubject.credits} หน่วยกิต &nbsp;&nbsp;
+            <b>{scheme.yearly ? 'น้ำหนัก' : 'จำนวนหน่วยกิต'}:</b> {currentSubject.credits} {scheme.weightLabel} &nbsp;&nbsp;
             <b>เวลาเรียน:</b> {hoursPerWeek} ชม./สัปดาห์ &nbsp; รวม <b>{currentSubject.hours}</b> ชม./ภาคเรียน
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
@@ -1369,22 +1386,64 @@ function PorPor5OfficialPrintSheets({
               <th rowSpan={2} style={{ width: '5%' }}>เลขที่</th>
               <th rowSpan={2} style={{ width: '9%' }}>เลขประจำตัว</th>
               <th rowSpan={2} style={{ width: '28%' }}>ชื่อ - สกุล</th>
-              <th colSpan={4}>ระหว่างเรียน (70 คะแนน)</th>
-              <th rowSpan={2} style={{ width: '8.5%' }}>ปลายภาค<br />(30)</th>
-              <th rowSpan={2} style={{ width: '8.5%' }}>รวม<br />คะแนน<br />(100)</th>
+              {scheme.yearly ? (
+                <>
+                  <th colSpan={3}>ภาคเรียนที่ 1</th>
+                  <th colSpan={3}>ภาคเรียนที่ 2</th>
+                  <th rowSpan={2} style={{ width: '7%' }}>รวม<br />ทั้งปี<br />(100)</th>
+                </>
+              ) : (
+                <>
+                  <th colSpan={4}>ระหว่างเรียน (70 คะแนน)</th>
+                  <th rowSpan={2} style={{ width: '8.5%' }}>ปลายภาค<br />(30)</th>
+                  <th rowSpan={2} style={{ width: '8.5%' }}>รวม<br />คะแนน<br />(100)</th>
+                </>
+              )}
               <th rowSpan={2} style={{ width: '8.5%' }}>ระดับผล<br />การเรียน</th>
               <th rowSpan={2} style={{ width: '8.5%' }}>ผลการ<br />แก้ไข</th>
             </tr>
             <tr>
-              <th style={{ width: '8%' }}>ก่อนกลางภาค<br />(25)</th>
-              <th style={{ width: '8%' }}>กลางภาค<br />(20)</th>
-              <th style={{ width: '8%' }}>หลังกลางภาค<br />(25)</th>
-              <th style={{ width: '8%' }}>รวมเก็บ<br />(70)</th>
+              {scheme.yearly ? (
+                <>
+                  <th style={{ width: '6%' }}>เก็บ<br />({scheme.courseworkMax})</th>
+                  <th style={{ width: '6%' }}>ปลายภาค<br />({scheme.finalMax})</th>
+                  <th style={{ width: '6%' }}>รวม<br />(50)</th>
+                  <th style={{ width: '6%' }}>เก็บ<br />({scheme.courseworkMax})</th>
+                  <th style={{ width: '6%' }}>ปลายภาค<br />({scheme.finalMax})</th>
+                  <th style={{ width: '6%' }}>รวม<br />(50)</th>
+                </>
+              ) : (
+                <>
+                  <th style={{ width: '8%' }}>ก่อนกลางภาค<br />(25)</th>
+                  <th style={{ width: '8%' }}>กลางภาค<br />(20)</th>
+                  <th style={{ width: '8%' }}>หลังกลางภาค<br />(25)</th>
+                  <th style={{ width: '8%' }}>รวมเก็บ<br />(70)</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
             {currentClass.students.map(st => {
               const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
+              if (scheme.yearly) {
+                const hasTerm2 = sc.term2Coursework !== undefined || sc.term2FinalExam !== undefined;
+                return (
+                  <tr key={st.code}>
+                    <td style={{ textAlign: 'center' }}>{st.no}</td>
+                    <td style={{ textAlign: 'center' }}>{st.code}</td>
+                    <td>{st.name}</td>
+                    <td style={{ textAlign: 'center' }}>{sc.coursework}</td>
+                    <td style={{ textAlign: 'center' }}>{sc.finalExam}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{sc.coursework + sc.finalExam}</td>
+                    <td style={{ textAlign: 'center' }}>{sc.term2Coursework ?? ''}</td>
+                    <td style={{ textAlign: 'center' }}>{sc.term2FinalExam ?? ''}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{hasTerm2 ? (sc.term2Coursework ?? 0) + (sc.term2FinalExam ?? 0) : ''}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 800 }}>{hasTerm2 ? sc.total : ''}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
+                    <td style={{ textAlign: 'center' }}>-</td>
+                  </tr>
+                );
+              }
               const { preMid, mid, postMid } = splitCoursework3Parts(sc.coursework);
               return (
                 <tr key={st.code}>
