@@ -1,9 +1,12 @@
 import { useState, useMemo } from 'react';
 import {
   calculateStudentGPA,
+  scoreScheme,
   type ClassAcademicData,
   type AcademicStudentRecord,
+  type StudentSubjectScore,
 } from '../data/academicData';
+import { detailHasMarks, fitDetail, type SubjectPlan } from '../utils/assessment';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 import { effectiveGrade } from '../data/academicData';
@@ -54,24 +57,83 @@ function splitNameParts(fullName: string) {
   };
 }
 
-function splitCw1And2(cw: number): { cw1: number; cw2: number } {
-  const safe = Math.min(70, Math.max(0, Math.round(cw)));
-  const cw1 = Math.round(safe / 2);
-  const cw2 = safe - cw1;
-  return { cw1, cw2 };
+// Every number on these sheets is what a teacher recorded; anything not recorded prints "-".
+type Num = number | null;
+const dash = (v: Num | undefined) => (typeof v === 'number' ? (Number.isInteger(v) ? String(v) : v.toFixed(1)) : '-');
+const sumOf = (xs: (number | null | undefined)[]) => xs.reduce<number>((n, x) => n + (Number(x) || 0), 0);
+
+/**
+ * ระหว่างเรียน 1 / 2 as recorded, never a split of the coursework total.
+ * ประถม (graded by year): coursework of term 1 / term 2.
+ * มัธยม: indicator marks before the midterm plus the midterm / after it, from the subject's plan.
+ */
+function courseworkHalf(half: 0 | 1, yearly: boolean, sc: StudentSubjectScore | undefined, plan: SubjectPlan | undefined): Num {
+  if (!sc) return null;
+  if (yearly) {
+    const v = half === 0 ? sc.coursework : sc.term2Coursework;
+    return typeof v === 'number' ? v : null;
+  }
+  const tp = plan?.[0];
+  if (!tp || !sc.detail?.[0]) return null;
+  const d = fitDetail(sc.detail[0], tp);
+  if (!detailHasMarks(d)) return null;
+  return half === 0 ? sumOf(d.before) + (d.midterm ?? 0) : sumOf(d.after);
 }
+
+function courseworkHalfFull(half: 0 | 1, yearly: boolean, courseworkMax: number, plan: SubjectPlan | undefined): Num {
+  if (yearly) return courseworkMax;
+  const tp = plan?.[0];
+  if (!tp) return null;
+  return half === 0 ? sumOf(tp.before) + tp.midterm : sumOf(tp.after);
+}
+
+const hasTerm2 = (sc: StudentSubjectScore | undefined) => sc?.term2Coursework !== undefined || sc?.term2FinalExam !== undefined;
+
+/** สอบปลายภาค: มัธยม this semester; ประถม both terms once term 2 is in */
+const examOf = (yearly: boolean, sc: StudentSubjectScore | undefined): Num => {
+  if (!sc || typeof sc.finalExam !== 'number') return null;
+  return yearly && hasTerm2(sc) ? sc.finalExam + (sc.term2FinalExam ?? 0) : sc.finalExam;
+};
+
+/** Row sums and ranks; a student missing any value gets neither, so ranks never rest on blanks */
+function rowTotals(students: AcademicStudentRecord[], values: (st: AcademicStudentRecord) => Num[]) {
+  const sums = students.map(st => {
+    const vs = values(st);
+    return { code: st.code, sum: vs.length && vs.every(v => typeof v === 'number') ? sumOf(vs) : null };
+  });
+  const complete = sums.flatMap(x => (x.sum === null ? [] : [x.sum])).sort((a, b) => b - a);
+  const map: Record<string, { sum: Num; rank: Num }> = {};
+  for (const x of sums) map[x.code] = { sum: x.sum, rank: x.sum === null ? null : complete.indexOf(x.sum) + 1 };
+  return map;
+}
+
+const levelCode = (r: string | undefined) =>
+  r === 'ดีเยี่ยม' ? '3 (ดีเยี่ยม)' : r === 'ดี' ? '2 (ดี)' : r === 'ผ่าน' ? '1 (ผ่าน)' : r === 'ไม่ผ่าน' ? '0 (ไม่ผ่าน)' : '-';
+const markCode = (m: string | undefined) => (m === 'ผ' ? '2 (ผ่าน)' : m === 'มผ' ? '1 (ไม่ผ่าน)' : '-');
 
 export default function SssPorPor6PrintBook({
   classData,
   targetStudents,
   ranksMap,
+  plans,
   defaultSheet = 'student_reports',
 }: {
   classData: ClassAcademicData;
   targetStudents: AcademicStudentRecord[];
   ranksMap: Record<string, { rank: number; total: number; gpa: number }>;
+  /** full-mark plans of this class by subject code (SGS); มัธยม ระหว่างเรียน 1/2 come from them */
+  plans?: Record<string, SubjectPlan>;
   defaultSheet?: SssPp6SheetKey;
 }) {
+  const scheme = scoreScheme(classData.level);
+  const yearly = scheme.yearly;
+  const half = (h: 0 | 1, st: AcademicStudentRecord, code: string) => courseworkHalf(h, yearly, st.scores[code], plans?.[code]);
+  const halfFull = (h: 0 | 1, code: string) => courseworkHalfFull(h, yearly, scheme.courseworkMax, plans?.[code]);
+  const anyTerm2 = classData.students.some(st => classData.subjects.some(sub => hasTerm2(st.scores[sub.code])));
+  const examFull = yearly ? scheme.finalMax * (anyTerm2 ? 2 : 1) : scheme.finalMax;
+  const fullsTotal = (fulls: Num[]) => (fulls.every(f => typeof f === 'number') ? sumOf(fulls) : null);
+  const splits = (code: string) => yearly || !!plans?.[code]?.[0];
+  const unsplit = classData.subjects.filter(sub => !splits(sub.code));
   // citizen ID, birth date and guardian come from Firestore (staff-only), never the JS bundle
   const studentDetails = useStudentDetails();
   const [sheet, setSheet] = useState<SssPp6SheetKey>(defaultSheet);
@@ -86,45 +148,12 @@ export default function SssPorPor6PrintBook({
     [classData.subjects]
   );
 
-  // คำนวณคะแนนรวมและอันดับของ ระหว่างเรียน 1, ระหว่างเรียน 2, และ คะแนนสอบ
-  const termRanks = useMemo(() => {
-    const t1List = classData.students.map(st => {
-      const sum = classData.subjects.reduce((acc, s) => {
-        const cw = st.scores[s.code]?.coursework ?? 0;
-        return acc + splitCw1And2(cw).cw1;
-      }, 0);
-      return { code: st.code, sum };
-    });
-    const t2List = classData.students.map(st => {
-      const sum = classData.subjects.reduce((acc, s) => {
-        const cw = st.scores[s.code]?.coursework ?? 0;
-        return acc + splitCw1And2(cw).cw2;
-      }, 0);
-      return { code: st.code, sum };
-    });
-    const exList = classData.students.map(st => {
-      const sum = classData.subjects.reduce((acc, s) => {
-        return acc + (st.scores[s.code]?.finalExam ?? 0);
-      }, 0);
-      return { code: st.code, sum };
-    });
-
-    const rankOf = (list: Array<{ code: string; sum: number }>) => {
-      const sorted = [...list].sort((a, b) => b.sum - a.sum);
-      const map: Record<string, { sum: number; rank: number }> = {};
-      list.forEach(item => {
-        const r = sorted.findIndex(x => x.sum === item.sum) + 1;
-        map[item.code] = { sum: item.sum, rank: r };
-      });
-      return map;
-    };
-
-    return {
-      t1: rankOf(t1List),
-      t2: rankOf(t2List),
-      ex: rankOf(exList),
-    };
-  }, [classData.students, classData.subjects]);
+  // รวมและลำดับที่ของ ระหว่างเรียน 1, ระหว่างเรียน 2 และคะแนนสอบ (only students with every subject recorded)
+  const termRanks = {
+    t1: rowTotals(classData.students, st => classData.subjects.map(sub => half(0, st, sub.code))),
+    t2: rowTotals(classData.students, st => classData.subjects.map(sub => half(1, st, sub.code))),
+    ex: rowTotals(classData.students, st => classData.subjects.map(sub => examOf(yearly, st.scores[sub.code]))),
+  };
 
   // แบ่งรายวิชาเป็นชุดละ 4 วิชาสำหรับชีต "สรุปผลสัมฤทธิ์ทางการเรียน" (เหมือน col_breaks ใน Excel)
   const subjectChunks = useMemo(() => {
@@ -363,16 +392,16 @@ export default function SssPorPor6PrintBook({
               <tr style={{ background: '#F1F5F9' }}>
                 <th colSpan={5} style={{ ...cellTh, textAlign: 'right', paddingRight: 6 }}>คะแนนเต็มระหว่างเรียน 1</th>
                 {classData.subjects.map(s => (
-                  <th key={s.code} style={cellTh}>35</th>
+                  <th key={s.code} style={cellTh}>{dash(halfFull(0, s.code))}</th>
                 ))}
-                <th style={cellTh}>{classData.subjects.length * 35}</th>
+                <th style={cellTh}>{dash(fullsTotal(classData.subjects.map(s => halfFull(0, s.code))))}</th>
                 <th style={cellTh}>-</th>
               </tr>
             </thead>
             <tbody>
               {classData.students.map(st => {
                 const np = splitNameParts(st.name);
-                const tr = termRanks.t1[st.code] || { sum: 0, rank: st.no };
+                const tr = termRanks.t1[st.code];
                 return (
                   <tr key={st.code}>
                     <td style={{ ...cellTd, textAlign: 'center' }}>{st.no}</td>
@@ -380,21 +409,21 @@ export default function SssPorPor6PrintBook({
                     <td style={{ ...cellTd, textAlign: 'center' }}>{np.prefix}</td>
                     <td style={cellTd}>{np.firstName}</td>
                     <td style={cellTd}>{np.lastName}</td>
-                    {classData.subjects.map(s => {
-                      const cw = st.scores[s.code]?.coursework ?? 0;
-                      return (
-                        <td key={s.code} style={{ ...cellTd, textAlign: 'center' }}>
-                          {splitCw1And2(cw).cw1}
-                        </td>
-                      );
-                    })}
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900, background: '#F8FAFC' }}>{tr.sum}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{tr.rank}</td>
+                    {classData.subjects.map(s => (
+                      <td key={s.code} style={{ ...cellTd, textAlign: 'center' }}>{dash(half(0, st, s.code))}</td>
+                    ))}
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900, background: '#F8FAFC' }}>{dash(tr?.sum)}</td>
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{dash(tr?.rank)}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          {unsplit.length > 0 && (
+            <div style={{ fontSize: '8.5pt', marginTop: 4 }}>
+              "-" = ยังไม่ได้บันทึกคะแนนแยกก่อน/หลังกลางภาค ({unsplit.map(sub => sub.code).join(', ')}) — ตั้งคะแนนเต็มรายตัวชี้วัดและกรอกใน ปพ.5 ก่อน · คะแนนระหว่างภาครวมดูได้ในชีตสรุปผลสัมฤทธิ์ทางการเรียน
+            </div>
+          )}
         </div>
       )}
 
@@ -429,16 +458,16 @@ export default function SssPorPor6PrintBook({
               <tr style={{ background: '#F1F5F9' }}>
                 <th colSpan={5} style={{ ...cellTh, textAlign: 'right', paddingRight: 6 }}>คะแนนเต็มระหว่างเรียน 2</th>
                 {classData.subjects.map(s => (
-                  <th key={s.code} style={cellTh}>35</th>
+                  <th key={s.code} style={cellTh}>{dash(halfFull(1, s.code))}</th>
                 ))}
-                <th style={cellTh}>{classData.subjects.length * 35}</th>
+                <th style={cellTh}>{dash(fullsTotal(classData.subjects.map(s => halfFull(1, s.code))))}</th>
                 <th style={cellTh}>-</th>
               </tr>
             </thead>
             <tbody>
               {classData.students.map(st => {
                 const np = splitNameParts(st.name);
-                const tr = termRanks.t2[st.code] || { sum: 0, rank: st.no };
+                const tr = termRanks.t2[st.code];
                 return (
                   <tr key={st.code}>
                     <td style={{ ...cellTd, textAlign: 'center' }}>{st.no}</td>
@@ -446,21 +475,21 @@ export default function SssPorPor6PrintBook({
                     <td style={{ ...cellTd, textAlign: 'center' }}>{np.prefix}</td>
                     <td style={cellTd}>{np.firstName}</td>
                     <td style={cellTd}>{np.lastName}</td>
-                    {classData.subjects.map(s => {
-                      const cw = st.scores[s.code]?.coursework ?? 0;
-                      return (
-                        <td key={s.code} style={{ ...cellTd, textAlign: 'center' }}>
-                          {splitCw1And2(cw).cw2}
-                        </td>
-                      );
-                    })}
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900, background: '#F8FAFC' }}>{tr.sum}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{tr.rank}</td>
+                    {classData.subjects.map(s => (
+                      <td key={s.code} style={{ ...cellTd, textAlign: 'center' }}>{dash(half(1, st, s.code))}</td>
+                    ))}
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900, background: '#F8FAFC' }}>{dash(tr?.sum)}</td>
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{dash(tr?.rank)}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          {unsplit.length > 0 && (
+            <div style={{ fontSize: '8.5pt', marginTop: 4 }}>
+              "-" = ยังไม่ได้บันทึกคะแนนแยกก่อน/หลังกลางภาค ({unsplit.map(sub => sub.code).join(', ')}) — ตั้งคะแนนเต็มรายตัวชี้วัดและกรอกใน ปพ.5 ก่อน · คะแนนระหว่างภาครวมดูได้ในชีตสรุปผลสัมฤทธิ์ทางการเรียน
+            </div>
+          )}
         </div>
       )}
 
@@ -495,16 +524,16 @@ export default function SssPorPor6PrintBook({
               <tr style={{ background: '#F1F5F9' }}>
                 <th colSpan={5} style={{ ...cellTh, textAlign: 'right', paddingRight: 6 }}>คะแนนเต็มสอบปลายภาค</th>
                 {classData.subjects.map(s => (
-                  <th key={s.code} style={cellTh}>30</th>
+                  <th key={s.code} style={cellTh}>{examFull}</th>
                 ))}
-                <th style={cellTh}>{classData.subjects.length * 30}</th>
+                <th style={cellTh}>{classData.subjects.length * examFull}</th>
                 <th style={cellTh}>-</th>
               </tr>
             </thead>
             <tbody>
               {classData.students.map(st => {
                 const np = splitNameParts(st.name);
-                const tr = termRanks.ex[st.code] || { sum: 0, rank: st.no };
+                const tr = termRanks.ex[st.code];
                 return (
                   <tr key={st.code}>
                     <td style={{ ...cellTd, textAlign: 'center' }}>{st.no}</td>
@@ -514,11 +543,11 @@ export default function SssPorPor6PrintBook({
                     <td style={cellTd}>{np.lastName}</td>
                     {classData.subjects.map(s => (
                       <td key={s.code} style={{ ...cellTd, textAlign: 'center' }}>
-                        {st.scores[s.code]?.finalExam ?? 0}
+                        {dash(examOf(yearly, st.scores[s.code]))}
                       </td>
                     ))}
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900, background: '#F8FAFC' }}>{tr.sum}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{tr.rank}</td>
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900, background: '#F8FAFC' }}>{dash(tr?.sum)}</td>
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{dash(tr?.rank)}</td>
                   </tr>
                 );
               })}
@@ -562,9 +591,7 @@ export default function SssPorPor6PrintBook({
             <tbody>
               {classData.students.map(st => {
                 const np = splitNameParts(st.name);
-                const actCode = st.activityResult === 'ผ่าน' ? '2 (ผ่าน)' : '1 (ไม่ผ่าน)';
-                const readCode = st.readThinkResult === 'ดีเยี่ยม' ? '3 (ดีเยี่ยม)' : st.readThinkResult === 'ดี' ? '2 (ดี)' : '1 (ผ่าน)';
-                const traitCode = st.traitResult === 'ดีเยี่ยม' ? '3 (ดีเยี่ยม)' : st.traitResult === 'ดี' ? '2 (ดี)' : '1 (ผ่าน)';
+                const actCode = (i: number) => markCode(st.activities?.[classData.activities[i]?.code]);
                 return (
                   <tr key={st.code}>
                     <td style={{ ...cellTd, textAlign: 'center' }}>{st.no}</td>
@@ -572,13 +599,12 @@ export default function SssPorPor6PrintBook({
                     <td style={{ ...cellTd, textAlign: 'center' }}>{np.prefix}</td>
                     <td style={cellTd}>{np.firstName}</td>
                     <td style={cellTd}>{np.lastName}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{actCode}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{actCode}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{actCode}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{actCode}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{readCode}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{traitCode}</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{readCode}</td>
+                    {[0, 1, 2, 3].map(i => (
+                      <td key={i} style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{actCode(i)}</td>
+                    ))}
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{levelCode(st.readThinkResult)}</td>
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{levelCode(st.traitResult)}</td>
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>-</td>
                   </tr>
                 );
               })}
@@ -587,7 +613,7 @@ export default function SssPorPor6PrintBook({
 
           <div style={{ border: '1px solid #000', padding: '6px 10px', fontSize: '8.5pt', lineHeight: 1.45, background: '#F8FAFC' }}>
             <b>คำแนะนำการกรอกข้อมูล (ตามแบบฟอร์ม SSS ปพ.6):</b> กิจกรรมแนะแนว / ลูกเสือ-ยุวกาชาด / ชมรม-ชุมนุม / กิจกรรมเพื่อสังคมฯ: <b>1 = ไม่ผ่าน, 2 = ผ่าน</b> &nbsp;|&nbsp;
-            การอ่าน คิดวิเคราะห์ และเขียนสื่อความ / คุณลักษณะอันพึงประสงค์ / สมรรถนะสำคัญของผู้เรียน: <b>1 = ผ่าน, 2 = ดี, 3 = ดีเยี่ยม</b>
+            การอ่าน คิดวิเคราะห์ และเขียนสื่อความ / คุณลักษณะอันพึงประสงค์ / สมรรถนะสำคัญของผู้เรียน: <b>0 = ไม่ผ่าน, 1 = ผ่าน, 2 = ดี, 3 = ดีเยี่ยม</b> &nbsp;|&nbsp; <b>"-" = ยังไม่ได้บันทึก</b>
           </div>
         </div>
       )}
@@ -626,8 +652,9 @@ export default function SssPorPor6PrintBook({
                 </tr>
                 <tr style={{ background: '#F8FAFC' }}>
                   {chunk.map(s => [
-                    <th key={`${s.code}_1`} style={cellTh}>ระหว่าง 1</th>,
-                    <th key={`${s.code}_2`} style={cellTh}>ระหว่าง 2</th>,
+                    ...(splits(s.code)
+                      ? [<th key={`${s.code}_1`} style={cellTh}>ระหว่าง 1</th>, <th key={`${s.code}_2`} style={cellTh}>ระหว่าง 2</th>]
+                      : [<th key={`${s.code}_12`} colSpan={2} style={cellTh}>ระหว่างภาค</th>]),
                     <th key={`${s.code}_ex`} style={cellTh}>สอบ</th>,
                     <th key={`${s.code}_tot`} style={cellTh}>รวม</th>,
                     <th key={`${s.code}_gr`} style={cellTh}>เกรด</th>,
@@ -635,10 +662,11 @@ export default function SssPorPor6PrintBook({
                 </tr>
                 <tr style={{ background: '#F1F5F9' }}>
                   {chunk.map(s => [
-                    <th key={`${s.code}_m1`} style={cellTh}>35</th>,
-                    <th key={`${s.code}_m2`} style={cellTh}>35</th>,
-                    <th key={`${s.code}_mex`} style={cellTh}>30</th>,
-                    <th key={`${s.code}_mtot`} style={cellTh}>100</th>,
+                    ...(splits(s.code)
+                      ? [<th key={`${s.code}_m1`} style={cellTh}>{dash(halfFull(0, s.code))}</th>, <th key={`${s.code}_m2`} style={cellTh}>{dash(halfFull(1, s.code))}</th>]
+                      : [<th key={`${s.code}_m12`} colSpan={2} style={cellTh}>{scheme.courseworkMax}</th>]),
+                    <th key={`${s.code}_mex`} style={cellTh}>{examFull}</th>,
+                    <th key={`${s.code}_mtot`} style={cellTh}>{yearly && !anyTerm2 ? 50 : 100}</th>,
                     <th key={`${s.code}_mgr`} style={cellTh}>4.0</th>,
                   ])}
                 </tr>
@@ -652,14 +680,17 @@ export default function SssPorPor6PrintBook({
                       <td style={{ ...cellTd, textAlign: 'center' }}>{st.code}</td>
                       <td style={cellTd}>{st.name}</td>
                       {chunk.map(s => {
-                        const sc = st.scores[s.code] || { coursework: 0, finalExam: 0, total: 0, grade: '0' };
-                        const { cw1, cw2 } = splitCw1And2(sc.coursework);
+                        const sc = st.scores[s.code];
                         return [
-                          <td key={`${s.code}_v1`} style={{ ...cellTd, textAlign: 'center' }}>{cw1}</td>,
-                          <td key={`${s.code}_v2`} style={{ ...cellTd, textAlign: 'center' }}>{cw2}</td>,
-                          <td key={`${s.code}_vex`} style={{ ...cellTd, textAlign: 'center' }}>{sc.finalExam}</td>,
-                          <td key={`${s.code}_vtot`} style={{ ...cellTd, textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{sc.total}</td>,
-                          <td key={`${s.code}_vgr`} style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>,
+                          ...(splits(s.code)
+                            ? [
+                              <td key={`${s.code}_v1`} style={{ ...cellTd, textAlign: 'center' }}>{dash(half(0, st, s.code))}</td>,
+                              <td key={`${s.code}_v2`} style={{ ...cellTd, textAlign: 'center' }}>{dash(half(1, st, s.code))}</td>,
+                            ]
+                            : [<td key={`${s.code}_v12`} colSpan={2} style={{ ...cellTd, textAlign: 'center' }}>{dash(sc?.coursework)}</td>]),
+                          <td key={`${s.code}_vex`} style={{ ...cellTd, textAlign: 'center' }}>{dash(examOf(yearly, sc))}</td>,
+                          <td key={`${s.code}_vtot`} style={{ ...cellTd, textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{dash(sc?.total)}</td>,
+                          <td key={`${s.code}_vgr`} style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc) || '-'}</td>,
                         ];
                       })}
                       {isLastChunk && (
@@ -688,7 +719,35 @@ export default function SssPorPor6PrintBook({
         const gpaStats = calculateStudentGPA(student, classData.subjects, true);
         const rankInfo = ranksMap[student.code] || { rank: idx + 1, total: classData.students.length, gpa: gpaStats.gpa };
         const isLastStudent = idx === targetStudents.length - 1;
-        const passAct = student.activityResult === 'ผ่าน';
+        const actResult = student.activityResult;
+        const reportSubjectRow = (subj: (typeof classData.subjects)[number]) => {
+          const sc = student.scores[subj.code];
+          const t2 = hasTerm2(sc);
+          return (
+            <tr key={subj.code}>
+              <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{subj.code}</td>
+              <td style={cellTd}>{subj.name}</td>
+              <td style={{ ...cellTd, textAlign: 'center' }}>{subj.hours}</td>
+              {splits(subj.code) ? (
+                <>
+                  <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>{dash(halfFull(0, subj.code))}</td>
+                  <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{dash(half(0, student, subj.code))}</td>
+                  <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>{dash(halfFull(1, subj.code))}</td>
+                  <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{dash(half(1, student, subj.code))}</td>
+                </>
+              ) : (
+                <td colSpan={4} style={{ ...cellTd, textAlign: 'center' }}>
+                  ระหว่างภาค <b>{dash(sc?.coursework)}</b> / {scheme.courseworkMax}
+                </td>
+              )}
+              <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>{yearly ? scheme.finalMax * (t2 ? 2 : 1) : scheme.finalMax}</td>
+              <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{dash(examOf(yearly, sc))}</td>
+              <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>{yearly && !t2 ? 50 : 100}</td>
+              <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{dash(sc?.total)}</td>
+              <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc) || '-'}</td>
+            </tr>
+          );
+        };
 
         const chk = (cond: boolean) => (
           <span style={{
@@ -788,24 +847,7 @@ export default function SssPorPor6PrintBook({
                     <td colSpan={11} style={cellTd}>รายวิชาพื้นฐาน</td>
                   </tr>
                   {coreSubjects.map(subj => {
-                    const sc = student.scores[subj.code] || { coursework: 0, finalExam: 0, total: 0, grade: '0' };
-                    const { cw1, cw2 } = splitCw1And2(sc.coursework);
-                    return (
-                      <tr key={subj.code}>
-                        <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{subj.code}</td>
-                        <td style={cellTd}>{subj.name}</td>
-                        <td style={{ ...cellTd, textAlign: 'center' }}>{subj.hours}</td>
-                        <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>35</td>
-                        <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{cw1}</td>
-                        <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>35</td>
-                        <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{cw2}</td>
-                        <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>30</td>
-                        <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{sc.finalExam}</td>
-                        <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>100</td>
-                        <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{sc.total}</td>
-                        <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>
-                      </tr>
-                    );
+                    return reportSubjectRow(subj);
                   })}
 
                   {/* หมวดรายวิชาเพิ่มเติม */}
@@ -816,24 +858,7 @@ export default function SssPorPor6PrintBook({
                         <td colSpan={11} style={cellTd}>รายวิชาเพิ่มเติม</td>
                       </tr>
                       {electiveSubjects.map(subj => {
-                        const sc = student.scores[subj.code] || { coursework: 0, finalExam: 0, total: 0, grade: '0' };
-                        const { cw1, cw2 } = splitCw1And2(sc.coursework);
-                        return (
-                          <tr key={subj.code}>
-                            <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{subj.code}</td>
-                            <td style={cellTd}>{subj.name}</td>
-                            <td style={{ ...cellTd, textAlign: 'center' }}>{subj.hours}</td>
-                            <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>35</td>
-                            <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{cw1}</td>
-                            <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>35</td>
-                            <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{cw2}</td>
-                            <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>30</td>
-                            <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{sc.finalExam}</td>
-                            <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>100</td>
-                            <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{sc.total}</td>
-                            <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>
-                          </tr>
-                        );
+                        return reportSubjectRow(subj);
                       })}
                     </>
                   )}
@@ -844,9 +869,9 @@ export default function SssPorPor6PrintBook({
                     <td colSpan={11} style={cellTd}>กิจกรรมเพิ่มเติม</td>
                   </tr>
                   <tr>
-                    <td style={{ ...cellTd, textAlign: 'center' }}>{classData.level === 'มัธยม' ? 'ก21101' : 'ก11101'}</td>
+                    <td style={{ ...cellTd, textAlign: 'center' }}>-</td>
                     <td style={cellTd}>กิจกรรมพัฒนาผู้เรียน / ลดเวลาเรียนเพิ่มเวลารู้</td>
-                    <td style={{ ...cellTd, textAlign: 'center' }}>60</td>
+                    <td style={{ ...cellTd, textAlign: 'center' }}>{classData.activities.reduce((n, a) => n + a.hours, 0)}</td>
                     <td style={{ ...cellTd, textAlign: 'center' }}>-</td>
                     <td style={{ ...cellTd, textAlign: 'center' }}>-</td>
                     <td style={{ ...cellTd, textAlign: 'center' }}>-</td>
@@ -855,7 +880,7 @@ export default function SssPorPor6PrintBook({
                     <td style={{ ...cellTd, textAlign: 'center' }}>-</td>
                     <td style={{ ...cellTd, textAlign: 'center' }}>-</td>
                     <td style={{ ...cellTd, textAlign: 'center' }}>-</td>
-                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{passAct ? 'ผ' : 'มผ'}</td>
+                    <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{actResult === 'ผ่าน' ? 'ผ' : actResult === 'ไม่ผ่าน' ? 'มผ' : '-'}</td>
                   </tr>
 
                   {/* แถวสรุประดับผลการเรียนเฉลี่ย (Row 34) */}
@@ -883,18 +908,16 @@ export default function SssPorPor6PrintBook({
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      'กิจกรรมแนะแนว',
-                      'ลูกเสือ/ยุวกาชาด',
-                      'ชมรม/ชุมนุม',
-                      'กิจกรรมเพื่อสังคมฯ',
-                    ].map(actName => (
-                      <tr key={actName}>
-                        <td style={{ ...cellTd, width: '48%', fontWeight: 700 }}>{actName}</td>
-                        <td style={{ ...cellTd, width: '26%', textAlign: 'center' }}>{chk(passAct)}ผ่าน</td>
-                        <td style={{ ...cellTd, width: '26%', textAlign: 'center' }}>{chk(!passAct)}ไม่ผ่าน</td>
-                      </tr>
-                    ))}
+                    {classData.activities.map(act => {
+                      const mark = student.activities?.[act.code];
+                      return (
+                        <tr key={act.code}>
+                          <td style={{ ...cellTd, width: '48%', fontWeight: 700 }}>{act.name}</td>
+                          <td style={{ ...cellTd, width: '26%', textAlign: 'center' }}>{chk(mark === 'ผ')}ผ่าน</td>
+                          <td style={{ ...cellTd, width: '26%', textAlign: 'center' }}>{chk(mark === 'มผ')}ไม่ผ่าน</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
 
@@ -921,9 +944,9 @@ export default function SssPorPor6PrintBook({
                       <th colSpan={3} style={cellTh}>สมรรถนะสำคัญของผู้เรียน</th>
                     </tr>
                     <tr>
-                      <td style={{ ...cellTd, textAlign: 'center' }}>{chk(student.readThinkResult === 'ดีเยี่ยม')}ดีเยี่ยม</td>
-                      <td style={{ ...cellTd, textAlign: 'center' }}>{chk(student.readThinkResult === 'ดี')}ดี</td>
-                      <td style={{ ...cellTd, textAlign: 'center' }}>{chk(student.readThinkResult === 'ผ่าน')}ผ่าน</td>
+                      <td style={{ ...cellTd, textAlign: 'center' }}>{chk(false)}ดีเยี่ยม</td>
+                      <td style={{ ...cellTd, textAlign: 'center' }}>{chk(false)}ดี</td>
+                      <td style={{ ...cellTd, textAlign: 'center' }}>{chk(false)}ผ่าน</td>
                     </tr>
                   </tbody>
                 </table>

@@ -7,7 +7,7 @@ import { Printer, Search, Eye, FileText, ArrowLeft, Edit3, Check, RotateCcw } fr
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
-import { useGradingStatus } from '../utils/assessmentStorage';
+import { useAssessmentPlans, useGradingStatus } from '../utils/assessmentStorage';
 import ActivityGrid from '../components/sgs/ActivityGrid';
 import { useAcademicData } from '../utils/academicStorage';
 import {
@@ -35,6 +35,7 @@ function PorPor6Content() {
   const { classesData, updateStudentScore, updateStudentEvaluation, updateStudentActivities, resetToDefault } = useAcademicData();
   const auth = useTeacherAuth();
   const { status: gradingStatus } = useGradingStatus();
+  const { plans } = useAssessmentPlans();
   const entryLocked = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
   const [showActivities, setShowActivities] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string>('m1');
@@ -199,6 +200,7 @@ function PorPor6Content() {
               classData={currentClass}
               targetStudents={targetStudents}
               ranksMap={ranksMap}
+              plans={plans[currentClass.classId]}
               defaultSheet={defaultSssSheet}
             />
           ) : (
@@ -604,6 +606,7 @@ function PorPor6Content() {
           classData={currentClass}
           targetStudents={currentClass.students}
           ranksMap={ranksMap}
+          plans={plans[currentClass.classId]}
           defaultSheet="all_workbook"
         />
       </div>
@@ -755,10 +758,7 @@ export function OfficialPorPor6Form({
         </thead>
         <tbody>
           {subjectsToShow.map(subj => {
-            const sc = student.scores[subj.code] || {
-              coursework: 0, finalExam: 0, total: 0, grade: '',
-              attendedHours: subj.hours, traitScore: 3, readThinkScore: 3,
-            };
+            const sc = student.scores[subj.code];
             return (
               <tr key={subj.code}>
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.code}</td>
@@ -766,13 +766,13 @@ export function OfficialPorPor6Form({
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.type}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.credits.toFixed(1)}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.hours}</td>
-                <td style={{ ...pTd, textAlign: 'center' }}>{sc.attendedHours}</td>
-                <td style={{ ...pTd, textAlign: 'center' }}>{sc.coursework}</td>
-                <td style={{ ...pTd, textAlign: 'center' }}>{sc.finalExam}</td>
-                <td style={{ ...pTd, textAlign: 'center', fontWeight: 700 }}>{sc.total}</td>
-                <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>
-                <td style={{ ...pTd, textAlign: 'center' }}>{sc.traitScore}</td>
-                <td style={{ ...pTd, textAlign: 'center' }}>{sc.readThinkScore}</td>
+                <td style={{ ...pTd, textAlign: 'center' }}>{dash(sc?.attendedHours)}</td>
+                <td style={{ ...pTd, textAlign: 'center' }}>{dash(sc?.coursework)}</td>
+                <td style={{ ...pTd, textAlign: 'center' }}>{dash(sc?.finalExam)}</td>
+                <td style={{ ...pTd, textAlign: 'center', fontWeight: 700 }}>{dash(sc?.total)}</td>
+                <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc) || '-'}</td>
+                <td style={{ ...pTd, textAlign: 'center' }}>{dash(sc?.traitScore)}</td>
+                <td style={{ ...pTd, textAlign: 'center' }}>{dash(sc?.readThinkScore)}</td>
               </tr>
             );
           })}
@@ -787,13 +787,13 @@ export function OfficialPorPor6Form({
               </td>
               <td style={{ ...pTd, textAlign: 'center' }}>กิจกรรม</td>
               <td style={{ ...pTd, textAlign: 'center' }}>-</td>
-              <td style={{ ...pTd, textAlign: 'center' }}>60</td>
-              <td style={{ ...pTd, textAlign: 'center' }}>60</td>
+              <td style={{ ...pTd, textAlign: 'center' }}>{classData.activities.reduce((n, a) => n + a.hours, 0)}</td>
+              <td style={{ ...pTd, textAlign: 'center' }}>-</td>
               <td style={{ ...pTd, textAlign: 'center' }}>-</td>
               <td style={{ ...pTd, textAlign: 'center' }}>-</td>
               <td style={{ ...pTd, textAlign: 'center' }}>-</td>
               <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>
-                {student.activityResult === 'ผ่าน' ? 'ผ' : 'มผ'}
+                {student.activityResult === 'ผ่าน' ? 'ผ' : student.activityResult === 'ไม่ผ่าน' ? 'มผ' : '-'}
               </td>
               <td style={{ ...pTd, textAlign: 'center' }}>-</td>
               <td style={{ ...pTd, textAlign: 'center' }}>-</td>
@@ -957,8 +957,8 @@ function KmdExcelPorPor6Form({
     let earnedCore = 0;
     let earnedElective = 0;
     for (const s of core12Subjects) {
-      const g = student.scores[s.code]?.grade ?? '3';
-      const passed = g !== '0' && g !== 'ร' && g !== 'มส';
+      const g = effectiveGrade(student.scores[s.code]);
+      const passed = !!g && g !== '0' && g !== 'ร' && g !== 'มส';
       if (passed) {
         if (s.type === 'พื้นฐาน') earnedCore += s.credits;
         else earnedElective += s.credits;
@@ -1023,15 +1023,15 @@ function KmdExcelPorPor6Form({
         </thead>
         <tbody>
           {core12Subjects.map(subj => {
-            const sc = student.scores[subj.code] || { total: 70, grade: '3' };
+            const sc = student.scores[subj.code];
             return (
               <tr key={subj.code}>
                 <td style={{ ...pTd, padding: '5px 10px', textAlign: 'left' }}>{subj.name.replace(/\s+\d+$/, '')}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.type}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.hours}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.credits.toFixed(1)}</td>
-                <td style={{ ...pTd, textAlign: 'center' }}>{sc.total}</td>
-                <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>
+                <td style={{ ...pTd, textAlign: 'center' }}>{dash(sc?.total)}</td>
+                <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc) || '-'}</td>
               </tr>
             );
           })}
@@ -1389,6 +1389,9 @@ function StudentGradeInspectModal({
     </div>
   );
 }
+
+/** A recorded number as printed; "-" when nothing was recorded */
+const dash = (v: number | null | undefined) => (typeof v === 'number' ? (Number.isInteger(v) ? String(v) : v.toFixed(1)) : '-');
 
 const PRINT_STYLES = `
   .only-print-batch { display: none; }
