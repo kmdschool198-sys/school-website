@@ -211,7 +211,7 @@ export default function ResultsPage() {
                   </thead>
                   <tbody>
                     {student360.classData.subjects.map((sub: any) => {
-                      const sc = student360.student.scores[sub.code] || { coursework: 50, finalExam: 20, total: 70, grade: '3' };
+                      const sc = student360.student.scores[sub.code] || { coursework: 0, finalExam: 0, total: 0, grade: '' };
                       return (
                         <tr key={sub.code} style={{ borderBottom: '1px solid #E2E8F0' }}>
                           <td style={{ padding: '8px', border: '1px solid #E2E8F0', textAlign: 'center', fontWeight: 700 }}>{sub.code}</td>

@@ -682,7 +682,7 @@ export function OfficialPorPor6Form({
         <tbody>
           {subjectsToShow.map(subj => {
             const sc = student.scores[subj.code] || {
-              coursework: 50, finalExam: 20, total: 70, grade: '3',
+              coursework: 0, finalExam: 0, total: 0, grade: '',
               attendedHours: subj.hours, traitScore: 3, readThinkScore: 3,
             };
             return (
@@ -1231,7 +1231,7 @@ function StudentGradeInspectModal({
             <tbody>
               {classData.subjects.map(subj => {
                 const sc = student.scores[subj.code] || {
-                  coursework: 50, finalExam: 20, total: 70, grade: '3',
+                  coursework: 0, finalExam: 0, total: 0, grade: '',
                   attendedHours: subj.hours, traitScore: 3, readThinkScore: 3,
                 };
                 return (

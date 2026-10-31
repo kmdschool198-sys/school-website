@@ -514,3 +514,11 @@ input:focus, textarea:focus {
 
 
 
+
+/* Score grid drag-fill handle (ปพ.5): a small square at the bottom-right of the focused cell,
+   like Excel's fill handle */
+.grid-cell .fill-handle {
+  position: absolute; right: 2px; bottom: 2px; width: 8px; height: 8px;
+  background: #0284C7; border: 1px solid #fff; cursor: crosshair; display: none;
+}
+.grid-cell:focus-within .fill-handle, .grid-cell:hover .fill-handle { display: block; }

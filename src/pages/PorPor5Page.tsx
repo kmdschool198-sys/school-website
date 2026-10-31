@@ -56,6 +56,16 @@ export default function PorPor5Page() {
   return <PorPor5Content />;
 }
 
+// Spreadsheet-style score grid (see handleGridPaste / gridInput)
+type GridCol = 'attendedHours' | 'coursework' | 'finalExam' | 'traitScore' | 'readThinkScore';
+const GRID_COLS: GridCol[] = ['attendedHours', 'coursework', 'finalExam', 'traitScore', 'readThinkScore'];
+const GRID_MAX: Record<GridCol, number> = { attendedHours: 999, coursework: 70, finalExam: 30, traitScore: 3, readThinkScore: 3 };
+
+/** A subject the student has no score for yet: zero marks and no grade, never a made-up pass */
+function blankScore(hours: number) {
+  return { coursework: 0, finalExam: 0, total: 0, grade: '', attendedHours: hours, traitScore: 3, readThinkScore: 3 };
+}
+
 function PorPor5Content() {
   const { classesData, updateStudentScore } = useAcademicData();
   const [selectedClassId, setSelectedClassId] = useState<string>('m1');
@@ -176,10 +186,7 @@ function PorPor5Content() {
 
         const ratio = totalRecordedDays > 0 ? presentDays / totalRecordedDays : 1;
         const calcHours = Math.round(ratio * currentSubject.hours);
-        const sc = st.scores[currentSubject.code] || {
-          coursework: 50, finalExam: 20, total: 70, grade: '3',
-          attendedHours: currentSubject.hours, traitScore: 3, readThinkScore: 3,
-        };
+        const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
 
         const specialGrade = calcHours < currentSubject.hours * 0.8 ? 'มส' : undefined;
         if (specialGrade === 'มส') lowAttendanceCount += 1;
@@ -218,10 +225,7 @@ function PorPor5Content() {
       const deducted = stLogs.filter(l => l.type === 'deduct').reduce((s, l) => s + l.points, 0);
       const net = 100 + added - deducted;
       const autoTrait: 0 | 1 | 2 | 3 = net >= 95 ? 3 : net >= 80 ? 2 : net >= 60 ? 1 : 0;
-      const sc = st.scores[currentSubject.code] || {
-        coursework: 50, finalExam: 20, total: 70, grade: '3',
-        attendedHours: currentSubject.hours, traitScore: 3, readThinkScore: 3,
-      };
+      const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
 
       updateStudentScore(
         currentClass.classId,
@@ -297,10 +301,7 @@ function PorPor5Content() {
 
   const bulkSetSubjectField = (mode: 'full_hours' | 'trait_3' | 'read_3') => {
     currentClass.students.forEach(st => {
-      const sc = st.scores[currentSubject.code] || {
-        coursework: 50, finalExam: 20, total: 70, grade: '3',
-        attendedHours: currentSubject.hours, traitScore: 3, readThinkScore: 3,
-      };
+      const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
       if (mode === 'full_hours') {
         updateStudentScore(currentClass.classId, st.code, currentSubject.code, sc.coursework, sc.finalExam, undefined, sc.traitScore, sc.readThinkScore, currentSubject.hours);
       } else if (mode === 'trait_3') {
@@ -314,49 +315,124 @@ function PorPor5Content() {
     toast.success('ตั้งค่าทั้งห้องเรียบร้อยแล้ว');
   };
 
-  const handleDirectScorePaste = (e: React.ClipboardEvent<HTMLInputElement>, startIdx: number, field: 'coursework' | 'finalExam') => {
+  // ── Spreadsheet-style entry ─────────────────────────────────────────────
+  // Editable number columns in table order. Paste a block copied from Excel into any of them
+  // (rows go down the class list, columns continue to the right), drag the small square at the
+  // bottom-right of a cell to copy its value down, and use Enter / arrow keys to move.
+  const scoreOf = (st: (typeof currentClass.students)[number]) =>
+    st.scores[currentSubject.code] || blankScore(currentSubject.hours);
+
+  const applyCells = (changes: Array<{ row: number; col: GridCol; value: number }>) => {
+    const byRow = new Map<number, Partial<Record<GridCol, number>>>();
+    changes.forEach(c => byRow.set(c.row, { ...(byRow.get(c.row) || {}), [c.col]: c.value }));
+    byRow.forEach((vals, row) => {
+      const st = currentClass.students[row];
+      if (!st) return;
+      const sc = scoreOf(st);
+      const special = sc.grade === 'ร' || sc.grade === 'มส' ? sc.grade : undefined;
+      updateStudentScore(
+        currentClass.classId, st.code, currentSubject.code,
+        vals.coursework ?? sc.coursework,
+        vals.finalExam ?? sc.finalExam,
+        special,
+        vals.traitScore ?? sc.traitScore,
+        vals.readThinkScore ?? sc.readThinkScore,
+        vals.attendedHours ?? sc.attendedHours,
+      );
+    });
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 1800);
+    return byRow.size;
+  };
+
+  const clampFor = (col: GridCol, v: number) => {
+    const max = col === 'attendedHours' ? currentSubject.hours : GRID_MAX[col];
+    return Math.min(max, Math.max(0, v));
+  };
+
+  const handleGridPaste = (e: React.ClipboardEvent<HTMLInputElement>, startRow: number, startCol: GridCol) => {
     const text = e.clipboardData.getData('text');
     if (!isTabularPaste(text)) return;
     e.preventDefault();
     const rows = parseClipboardTable(text);
-    if (rows.length === 0) return;
+    const c0 = GRID_COLS.indexOf(startCol);
+    const changes: Array<{ row: number; col: GridCol; value: number }> = [];
+    rows.forEach((cells, r) => {
+      if (startRow + r >= currentClass.students.length) return;
+      cells.forEach((cell, c) => {
+        const col = GRID_COLS[c0 + c];
+        const v = cleanNumeric(cell);
+        if (col && v !== null) changes.push({ row: startRow + r, col, value: clampFor(col, v) });
+      });
+    });
+    if (!changes.length) return;
+    const n = applyCells(changes);
+    toast.success(`วางจาก Excel แล้ว ${n} คน`);
+  };
 
-    let count = 0;
-    for (let r = 0; r < rows.length; r++) {
-      const sIdx = startIdx + r;
-      if (sIdx >= currentClass.students.length) break;
-      const st = currentClass.students[sIdx];
-      const sc = st.scores[currentSubject.code] || {
-        coursework: 50, finalExam: 20, total: 70, grade: '3',
-        attendedHours: currentSubject.hours, traitScore: 3, readThinkScore: 3,
-      };
+  const focusCell = (row: number, col: GridCol) => {
+    const el = document.querySelector<HTMLInputElement>(`input[data-grid-row="${row}"][data-grid-col="${col}"]`);
+    if (el) { el.focus(); el.select(); }
+  };
 
-      let cw = sc.coursework;
-      let fin = sc.finalExam;
-      const cells = rows[r];
+  const handleGridKey = (e: React.KeyboardEvent<HTMLInputElement>, row: number, col: GridCol) => {
+    const c = GRID_COLS.indexOf(col);
+    if (e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); focusCell(row + 1, col); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); focusCell(row - 1, col); }
+    else if (e.key === 'ArrowRight' && e.currentTarget.selectionStart === e.currentTarget.value.length && GRID_COLS[c + 1]) { e.preventDefault(); focusCell(row, GRID_COLS[c + 1]); }
+    else if (e.key === 'ArrowLeft' && e.currentTarget.selectionStart === 0 && c > 0) { e.preventDefault(); focusCell(row, GRID_COLS[c - 1]); }
+  };
 
-      if (field === 'coursework') {
-        if (cells.length >= 2) {
-          const v1 = cleanNumeric(cells[0]);
-          const v2 = cleanNumeric(cells[1]);
-          if (v1 !== null) cw = Math.min(70, Math.max(0, v1));
-          if (v2 !== null) fin = Math.min(30, Math.max(0, v2));
-        } else {
-          const v1 = cleanNumeric(cells[0]);
-          if (v1 !== null) cw = Math.min(70, Math.max(0, v1));
-        }
-      } else {
-        const v1 = cleanNumeric(cells[0]);
-        if (v1 !== null) fin = Math.min(30, Math.max(0, v1));
-      }
+  // drag-fill: mouse down on the handle, move over rows, release to copy the value down/up
+  const [fill, setFill] = useState<{ col: GridCol; from: number; to: number } | null>(null);
+  useEffect(() => {
+    if (!fill) return;
+    const finish = () => {
+      setFill(null);
+      if (fill.to === fill.from) return;
+      const src = currentClass.students[fill.from];
+      if (!src) return;
+      const value = Number(scoreOf(src)[fill.col]);
+      const [a, b] = fill.to > fill.from ? [fill.from + 1, fill.to] : [fill.to, fill.from - 1];
+      const changes = [];
+      for (let r = a; r <= b; r++) changes.push({ row: r, col: fill.col, value });
+      const n = applyCells(changes);
+      toast.success(`คัดลอกค่า ${value} ให้อีก ${n} คน`);
+    };
+    window.addEventListener('mouseup', finish);
+    return () => window.removeEventListener('mouseup', finish);
+  });
 
-      updateStudentScore(currentClass.classId, st.code, currentSubject.code, cw, fin, undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours);
-      count++;
-    }
-
-    setSavedToast(true);
-    setTimeout(() => setSavedToast(false), 2000);
-    toast.success(`วางคะแนนจาก Excel สำเร็จ ${count} คน`);
+  const gridInput = (st: (typeof currentClass.students)[number], row: number, col: GridCol, style: React.CSSProperties) => {
+    const sc = scoreOf(st);
+    const inFill = fill && fill.col === col && row >= Math.min(fill.from, fill.to) && row <= Math.max(fill.from, fill.to);
+    return (
+      <div
+        className="grid-cell"
+        style={{ position: 'relative', outline: inFill ? '2px dashed #0284C7' : undefined, outlineOffset: -2 }}
+        onMouseOver={() => setFill(f => (f && f.col === col && f.to !== row ? { ...f, to: row } : f))}
+      >
+        <input
+          type="number"
+          min={0}
+          max={col === 'attendedHours' ? currentSubject.hours : GRID_MAX[col]}
+          value={sc[col]}
+          data-grid-row={row}
+          data-grid-col={col}
+          onPaste={ev => handleGridPaste(ev, row, col)}
+          onKeyDown={ev => handleGridKey(ev, row, col)}
+          onFocus={ev => ev.target.select()}
+          onChange={e => applyCells([{ row, col, value: clampFor(col, Number(e.target.value)) }])}
+          title="วางหลายช่องจาก Excel ได้ (Ctrl+V) · ลากจุดมุมขวาล่างเพื่อคัดลอกลง · Enter ไปแถวถัดไป"
+          style={style}
+        />
+        <span
+          className="fill-handle no-print"
+          onMouseDown={e => { e.preventDefault(); setFill({ col, from: row, to: row }); }}
+          title="ลากลงเพื่อคัดลอกค่านี้ให้คนถัดไป"
+        />
+      </div>
+    );
   };
 
   const handlePasteModalApply = (records: Array<{ studentId: string; values: Record<string, number | null> }>) => {
@@ -364,10 +440,7 @@ function PorPor5Content() {
     for (const rec of records) {
       const st = currentClass.students.find(s => s.code === rec.studentId);
       if (!st) continue;
-      const sc = st.scores[currentSubject.code] || {
-        coursework: 50, finalExam: 20, total: 70, grade: '3',
-        attendedHours: currentSubject.hours, traitScore: 3, readThinkScore: 3,
-      };
+      const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
       const cw = rec.values.coursework !== null && rec.values.coursework !== undefined
         ? Math.min(70, Math.max(0, rec.values.coursework))
         : sc.coursework;
@@ -411,10 +484,7 @@ function PorPor5Content() {
         'คุณลักษณะอันพึงประสงค์ (0-3)', 'การอ่านคิดวิเคราะห์และเขียน (0-3)',
       ],
       ...currentClass.students.map(st => {
-        const sc = st.scores[currentSubject.code] || {
-          coursework: 50, finalExam: 20, total: 70, grade: '3',
-          attendedHours: currentSubject.hours, traitScore: 3, readThinkScore: 3,
-        };
+        const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
         const { preMid, mid, postMid } = splitCoursework3Parts(sc.coursework);
         const attPct = currentSubject.hours > 0 ? ((sc.attendedHours / currentSubject.hours) * 100).toFixed(1) : '100.0';
         return [
@@ -755,16 +825,13 @@ function PorPor5Content() {
                   <th style={{ ...thP5, width: 85, background: '#0F172A' }}>รวม<br />(100)</th>
                   <th style={{ ...thP5, width: 80, background: '#15803D' }}>เกรด</th>
                   <th style={{ ...thP5, width: 88 }}>สถานะพิเศษ<br />(ปกติ/ร/มส)</th>
-                  <th style={{ ...thP5, width: 95 }}>คุณลักษณะฯ<br />(0-3)</th>
+                  <th style={{ ...thP5, width: 95 }}>คุณลักษณะฯ<br />(0-3: ไม่ผ่าน-ดีเยี่ยม)</th>
                   <th style={{ ...thP5, width: 95 }}>อ่านคิดฯ<br />(0-3)</th>
                 </tr>
               </thead>
               <tbody>
                 {currentClass.students.map((st, idx) => {
-                  const sc = st.scores[currentSubject.code] || {
-                    coursework: 50, finalExam: 20, total: 70, grade: '3',
-                    attendedHours: currentSubject.hours, traitScore: 3, readThinkScore: 3,
-                  };
+                  const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
                   const specialVal = sc.grade === 'ร' || sc.grade === 'มส' ? sc.grade : '';
 
                   const triggerUpdate = (cw: number, fin: number, spec?: string, tr?: number, rt?: number, hrs?: number) => {
@@ -779,38 +846,13 @@ function PorPor5Content() {
                       <td style={{ ...tdP5, color: '#475569', fontWeight: 700 }}>{st.code}</td>
                       <td style={{ ...tdP5, textAlign: 'left', fontWeight: 800, color: '#0F172A' }}>{st.name}</td>
                       <td style={tdP5}>
-                        <input
-                          type="number"
-                          min={0}
-                          max={currentSubject.hours}
-                          value={sc.attendedHours}
-                          onChange={e => triggerUpdate(sc.coursework, sc.finalExam, specialVal || undefined, sc.traitScore, sc.readThinkScore, Number(e.target.value))}
-                          style={inpStyle}
-                        />
+                        {gridInput(st, idx, 'attendedHours', inpStyle)}
                       </td>
                       <td style={{ ...tdP5, background: '#F0F9FF' }}>
-                        <input
-                          type="number"
-                          min={0}
-                          max={70}
-                          value={sc.coursework}
-                          onPaste={ev => handleDirectScorePaste(ev, idx, 'coursework')}
-                          onChange={e => triggerUpdate(Number(e.target.value), sc.finalExam, specialVal || undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours)}
-                          title="กด Ctrl+V เพื่อวางคะแนนจาก Excel ได้ทันที"
-                          style={{ ...inpStyle, borderColor: '#38BDF8', fontWeight: 900 }}
-                        />
+                        {gridInput(st, idx, 'coursework', { ...inpStyle, borderColor: '#38BDF8', fontWeight: 900 })}
                       </td>
                       <td style={{ ...tdP5, background: '#F0F9FF' }}>
-                        <input
-                          type="number"
-                          min={0}
-                          max={30}
-                          value={sc.finalExam}
-                          onPaste={ev => handleDirectScorePaste(ev, idx, 'finalExam')}
-                          onChange={e => triggerUpdate(sc.coursework, Number(e.target.value), specialVal || undefined, sc.traitScore, sc.readThinkScore, sc.attendedHours)}
-                          title="กด Ctrl+V เพื่อวางคะแนนจาก Excel ได้ทันที"
-                          style={{ ...inpStyle, borderColor: '#38BDF8', fontWeight: 900 }}
-                        />
+                        {gridInput(st, idx, 'finalExam', { ...inpStyle, borderColor: '#38BDF8', fontWeight: 900 })}
                       </td>
                       <td style={{ ...tdP5, fontWeight: 900, fontSize: '0.95rem', color: '#0F172A', background: '#F8FAFC' }}>
                         {sc.total}
@@ -836,28 +878,10 @@ function PorPor5Content() {
                         </select>
                       </td>
                       <td style={tdP5}>
-                        <select
-                          value={sc.traitScore}
-                          onChange={e => triggerUpdate(sc.coursework, sc.finalExam, specialVal || undefined, Number(e.target.value), sc.readThinkScore, sc.attendedHours)}
-                          style={inpStyle}
-                        >
-                          <option value={3}>3 (ดีเยี่ยม)</option>
-                          <option value={2}>2 (ดี)</option>
-                          <option value={1}>1 (ผ่าน)</option>
-                          <option value={0}>0 (ไม่ผ่าน)</option>
-                        </select>
+                        {gridInput(st, idx, 'traitScore', inpStyle)}
                       </td>
                       <td style={tdP5}>
-                        <select
-                          value={sc.readThinkScore}
-                          onChange={e => triggerUpdate(sc.coursework, sc.finalExam, specialVal || undefined, sc.traitScore, Number(e.target.value), sc.attendedHours)}
-                          style={inpStyle}
-                        >
-                          <option value={3}>3 (ดีเยี่ยม)</option>
-                          <option value={2}>2 (ดี)</option>
-                          <option value={1}>1 (ผ่าน)</option>
-                          <option value={0}>0 (ไม่ผ่าน)</option>
-                        </select>
+                        {gridInput(st, idx, 'readThinkScore', inpStyle)}
                       </td>
                     </tr>
                   );
@@ -1249,7 +1273,7 @@ function PorPor5OfficialPrintSheets({
             </thead>
             <tbody>
               {currentClass.students.map(st => {
-                const sc = st.scores[currentSubject.code] || { coursework: 50 };
+                const sc = st.scores[currentSubject.code] || { coursework: 0 };
                 const indScores = splitIndicators5(sc.coursework);
                 return (
                   <tr key={st.code}>
@@ -1303,9 +1327,7 @@ function PorPor5OfficialPrintSheets({
           </thead>
           <tbody>
             {currentClass.students.map(st => {
-              const sc = st.scores[currentSubject.code] || {
-                coursework: 50, finalExam: 20, total: 70, grade: '3',
-              };
+              const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
               const { preMid, mid, postMid } = splitCoursework3Parts(sc.coursework);
               return (
                 <tr key={st.code}>

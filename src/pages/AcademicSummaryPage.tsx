@@ -105,7 +105,7 @@ function AcademicSummaryContent() {
         let totalScoreSum = 0;
 
         for (const st of cls.students) {
-          const sc = st.scores[subj.code] || { coursework: 50, finalExam: 20, total: 70, grade: '3' };
+          const sc = st.scores[subj.code] || { coursework: 0, finalExam: 0, total: 0, grade: '' };
           const g = sc.grade || '0';
           if (g in counts) {
             counts[g as keyof typeof counts] += 1;
@@ -340,7 +340,7 @@ function AcademicSummaryContent() {
         let hasFail = false;
 
         for (const subj of cls.subjects) {
-          const sc = st.scores[subj.code] || { coursework: 50, finalExam: 20, total: 70, grade: '3' };
+          const sc = st.scores[subj.code] || { coursework: 0, finalExam: 0, total: 0, grade: '' };
           if (sc.total > bestSubjScore) {
             bestSubjScore = sc.total;
             bestSubjName = `${subj.name} (${sc.total}%)`;

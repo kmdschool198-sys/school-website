@@ -163,11 +163,12 @@ export function useAcademicData() {
         ...cls,
         students: cls.students.map((st: AcademicStudentRecord) => {
           if (st.code !== studentCode) return st;
+          // no previous score: start from zero marks, not an assumed pass
           const prevSubj = st.scores[subjectCode] || {
-            coursework: 50,
-            finalExam: 20,
-            total: 70,
-            grade: '3',
+            coursework: 0,
+            finalExam: 0,
+            total: 0,
+            grade: '',
             attendedHours: 40,
             traitScore: 3,
             readThinkScore: 3,
