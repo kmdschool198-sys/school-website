@@ -19,10 +19,9 @@ import { bmiInterpretation } from '../utils/bmi';
 import { sameStudent } from '../utils/studentKey';
 import type { BehaviorLogEntry } from './BehaviorPage';
 import type { HomeVisitRecord } from './HomeVisitPage';
-import {
-  OfficialDocument, OfficialHeader, SignatureBlock, DIRECTOR_SIGNER, thaiDateLong,
-  officialTh, officialTd, officialTdLeft, SHADE,
-} from '../components/print/Official';
+import { OfficialDocument, OfficialHeader, SignatureBlock } from '../components/print/Official';
+import { DIRECTOR_SIGNER, officialTh, officialTd, officialTdLeft, SHADE } from '../components/print/officialStyles';
+import { thaiDateLong, todayIso } from '../utils/dates';
 
 interface AttRecord { status: string; noMilk?: boolean; noBrush?: boolean; noLunch?: boolean }
 interface AttDoc { classId: string; date: string; records: Record<string, AttRecord> }
@@ -31,11 +30,6 @@ interface BodyLog { studentId?: string; studentCode?: string; studentName?: stri
 const LOW_BEHAVIOR_SCORE = 80;   // ต่ำกว่านี้ต้องติดตาม (คะแนนเริ่มต้น 100)
 const LOW_GPA = 1.5;             // กลุ่มเสี่ยงด้านการเรียน
 
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
 export default function ExecutiveDashboard() {
   const auth = useTeacherAuth();
   if (!auth.authed) return <TeacherLoginGate title="📊 แดชบอร์ดผู้บริหาร" subtitle="ภาพรวมนักเรียนรายวัน การดูแลช่วยเหลือ และวิชาการ" />;
@@ -43,7 +37,7 @@ export default function ExecutiveDashboard() {
 }
 
 function Dashboard() {
-  const [date, setDate] = useState(todayStr());
+  const [date, setDate] = useState(todayIso());
   const { classes } = useSchoolRoster();
   const { holidays, schoolDays } = useSchoolDays();
   const { classesData } = useAcademicData();

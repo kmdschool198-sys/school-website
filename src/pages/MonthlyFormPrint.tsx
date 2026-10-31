@@ -10,7 +10,8 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 import { SCHOOL_NAME } from '../config/siteLinks';
-import { OfficialDocument, OfficialHeader, SignatureBlock, DIRECTOR_SIGNER, officialTh, officialTd, officialTdLeft, SHADE } from '../components/print/Official';
+import { OfficialDocument, OfficialHeader, SignatureBlock } from '../components/print/Official';
+import { DIRECTOR_SIGNER, officialTh, officialTd, officialTdLeft, SHADE } from '../components/print/officialStyles';
 import {
   SCHOOL_CALENDAR_COLLECTION,
   resolveSchoolDay,

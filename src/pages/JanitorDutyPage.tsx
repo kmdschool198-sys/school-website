@@ -17,10 +17,9 @@ import {
   type DutyShift, type DutySlot, type JanitorRoster,
 } from '../data/janitor';
 import type { JanitorDailyRecord } from './JanitorTaskPage';
-import {
-  OfficialDocument, OfficialHeader, SignatureBlock, DIRECTOR_SIGNER, THAI_MONTHS,
-  officialTh, officialTd, officialTdLeft, SHADE,
-} from '../components/print/Official';
+import { OfficialDocument, OfficialHeader, SignatureBlock } from '../components/print/Official';
+import { DIRECTOR_SIGNER, officialTh, officialTd, officialTdLeft, SHADE } from '../components/print/officialStyles';
+import { THAI_MONTHS, currentMonth } from '../utils/dates';
 
 type Tab = 'roster' | 'month' | 'report';
 const WEEK_ORDER = ['1', '2', '3', '4', '5', '6', '0']; // จันทร์ .. อาทิตย์
@@ -31,11 +30,6 @@ export default function JanitorDutyPage() {
     return <TeacherLoginGate title="🗓️ ตารางเวรนักการภารโรง" subtitle="จัดตารางเวร และพิมพ์รายงานการปฏิบัติงานประจำเดือน" />;
   }
   return <JanitorDuty userName={auth.name} />;
-}
-
-function thisMonth() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function datesOfMonth(month: string): string[] {
@@ -53,7 +47,7 @@ function slotText(s: DutySlot) {
 
 function JanitorDuty({ userName }: { userName: string }) {
   const [tab, setTab] = useState<Tab>('roster');
-  const [month, setMonth] = useState(thisMonth());
+  const [month, setMonth] = useState(currentMonth());
   const people = usePersonnel('support');
   const staffList = useMemo(() => people.map(p => p.name), [people]);
   const [roster, setRoster] = useState<JanitorRoster>(EMPTY_ROSTER);
@@ -92,8 +86,8 @@ function JanitorDuty({ userName }: { userName: string }) {
         weekly: roster.weekly, overrides: roster.overrides, updatedAt: Date.now(), updatedBy: userName,
       });
       setDirty(false);
-    } catch (e: any) {
-      alert('บันทึกตารางเวรไม่สำเร็จ: ' + (e?.message || e));
+    } catch (e) {
+      alert('บันทึกตารางเวรไม่สำเร็จ: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setSaving(false);
     }

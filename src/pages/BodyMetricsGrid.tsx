@@ -278,7 +278,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           e?.weight !== undefined ? String(e.weight) : '-',
           e?.height !== undefined ? String(e.height) : '-',
           e?.bmi !== undefined ? String(e.bmi) : '-',
-          e?.bmi ? bmiStatus(e.bmi) : '-',
+          e?.bmi ? bmiInterpretation(e.bmi) : '-',
         ];
       })
         : classItem.students.map((s, i) => {
@@ -495,7 +495,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
                           {bmi || '-'}
                         </td>
                         <td style={td}>
-                          {bmi && <span style={{ background: bmiColor(bmi) + '22', color: bmiColor(bmi), padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>{bmiStatus(bmi)}</span>}
+                          {bmi && <span style={{ background: bmiColor(bmi) + '22', color: bmiColor(bmi), padding: '2px 8px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>{bmiInterpretation(bmi)}</span>}
                         </td>
                       </tr>
                     );
@@ -531,9 +531,6 @@ function thisMonth() { const d = new Date(); return `${d.getFullYear()}-${String
 function bmiColor(b: number) {
   if (b < 16) return '#EF4444'; if (b < 18.5) return '#F59E0B';
   if (b < 25) return '#10B981'; if (b < 30) return '#F59E0B'; return '#EF4444';
-}
-function bmiStatus(b: number) {
-  return bmiInterpretation(b);
 }
 
 const lnk: React.CSSProperties = { color: 'white', display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none', fontSize: '0.85rem', opacity: 0.9 };
