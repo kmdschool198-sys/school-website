@@ -4,7 +4,7 @@
 //   log_body_metrics, student_details (staff-only), config/academic_data_2569
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Printer } from 'lucide-react';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
@@ -22,6 +22,7 @@ import type { HomeVisitRecord } from './HomeVisitPage';
 import { OfficialDocument, OfficialHeader, SignatureBlock } from '../components/print/Official';
 import { DIRECTOR_SIGNER, officialTh, officialTd, officialTdLeft, SHADE } from '../components/print/officialStyles';
 import { thaiDateLong, todayIso } from '../utils/dates';
+import { ChartCard, HBars, SERIES, StackedBars, TrendLine } from '../components/charts/DashboardCharts';
 
 interface AttRecord { status: string; noMilk?: boolean; noBrush?: boolean; noLunch?: boolean }
 interface AttDoc { classId: string; date: string; records: Record<string, AttRecord> }
@@ -29,6 +30,9 @@ interface BodyLog { studentId?: string; studentCode?: string; studentName?: stri
 
 const LOW_BEHAVIOR_SCORE = 80;   // ต่ำกว่านี้ต้องติดตาม (คะแนนเริ่มต้น 100)
 const LOW_GPA = 1.5;             // กลุ่มเสี่ยงด้านการเรียน
+const TREND_DAYS = 30;           // จำนวนวันเปิดเรียนล่าสุดในกราฟแนวโน้ม
+const THAI_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const shortThai = (iso: string) => { const [, m, d] = iso.split('-').map(Number); return `${d} ${THAI_MONTHS_SHORT[m - 1]}`; };
 
 export default function ExecutiveDashboard() {
   const auth = useTeacherAuth();
@@ -45,6 +49,7 @@ function Dashboard() {
   const [behaviorLogs, setBehaviorLogs] = useState<BehaviorLogEntry[]>([]);
   const [visits, setVisits] = useState<Record<string, HomeVisitRecord>>({});
   const [bodyLogs, setBodyLogs] = useState<BodyLog[]>([]);
+  const [trendDocs, setTrendDocs] = useState<AttDoc[]>([]);
 
   useEffect(() => onSnapshot(query(collection(db, 'attendance'), where('date', '==', date)), snap => {
     const arr: AttDoc[] = [];
@@ -65,6 +70,16 @@ function Dashboard() {
     snap.forEach(d => arr.push(d.data() as BodyLog));
     setBodyLogs(arr);
   }, () => setBodyLogs([])), []);
+
+  // ~2 months of attendance before the chosen day, for the trend chart
+  useEffect(() => {
+    const from = new Date(`${date}T00:00:00`);
+    from.setDate(from.getDate() - 70);
+    const fromIso = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
+    getDocs(query(collection(db, 'attendance'), where('date', '>=', fromIso), where('date', '<=', date)))
+      .then(snap => setTrendDocs(snap.docs.map(d => d.data() as AttDoc)))
+      .catch(() => setTrendDocs([]));
+  }, [date]);
 
   const day = resolveSchoolDay(date, schoolDays, holidays);
 
@@ -124,6 +139,20 @@ function Dashboard() {
 
   const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '-');
 
+  // ร้อยละมาเรียนของทั้งโรงเรียนในแต่ละวันที่มีการเช็คชื่อ (นับเฉพาะชั้นที่เช็คแล้ว)
+  const trend = useMemo(() => {
+    const byDate = new Map<string, { present: number; total: number }>();
+    for (const d of trendDocs) {
+      const recs = Object.values(d.records || {});
+      const t = byDate.get(d.date) || { present: 0, total: 0 };
+      t.total += recs.length;
+      t.present += recs.filter(r => (r.status || 'present') === 'present').length;
+      byDate.set(d.date, t);
+    }
+    return [...byDate].filter(([, t]) => t.total > 0).sort(([a], [b]) => a.localeCompare(b)).slice(-TREND_DAYS)
+      .map(([key, t]) => ({ key, label: shortThai(key), value: (t.present / t.total) * 100, detail: `มา ${t.present}/${t.total} คน` }));
+  }, [trendDocs]);
+
   return (
     <SmartSchoolLayout pageTitle="แดชบอร์ดผู้บริหาร">
       <div className="no-print" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
@@ -139,6 +168,43 @@ function Dashboard() {
         <Stat label="ความประพฤติต่ำกว่า 80" value={String(care.lowBehavior.length)} sub="คน ต้องติดตาม" warn={care.lowBehavior.length > 0} />
         <Stat label="เยี่ยมบ้านแล้ว" value={`${care.visited}/${allStudents.length}`} sub={pct(care.visited, allStudents.length)} />
         <Stat label="GPA เฉลี่ยทั้งโรงเรียน" value={academic.schoolAvg ? academic.schoolAvg.toFixed(2) : '-'} sub={`กลุ่มเสี่ยง ${academic.riskCount} คน`} />
+      </div>
+
+      <div className="no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 12, marginBottom: 16 }}>
+        <ChartCard title="การมาเรียนรายชั้น" note={`${thaiDateLong(date)} · เรียงตามชั้น`}>
+          <StackedBars
+            series={[{ name: 'มา', color: SERIES.blue }, { name: 'ลา', color: SERIES.aqua }, { name: 'ขาด', color: SERIES.orange }]}
+            rows={daily.map(r => ({ label: r.label, values: r.checked ? [r.present, r.leave, r.absent] : [0, 0, 0], note: 'ยังไม่เช็คชื่อ' }))}
+            labelOf={row => pct(row.values[0], row.values.reduce((a, b) => a + b, 0))}
+          />
+        </ChartCard>
+
+        <ChartCard title="แนวโน้มการมาเรียน" note={`ร้อยละมาเรียนทั้งโรงเรียน ${TREND_DAYS} วันเปิดเรียนล่าสุด · คลิกจุดเพื่อดูวันนั้น`}>
+          <TrendLine points={trend} format={v => `${Math.round(v)}%`} selected={date} onSelect={setDate} />
+        </ChartCard>
+
+        <ChartCard title="GPA เฉลี่ยรายชั้น" note={`ทั้งโรงเรียน ${academic.schoolAvg ? academic.schoolAvg.toFixed(2) : '-'} · กลุ่มเสี่ยง ${academic.riskCount} คน`}>
+          <HBars
+            rows={academic.perClass.map(c => ({ label: c.label, value: c.count ? c.avg : null, detail: `${c.count} คน · เสี่ยง ${c.risk.length}` }))}
+            max={4}
+            format={v => v.toFixed(2)}
+            reference={{ value: LOW_GPA, label: `เกณฑ์กลุ่มเสี่ยง GPA ${LOW_GPA}` }}
+          />
+        </ChartCard>
+
+        <ChartCard title="การดูแลช่วยเหลือนักเรียน" note={`จำนวนนักเรียน จากทั้งหมด ${allStudents.length} คน`}>
+          <HBars
+            rows={[
+              { label: 'เยี่ยมบ้านแล้ว', value: care.visited, detail: pct(care.visited, allStudents.length) },
+              { label: 'ยากจน/ยากจนพิเศษ', value: care.poor },
+              { label: 'ควรได้รับทุน', value: care.scholarship },
+              { label: `ความประพฤติ < ${LOW_BEHAVIOR_SCORE}`, value: care.lowBehavior.length },
+              { label: 'BMI ไม่สมส่วน', value: care.bmiFlags.length },
+            ]}
+            max={Math.max(1, allStudents.length)}
+            format={v => `${v} คน`}
+          />
+        </ChartCard>
       </div>
 
       <OfficialDocument style={paper}>
