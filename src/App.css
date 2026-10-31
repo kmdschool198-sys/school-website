@@ -151,9 +151,13 @@
   transition: all 0.3s ease;
 }
 
-.dropdown-item:hover {
+/* Bootstrap paints a clicked item blue; keep the site's light orange instead */
+.dropdown-content .dropdown-item:active,
+.dropdown-content .dropdown-item.active,
+.dropdown-content .dropdown-item:focus,
+.dropdown-content .dropdown-item:hover {
   background-color: #FDF4F0;
-  color: var(--primary-orange);
+  color: #C2410C;
   padding-left: 2.5rem;
 }
 
