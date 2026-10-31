@@ -17,6 +17,7 @@ import {
   type RosterByClass,
   type ScoreOverrides,
 } from './academicScores';
+import { activityOverall, courseworkFromDetail, detailHasMarks, itemsLevel, type ActivityMark } from './assessment';
 
 // Teachers' entered scores (see academicScores.ts for the storage model). The local copy is
 // only a cache for showing scores while offline; it is never written back as a whole.
@@ -100,6 +101,13 @@ export function useAcademicData() {
     const keptSpecial = prev.grade === 'ร' || prev.grade === 'มส' ? prev.grade : undefined;
     const special = specialGrade === undefined ? keptSpecial : specialGrade ?? undefined;
     const next = { ...prev, ...fields };
+    // indicator marks decide a term's coursework once that term has any; item levels decide the overall level
+    if (detailHasMarks(fields.detail?.[0])) next.coursework = courseworkFromDetail(fields.detail![0]);
+    if (detailHasMarks(fields.detail?.[1])) next.term2Coursework = courseworkFromDetail(fields.detail![1]);
+    const traitLevel = fields.traitItems ? itemsLevel(fields.traitItems) : null;
+    if (traitLevel !== null) next.traitScore = traitLevel;
+    const readLevel = fields.readItems ? itemsLevel(fields.readItems) : null;
+    if (readLevel !== null) next.readThinkScore = readLevel;
     const parts = {
       coursework: next.coursework ?? 0,
       finalExam: next.finalExam ?? 0,
@@ -112,10 +120,15 @@ export function useAcademicData() {
       traitScore: next.traitScore ?? 3,
       readThinkScore: next.readThinkScore ?? 3,
       attendedHours: next.attendedHours ?? hours,
+      detail: next.detail,
+      remedial: next.remedial,
+      traitItems: next.traitItems,
+      readItems: next.readItems,
     };
-    // Firestore rejects undefined; a term-2 field that was never entered is simply left out
-    if (write.term2Coursework === undefined) delete write.term2Coursework;
-    if (write.term2FinalExam === undefined) delete write.term2FinalExam;
+    // Firestore rejects undefined; optional fields that were never entered are simply left out
+    for (const key of Object.keys(write) as (keyof StudentSubjectScore)[]) {
+      if (write[key] === undefined) delete write[key];
+    }
     applyLocally(scoreWrite(classId, studentCode, subjectCode, write));
   }, [applyLocally]);
 
@@ -129,10 +142,19 @@ export function useAcademicData() {
     applyLocally(evaluationWrite(classId, studentCode, { traitResult, readThinkResult, activityResult }));
   }, [applyLocally]);
 
+  /** ผ / มผ per activity; the overall activity result follows once every activity is marked */
+  const updateStudentActivities = useCallback((classId: string, studentCode: string, activities: Record<string, ActivityMark>) => {
+    const cls = viewRef.current.find(c => c.classId === classId);
+    const overall = activityOverall(activities, (cls?.activities || []).map(a => a.code));
+    const write: ScoreOverrides = { evaluations: { [classId]: { [studentCode]: { activities, ...(overall ? { activityResult: overall } : {}) } } } };
+    applyLocally(write);
+  }, [applyLocally]);
+
   return {
     classesData,
     updateStudentScore,
     updateStudentEvaluation,
+    updateStudentActivities,
     /** Re-read every entered score from the server. Never deletes or overwrites anyone's data. */
     resetToDefault: async () => {
       const snap = await getDoc(SCORES_DOC);

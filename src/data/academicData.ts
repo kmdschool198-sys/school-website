@@ -3,6 +3,8 @@
 // ประถม term-1 scores were halved to the school's ปพ.5 ประถม scale (เก็บ 35 + ปลายภาค 15 per term);
 // their grades are blank until term 2 is entered, since ประถม is graded on the year total.
 
+import type { ActivityMark, Remedial, TermDetail } from '../utils/assessment';
+
 export interface AcademicSubject {
   code: string;
   name: string;
@@ -23,6 +25,12 @@ export interface StudentSubjectScore {
   attendedHours: number;  // เวลาเรียนที่มาจริง
   traitScore: number;     // คุณลักษณะอันพึงประสงค์ (0-3)
   readThinkScore: number; // อ่าน คิด วิเคราะห์และเขียน (0-3)
+  /** marks per indicator when the subject has a full-mark plan: [term 1] or [term 1, term 2] (ประถม) */
+  detail?: TermDetail[];
+  /** ผลการแก้ตัว / เรียนซ้ำ; `grade` keeps the original result */
+  remedial?: Remedial;
+  traitItems?: (number | null)[]; // คุณลักษณะ 8 ข้อ (0-3); traitScore follows them when set
+  readItems?: (number | null)[];  // อ่าน คิด วิเคราะห์ เขียน 5 ข้อ (0-3); readThinkScore follows them when set
 }
 
 export interface AcademicStudentRecord {
@@ -34,6 +42,8 @@ export interface AcademicStudentRecord {
   traitResult: 'ดีเยี่ยม' | 'ดี' | 'ผ่าน' | 'ไม่ผ่าน';
   readThinkResult: 'ดีเยี่ยม' | 'ดี' | 'ผ่าน' | 'ไม่ผ่าน';
   activityResult: 'ผ่าน' | 'ไม่ผ่าน';
+  /** ผ / มผ per activity code (แนะแนว, ลูกเสือ, ชุมนุม, กิจกรรมเพื่อสังคม) */
+  activities?: Record<string, ActivityMark>;
 }
 
 export interface ClassAcademicData {
@@ -120,6 +130,10 @@ export function scorePercents(level: ClassAcademicData['level'], sc: ScoreParts)
   return { courseworkPct: (cw / (scheme.courseworkMax * terms)) * 100, finalPct: (fin / (scheme.finalMax * terms)) * 100 };
 }
 
+/** The grade that counts (GPA, ปพ.6): the ผลการแก้ตัว when there is one, else the original grade */
+export const effectiveGrade = (sc: Pick<StudentSubjectScore, 'grade' | 'remedial'> | undefined) =>
+  sc?.remedial?.grade || sc?.grade || '';
+
 export function scoreToGrade(total: number, special?: string): string {
   if (special === 'ร' || special === 'มส') return special;
   if (total >= 80) return '4';
@@ -148,7 +162,7 @@ export function calculateStudentGPA(
 
   for (const subj of targetSubjects) {
     const sc = student.scores[subj.code];
-    const gStr = sc ? sc.grade : '0';
+    const gStr = sc ? effectiveGrade(sc) : '0';
     const gNum = parseFloat(gStr);
     if (subj.type === 'พื้นฐาน') coreCredits += subj.credits;
     else electiveCredits += subj.credits;

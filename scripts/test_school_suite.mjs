@@ -501,3 +501,46 @@ test('Suite 12: ประถม grades the year (50 + 50), มัธยม grade
     }
   }
 });
+
+// -------------------------------------------------------------
+// Test Suite 13: SGS rules (full marks per indicator, remedial, item levels, activities)
+// -------------------------------------------------------------
+test('Suite 13: SGS-style assessment rules', async () => {
+  const a = await import('../src/utils/assessment.ts');
+  const { scoreScheme, calculateStudentGPA, effectiveGrade } = await import('../src/data/academicData.ts');
+  const sec = scoreScheme('มัธยม');
+  const pri = scoreScheme('ประถม');
+
+  // indicators + midterm must equal the level's coursework share
+  const plan = { before: [10, 10, 10], midterm: 20, after: [10, 10], final: 30 };
+  assert.deepEqual(a.planErrors(plan, sec), []);
+  assert.ok(a.planErrors({ ...plan, midterm: 10 }, sec).some(e => e.includes('ต้องเท่ากับ 70')));
+  assert.ok(a.planErrors({ before: [10, 10, 15], midterm: 0, after: [], final: 15 }, pri).length === 0);
+  assert.ok(a.planErrors({ ...plan, before: Array(10).fill(1) }, sec).some(e => e.includes('ไม่เกิน 9')));
+
+  // marks never exceed their full mark; coursework is their sum
+  const d = a.fitDetail({ before: [12, 7, null], midterm: 25, after: [5] }, plan);
+  assert.deepEqual(d, { before: [10, 7, null], midterm: 20, after: [5, null] });
+  assert.equal(a.courseworkFromDetail(d), 42);
+  assert.equal(a.detailHasMarks(a.fitDetail(undefined, plan)), false);
+
+  // remedial caps: 0 and มส up to 1, ร and เรียนซ้ำ 0-4; the remedial grade counts in GPA
+  assert.deepEqual(a.remedialGradeOptions('0', 'แก้ตัว'), ['0', '1']);
+  assert.deepEqual(a.remedialGradeOptions('มส', 'แก้ตัว'), ['0', '1']);
+  assert.equal(a.remedialGradeOptions('ร', 'แก้ตัว').at(-1), '4');
+  assert.equal(a.remedialGradeOptions('0', 'เรียนซ้ำ').at(-1), '4');
+  assert.equal(effectiveGrade({ grade: '0', remedial: { grade: '1', type: 'แก้ตัว', date: '2026-11-02', by: 'ครู' } }), '1');
+  const subjects = [{ code: 'X', name: 'x', type: 'พื้นฐาน', group: '', credits: 1, hours: 40, teacher: '' }];
+  const student = { scores: { X: { grade: '0', remedial: { grade: '1', type: 'แก้ตัว', date: '', by: '' } } } };
+  assert.equal(calculateStudentGPA(student, subjects).gpa, 1);
+
+  // item levels: rounded mean of the items entered
+  assert.equal(a.itemsLevel([3, 3, 2, 2, 3, 3, 3, 3]), 3);
+  assert.equal(a.itemsLevel([1, 2, null]), 2);
+  assert.equal(a.itemsLevel([null, null]), null);
+
+  // activities: ผ่าน only when all are ผ, ไม่ผ่าน as soon as one is มผ
+  assert.equal(a.activityOverall({ A: 'ผ', B: 'ผ' }, ['A', 'B']), 'ผ่าน');
+  assert.equal(a.activityOverall({ A: 'ผ', B: 'มผ' }, ['A', 'B']), 'ไม่ผ่าน');
+  assert.equal(a.activityOverall({ A: 'ผ' }, ['A', 'B']), null);
+});

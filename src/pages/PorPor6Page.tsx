@@ -6,12 +6,15 @@ import { SCHOOL_NAME } from '../config/siteLinks';
 import { Printer, Search, Eye, FileText, ArrowLeft, Edit3, Check, RotateCcw } from 'lucide-react';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
-import { useTeacherAuth } from '../utils/teacherAuth';
+import { canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
+import { useGradingStatus } from '../utils/assessmentStorage';
+import ActivityGrid from '../components/sgs/ActivityGrid';
 import { useAcademicData } from '../utils/academicStorage';
 import {
   calculateStudentGPA,
   calculateClassRanks,
   scoreScheme,
+  effectiveGrade,
   type ClassAcademicData,
   type AcademicStudentRecord,
 } from '../data/academicData';
@@ -29,7 +32,11 @@ export default function PorPor6Page() {
 }
 
 function PorPor6Content() {
-  const { classesData, updateStudentScore, updateStudentEvaluation, resetToDefault } = useAcademicData();
+  const { classesData, updateStudentScore, updateStudentEvaluation, updateStudentActivities, resetToDefault } = useAcademicData();
+  const auth = useTeacherAuth();
+  const { status: gradingStatus } = useGradingStatus();
+  const entryLocked = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
+  const [showActivities, setShowActivities] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string>('m1');
   const [semesterLabel, setSemesterLabel] = useState<string>('เทอม 1/2569 (ปัจจุบัน)');
   const [search, setSearch] = useState<string>('');
@@ -342,6 +349,21 @@ function PorPor6Content() {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* กิจกรรมพัฒนาผู้เรียน ผ / มผ (SGS) */}
+        <div style={{ background: 'white', borderRadius: 14, border: '1px solid #E2E8F0', marginBottom: 16, overflow: 'hidden' }}>
+          <button type="button" onClick={() => setShowActivities(v => !v)} aria-expanded={showActivities}
+            style={{ width: '100%', textAlign: 'left', border: 'none', background: 'white', padding: '12px 16px', fontWeight: 900, fontSize: '1rem', cursor: 'pointer', color: '#0F172A' }}>
+            {showActivities ? '▾' : '▸'} บันทึกผลกิจกรรมพัฒนาผู้เรียน (ผ / มผ) — ชั้น {currentClass.shortName}
+          </button>
+          {showActivities && (
+            <div style={{ padding: '0 12px 12px' }}>
+              {entryLocked && <div role="status" style={{ background: '#FEF3C7', color: '#78350F', borderRadius: 8, padding: '8px 12px', marginBottom: 8, fontWeight: 700 }}>งานทะเบียนปิดการบันทึกผลแล้ว — แก้ไขไม่ได้</div>}
+              <ActivityGrid classData={currentClass} locked={entryLocked}
+                onSave={(code, activities) => updateStudentActivities(currentClass.classId, code, activities)} />
+            </div>
+          )}
         </div>
 
         {/* Student List Table Card (matching Screenshot 3) */}
@@ -748,7 +770,7 @@ export function OfficialPorPor6Form({
                 <td style={{ ...pTd, textAlign: 'center' }}>{sc.coursework}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{sc.finalExam}</td>
                 <td style={{ ...pTd, textAlign: 'center', fontWeight: 700 }}>{sc.total}</td>
-                <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
+                <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{sc.traitScore}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{sc.readThinkScore}</td>
               </tr>
@@ -1009,7 +1031,7 @@ function KmdExcelPorPor6Form({
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.hours}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{subj.credits.toFixed(1)}</td>
                 <td style={{ ...pTd, textAlign: 'center' }}>{sc.total}</td>
-                <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
+                <td style={{ ...pTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>
               </tr>
             );
           })}

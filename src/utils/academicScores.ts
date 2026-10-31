@@ -8,7 +8,7 @@
 // overwrite the whole school. Class structure (subjects, hours) comes from academicData.ts.
 import type { AcademicStudentRecord, ClassAcademicData, StudentSubjectScore } from '../data/academicData';
 
-export type Evaluation = Pick<AcademicStudentRecord, 'traitResult' | 'readThinkResult' | 'activityResult'>;
+export type Evaluation = Pick<AcademicStudentRecord, 'traitResult' | 'readThinkResult' | 'activityResult' | 'activities'>;
 
 export interface ScoreOverrides {
   scores?: Record<string, Record<string, Record<string, StudentSubjectScore>>>;

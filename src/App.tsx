@@ -40,6 +40,7 @@ const PrintHubPage = lazy(() => import('./pages/PrintHubPage'));
 const BehaviorPage = lazy(() => import('./pages/BehaviorPage'));
 const LunchPage = lazy(() => import('./pages/LunchPage'));
 const DutyPage = lazy(() => import('./pages/DutyPage'));
+const RemedialPage = lazy(() => import('./pages/RemedialPage'));
 const TimetablePage = lazy(() => import('./pages/TimetablePage'));
 const JanitorTaskPage = lazy(() => import('./pages/JanitorTaskPage'));
 const JanitorDutyPage = lazy(() => import('./pages/JanitorDutyPage'));
@@ -80,6 +81,7 @@ function App() {
           <Route path="/school-calendar" element={<SchoolCalendar />} />
           <Route path="/porpor6" element={<PorPor6Page />} />
           <Route path="/academic-summary" element={<AcademicSummaryPage />} />
+          <Route path="/remedial" element={<RemedialPage />} />
           <Route path="/porpor5" element={<PorPor5Page />} />
           <Route path="/print-hub" element={<PrintHubPage />} />
           <Route path="/behavior" element={<BehaviorPage />} />

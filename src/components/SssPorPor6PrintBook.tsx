@@ -6,6 +6,7 @@ import {
 } from '../data/academicData';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
+import { effectiveGrade } from '../data/academicData';
 
 export type SssPp6SheetKey =
   | 'all_workbook'     // พิมพ์ครบทุกหน้าในไฟล์ ปพ6.xlsx (8 ชีตสรุปห้อง + ใบรายงานรายบุคคลทุกคน)
@@ -658,7 +659,7 @@ export default function SssPorPor6PrintBook({
                           <td key={`${s.code}_v2`} style={{ ...cellTd, textAlign: 'center' }}>{cw2}</td>,
                           <td key={`${s.code}_vex`} style={{ ...cellTd, textAlign: 'center' }}>{sc.finalExam}</td>,
                           <td key={`${s.code}_vtot`} style={{ ...cellTd, textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{sc.total}</td>,
-                          <td key={`${s.code}_vgr`} style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>,
+                          <td key={`${s.code}_vgr`} style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>,
                         ];
                       })}
                       {isLastChunk && (
@@ -802,7 +803,7 @@ export default function SssPorPor6PrintBook({
                         <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{sc.finalExam}</td>
                         <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>100</td>
                         <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{sc.total}</td>
-                        <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
+                        <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>
                       </tr>
                     );
                   })}
@@ -830,7 +831,7 @@ export default function SssPorPor6PrintBook({
                             <td style={{ ...cellTd, textAlign: 'center', fontWeight: 700 }}>{sc.finalExam}</td>
                             <td style={{ ...cellTd, textAlign: 'center', color: '#475569' }}>100</td>
                             <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{sc.total}</td>
-                            <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
+                            <td style={{ ...cellTd, textAlign: 'center', fontWeight: 900 }}>{effectiveGrade(sc)}</td>
                           </tr>
                         );
                       })}

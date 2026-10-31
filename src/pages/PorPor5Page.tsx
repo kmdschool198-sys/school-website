@@ -7,9 +7,13 @@ import {
 } from 'lucide-react';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
-import { useTeacherAuth } from '../utils/teacherAuth';
+import { canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
+import { useAssessmentPlans, useGradingStatus } from '../utils/assessmentStorage';
+import PlanEditor from '../components/sgs/PlanEditor';
+import IndicatorGrid from '../components/sgs/IndicatorGrid';
+import ItemsGrid from '../components/sgs/ItemsGrid';
 import { useAcademicData } from '../utils/academicStorage';
-import { calculateClassRanks, scoreScheme, type ScoreScheme } from '../data/academicData';
+import { calculateClassRanks, scoreScheme, type ScoreScheme, type StudentSubjectScore } from '../data/academicData';
 import { downloadCsvReport } from '../utils/csvReport';
 import ExcelPasteModal from '../components/ExcelPasteModal';
 import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
@@ -77,6 +81,14 @@ function blankScore(hours: number) {
 
 function PorPor5Content() {
   const { classesData, updateStudentScore } = useAcademicData();
+  const auth = useTeacherAuth();
+  const { plans, savePlan } = useAssessmentPlans();
+  const { status: gradingStatus } = useGradingStatus();
+  // SGS: once งานทะเบียน closes score entry only registrars can change scores
+  const entryLocked = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
+  const [entryTab, setEntryTab] = useState<'scores' | 'items'>('scores');
+  const [planTerm, setPlanTerm] = useState(0);
+  const [showPlanEditor, setShowPlanEditor] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string>('m1');
   const [selectedSubjectCode, setSelectedSubjectCode] = useState<string>('ง21201');
   const [semesterLabel, setSemesterLabel] = useState<string>('ภาคเรียนที่ 1 ปีการศึกษา 2569');
@@ -123,6 +135,12 @@ function PorPor5Content() {
 
   const scheme = scoreScheme(currentClass.level);
   const GRID_COLS = gridColsFor(scheme);
+  const subjectPlan = plans[currentClass.classId]?.[currentSubject.code];
+  const saveCell = (studentCode: string, patch: Parameters<typeof updateStudentScore>[3]) => {
+    updateStudentScore(currentClass.classId, studentCode, currentSubject.code, patch);
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 1500);
+  };
 
   const handleClassChange = (cid: string) => {
     setSelectedClassId(cid);
@@ -397,6 +415,7 @@ function PorPor5Content() {
           min={0}
           max={gridMaxFor(scheme, col, currentSubject.hours)}
           value={sc[col] ?? ''}
+          disabled={entryLocked}
           data-grid-row={row}
           data-grid-col={col}
           onPaste={ev => handleGridPaste(ev, row, col)}
@@ -838,7 +857,62 @@ function PorPor5Content() {
           </div>
         </div>
 
-        {/* Score Recording Table */}
+        {/* SGS-style entry: full marks per indicator, traits / reading per item, entry lock */}
+        <div className="no-print" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+          {([['scores', 'บันทึกคะแนน'], ['items', 'คุณลักษณะ / อ่าน คิด เขียน']] as const).map(([key, label]) => (
+            <button key={key} type="button" onClick={() => setEntryTab(key)} aria-pressed={entryTab === key}
+              style={{ border: 'none', borderRadius: 10, padding: '8px 16px', fontWeight: 800, cursor: 'pointer', background: entryTab === key ? '#0F172A' : '#E2E8F0', color: entryTab === key ? 'white' : '#0F172A' }}>
+              {label}
+            </button>
+          ))}
+          {entryTab === 'scores' && (
+            <button type="button" onClick={() => setShowPlanEditor(true)} disabled={entryLocked}
+              style={{ border: '1px solid #0369A1', borderRadius: 10, padding: '7px 14px', fontWeight: 800, cursor: 'pointer', background: 'white', color: '#0369A1' }}>
+              {subjectPlan ? 'แก้คะแนนเต็มรายตัวชี้วัด' : 'ตั้งคะแนนเต็มรายตัวชี้วัด (แบบ SGS)'}
+            </button>
+          )}
+          {entryTab === 'scores' && subjectPlan && scheme.yearly && [0, 1].map(t => (
+            <button key={t} type="button" onClick={() => setPlanTerm(t)} aria-pressed={planTerm === t}
+              style={{ border: 'none', borderRadius: 999, padding: '6px 14px', fontWeight: 800, cursor: 'pointer', background: planTerm === t ? '#0369A1' : '#F1F5F9', color: planTerm === t ? 'white' : '#0F172A' }}>
+              ภาคเรียนที่ {t + 1}
+            </button>
+          ))}
+        </div>
+        {entryLocked && (
+          <div role="status" className="no-print" style={{ background: '#FEF3C7', border: '1px solid #FCD34D', color: '#78350F', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontWeight: 700 }}>
+            งานทะเบียนปิดการบันทึกผลการเรียนแล้ว — ดูคะแนนได้ แก้ไขไม่ได้ (ติดต่องานทะเบียน/วัดผล)
+          </div>
+        )}
+        {showPlanEditor && (
+          <PlanEditor
+            title={`คะแนนเต็มรายตัวชี้วัด ${currentSubject.code} ${currentSubject.name} (${currentClass.shortName})`}
+            scheme={scheme}
+            plan={subjectPlan}
+            onSave={async plan => {
+              await savePlan(currentClass.classId, currentSubject.code, plan);
+              toast.success('บันทึกคะแนนเต็มรายตัวชี้วัดแล้ว');
+            }}
+            onClose={() => setShowPlanEditor(false)}
+          />
+        )}
+
+        {entryTab === 'items' ? (
+          <div style={{ background: '#FFFFFF', borderRadius: 16, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            <ItemsGrid students={currentClass.students} subjectCode={currentSubject.code} locked={entryLocked} onSave={saveCell} />
+          </div>
+        ) : subjectPlan ? (
+          <div style={{ background: '#FFFFFF', borderRadius: 16, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            <IndicatorGrid
+              students={currentClass.students}
+              subjectCode={currentSubject.code}
+              scheme={scheme}
+              plan={subjectPlan}
+              term={scheme.yearly ? planTerm : 0}
+              locked={entryLocked}
+              onSave={saveCell}
+            />
+          </div>
+        ) : (
         <div style={{
           background: '#FFFFFF', borderRadius: 16, border: '1px solid #E2E8F0',
           boxShadow: '0 4px 16px rgba(15,23,42,0.04)', overflow: 'hidden',
@@ -926,6 +1000,7 @@ function PorPor5Content() {
                         <select
                           value={specialVal}
                           onChange={e => setSpecial(e.target.value)}
+                          disabled={entryLocked}
                           style={{ ...inpStyle, width: 76, color: specialVal ? '#DC2626' : '#475569' }}
                         >
                           <option value="">ปกติ</option>
@@ -946,6 +1021,7 @@ function PorPor5Content() {
             </table>
           </div>
         </div>
+        )}
 
         <ExcelPasteModal
           isOpen={showPasteModal}
@@ -1440,7 +1516,7 @@ function PorPor5OfficialPrintSheets({
                     <td style={{ textAlign: 'center', fontWeight: 700, background: '#F8FAFC' }}>{hasTerm2 ? (sc.term2Coursework ?? 0) + (sc.term2FinalExam ?? 0) : ''}</td>
                     <td style={{ textAlign: 'center', fontWeight: 800 }}>{hasTerm2 ? sc.total : ''}</td>
                     <td style={{ textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
-                    <td style={{ textAlign: 'center' }}>-</td>
+                    <td style={{ textAlign: 'center' }}>{sc.remedial?.grade ?? '-'}</td>
                   </tr>
                 );
               }
@@ -1457,7 +1533,7 @@ function PorPor5OfficialPrintSheets({
                   <td style={{ textAlign: 'center', fontWeight: 700 }}>{sc.finalExam}</td>
                   <td style={{ textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{sc.total}</td>
                   <td style={{ textAlign: 'center', fontWeight: 900 }}>{sc.grade}</td>
-                  <td style={{ textAlign: 'center' }}>-</td>
+                  <td style={{ textAlign: 'center' }}>{sc.remedial?.grade ?? '-'}</td>
                 </tr>
               );
             })}
@@ -1507,20 +1583,20 @@ function PorPor5OfficialPrintSheets({
             </thead>
             <tbody>
               {currentClass.students.map(st => {
-                const sc = st.scores[currentSubject.code] || { traitScore: 3, readThinkScore: 3 };
+                const sc: Partial<StudentSubjectScore> = st.scores[currentSubject.code] || { traitScore: 3, readThinkScore: 3 };
                 const t = sc.traitScore ?? 3;
                 const r = sc.readThinkScore ?? 3;
                 return (
                   <tr key={st.code}>
                     <td style={{ textAlign: 'center' }}>{st.no}</td>
                     <td>{st.name}</td>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map(k => (
-                      <td key={`t_${k}`} style={{ textAlign: 'center' }}>{t}</td>
+                    {[0, 1, 2, 3, 4, 5, 6, 7].map(k => (
+                      <td key={`t_${k}`} style={{ textAlign: 'center' }}>{sc.traitItems?.[k] ?? ''}</td>
                     ))}
                     <td style={{ textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{t}</td>
                     <td style={{ textAlign: 'center', fontWeight: 800 }}>{t > 0 ? 'ผ่าน' : 'ไม่ผ่าน'}</td>
-                    {[1, 2, 3, 4, 5].map(k => (
-                      <td key={`r_${k}`} style={{ textAlign: 'center' }}>{r}</td>
+                    {[0, 1, 2, 3, 4].map(k => (
+                      <td key={`r_${k}`} style={{ textAlign: 'center' }}>{sc.readItems?.[k] ?? ''}</td>
                     ))}
                     <td style={{ textAlign: 'center', fontWeight: 800, background: '#F8FAFC' }}>{r}</td>
                     <td style={{ textAlign: 'center', fontWeight: 800 }}>{r > 0 ? 'ผ่าน' : 'ไม่ผ่าน'}</td>
