@@ -493,12 +493,11 @@ test('Suite 12: ประถม grades the year (50 + 50), มัธยม grade
   assert.deepEqual(scorePercents('ประถม', { coursework: 35, finalExam: 7.5 }), { courseworkPct: 100, finalPct: 50 });
   assert.deepEqual(scorePercents('มัธยม', { coursework: 35, finalExam: 15 }), { courseworkPct: 50, finalPct: 50 });
 
-  // built-in ประถม term-1 data fits the 35/15 scale and waits for term 2
+  // the term maximum holds for every ประถม class, whatever a teacher types in
   for (const cls of INITIAL_ACADEMIC_DATA.filter(c => c.level === 'ประถม')) {
-    for (const st of cls.students) for (const sc of Object.values(st.scores)) {
-      assert.ok(sc.coursework <= 35 && sc.finalExam <= 15, `${cls.classId} ${st.code} over the ประถม term maximum`);
-      assert.ok(sc.grade === '' || sc.grade === 'ร' || sc.grade === 'มส', `${cls.classId} ${st.code} graded before term 2`);
-    }
+    const sc = scoreScheme(cls.level);
+    assert.equal(sc.courseworkMax + sc.finalMax, 50, `${cls.classId} term is out of 50`);
+    assert.equal((sc.courseworkMax + sc.finalMax) * 2, 100, `${cls.classId} year is out of 100`);
   }
 });
 
@@ -543,4 +542,76 @@ test('Suite 13: SGS-style assessment rules', async () => {
   assert.equal(a.activityOverall({ A: 'ผ', B: 'ผ' }, ['A', 'B']), 'ผ่าน');
   assert.equal(a.activityOverall({ A: 'ผ', B: 'มผ' }, ['A', 'B']), 'ไม่ผ่าน');
   assert.equal(a.activityOverall({ A: 'ผ' }, ['A', 'B']), null);
+});
+
+// -------------------------------------------------------------
+// Test Suite 14: ปพ.5 / ปพ.6 data lives in Firestore, never in the site bundle
+// -------------------------------------------------------------
+test('Suite 14: scores come from Firestore, the bundle only carries class structure', async (t) => {
+  const { INITIAL_ACADEMIC_DATA, calculateStudentGPA, calculateClassRanks } = await import('../src/data/academicData.ts');
+  const { applyScoreOverrides } = await import('../src/utils/academicScores.ts');
+
+  await t.test('no student record, name or score is bundled', () => {
+    for (const cls of INITIAL_ACADEMIC_DATA) {
+      assert.deepEqual(cls.students, [], `${cls.classId} ships student records`);
+      assert.ok(cls.subjects.length > 0, `${cls.classId} keeps its subjects`);
+      assert.ok(cls.activities.length > 0, `${cls.classId} keeps its activities`);
+    }
+    // the source file itself must stay free of entered marks and student names
+    const src = fs.readFileSync(path.join(rootDir, 'src', 'data', 'academicData.ts'), 'utf-8');
+    const dataPart = src.slice(src.indexOf('export const INITIAL_ACADEMIC_DATA'));
+    for (const leak of ['"coursework"', '"finalExam"', '"traitResult"', 'เด็กชาย', 'เด็กหญิง']) {
+      assert.ok(!dataPart.includes(leak), `academicData.ts ships ${leak}`);
+    }
+  });
+
+  // one ประถม and one มัธยม class, filled the way config/academic_scores_2569 stores it
+  const roster = {
+    p1: [{ code: '3069', name: 'นักเรียน ก' }, { code: '3070', name: 'นักเรียน ข' }],
+    m1: [{ code: '2536', name: 'นักเรียน ค' }],
+  };
+  const overrides = {
+    scores: {
+      p1: {
+        3069: { ท11101: { coursework: 32.5, finalExam: 11.5, term2Coursework: 30, term2FinalExam: 12, total: 86, grade: '4', attendedHours: 200, traitScore: 3, readThinkScore: 3 } },
+      },
+      m1: {
+        2536: { ว21103: { coursework: 60, finalExam: 25, total: 85, grade: '4', attendedHours: 40, traitScore: 3, readThinkScore: 3 } },
+      },
+    },
+    evaluations: {
+      p1: { 3069: { traitResult: 'ดีเยี่ยม', readThinkResult: 'ดี', activityResult: 'ผ่าน', activities: { แนะแนว: 'ผ' } } },
+    },
+  };
+
+  await t.test('the roster plus the Firestore document rebuild the whole form', () => {
+    const view = applyScoreOverrides(INITIAL_ACADEMIC_DATA, overrides, roster);
+    const p1 = view.find(c => c.classId === 'p1');
+    assert.deepEqual(p1.students.map(s => [s.no, s.code, s.name]), [[1, '3069', 'นักเรียน ก'], [2, '3070', 'นักเรียน ข']]);
+    assert.equal(p1.students[0].scores['ท11101'].total, 86);
+    assert.equal(p1.students[0].traitResult, 'ดีเยี่ยม');
+    assert.equal(p1.students[0].activities['แนะแนว'], 'ผ');
+    // a roster student with nothing entered prints an empty row, not a made-up pass
+    assert.deepEqual(p1.students[1].scores, {});
+    assert.equal(p1.students[1].traitResult, 'ผ่าน');
+    const m1 = view.find(c => c.classId === 'm1');
+    assert.equal(m1.students.length, 1);
+    assert.equal(m1.students[0].scores['ว21103'].grade, '4');
+  });
+
+  await t.test('GPA and class ranks come out of the Firestore-backed view', () => {
+    const view = applyScoreOverrides(INITIAL_ACADEMIC_DATA, overrides, roster);
+    const p1 = view.find(c => c.classId === 'p1');
+    const subject = p1.subjects.find(s => s.code === 'ท11101');
+    assert.equal(calculateStudentGPA(p1.students[0], [subject]).gpa, 4);
+    assert.equal(calculateStudentGPA(p1.students[1], [subject]).gpa, 0);
+    const ranks = calculateClassRanks(p1.students, p1.subjects);
+    assert.equal(ranks['3069'].rank, 1);
+    assert.equal(ranks['3069'].total, 2);
+  });
+
+  await t.test('a class with no roster yet shows no students instead of stale ones', () => {
+    const view = applyScoreOverrides(INITIAL_ACADEMIC_DATA, overrides, {});
+    assert.deepEqual(view.find(c => c.classId === 'p1').students, []);
+  });
 });
