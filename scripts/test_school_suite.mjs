@@ -404,3 +404,70 @@ test('Suite 9: Each term opens on a school day', async () => {
   // ปฏิทินโรงเรียน 2569: 2 พ.ย. 2569 = เปิดเทอมภาคเรียนที่ 2 วันเรียนที่ 1
   assert.equal(openings.find(a => a.id === 'd-open-2-69')?.date, '2026-11-02');
 });
+
+// -------------------------------------------------------------
+// Test Suite 10: Facebook posts become website news without duplicates
+// -------------------------------------------------------------
+test('Suite 10: Facebook Page sync maps posts and skips ones already on the site', async () => {
+  const { toSitePost, newSitePosts, postKeys, thaiDate, titleFromMessage } = await import('./lib/facebookPosts.mjs');
+
+  // 23:30 UTC is already the next day in Thailand
+  assert.equal(thaiDate('2026-11-01T23:30:00+0000'), '2026-11-02');
+  assert.equal(titleFromMessage('\n  เปิดภาคเรียนที่ 2/2569  \nรายละเอียด'), 'เปิดภาคเรียนที่ 2/2569');
+  assert.ok(titleFromMessage('ก '.repeat(200)).endsWith('…'));
+  assert.equal(toSitePost({ id: '1_2', message: '   ', created_time: '2026-11-02T01:00:00+0000' }), null, 'posts without text are skipped');
+
+  // a numeric page id before /posts/ is not a post id
+  assert.deepEqual(postKeys('https://www.facebook.com/100064/posts/987654321/'), ['987654321']);
+  assert.deepEqual(postKeys('https://www.facebook.com/BnKhlngMddang/posts/pfbid0abcXYZ'), ['pfbid0abcXYZ']);
+
+  const fb = [
+    { id: '100064_111111111', message: 'ประชุมผู้ปกครอง 2/2569\nรายละเอียด', created_time: '2026-11-03T02:00:00+0000', permalink_url: 'https://www.facebook.com/100064/posts/pfbidAAA' },
+    { id: '100064_222222222', message: 'ตลาดนัดทักษะอาชีพ ประจำภาคเรียน', created_time: '2026-11-06T02:00:00+0000', permalink_url: 'https://www.facebook.com/100064/posts/pfbidBBB' },
+    { id: '100064_333333333', message: 'เปิดเทอมภาคเรียนที่ 2/2569 วันเรียนที่ 1', created_time: '2026-11-02T01:00:00+0000', permalink_url: 'https://www.facebook.com/100064/posts/pfbidCCC' },
+    { id: '100064_444444444', message: 'กีฬาสีภายใน', created_time: '2026-11-10T01:00:00+0000', permalink_url: 'https://www.facebook.com/100064/posts/pfbidDDD' },
+  ];
+  const existing = [
+    { id: 'fb_100064_111111111', title: 'ประชุมผู้ปกครอง 2/2569', date: '2026-11-03', facebookUrl: 'https://www.facebook.com/100064/posts/pfbidAAA' }, // synced before
+    { id: 'manual1', title: 'ตลาดนัดทักษะอาชีพ', date: '2026-11-06', facebookUrl: 'https://www.facebook.com/share/p/xyz/' }, // typed by a teacher, other link
+    { id: 'manual2', title: 'x', date: '2026-01-01', facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/333333333' }, // same numeric id
+  ];
+  const added = newSitePosts(fb, existing);
+  assert.deepEqual(added.map(p => p.docId), ['fb_100064_444444444']);
+  assert.equal(added[0].data.date, '2026-11-10');
+  assert.equal(added[0].data.source, 'facebook');
+});
+
+test('Suite 11: Facebook sync writes only new posts and never overwrites news', async () => {
+  const { syncFacebookPosts } = await import('./lib/facebookPosts.mjs');
+  const docs = new Map([
+    ['teacher1', { title: 'ข่าวที่ครูลงเอง', date: '2026-10-01', facebookUrl: '' }],
+    ['fb_9_100000001', { title: 'โพสต์เก่า', date: '2026-10-20', source: 'facebook', imageUrl: 'https://old.jpg' }],
+  ]);
+  const calls = [];
+  const db = {
+    collection: () => ({
+      get: async () => ({ docs: [...docs].map(([id, data]) => ({ id, data: () => data })) }),
+      doc: id => ({
+        create: async data => { if (docs.has(id)) throw new Error('exists'); calls.push(['create', id]); docs.set(id, data); },
+        update: async data => { calls.push(['update', id, Object.keys(data).sort().join()]); },
+      }),
+    }),
+  };
+  const fetchImpl = async () => ({
+    ok: true,
+    json: async () => ({ data: [
+      { id: '9_100000001', message: 'โพสต์เก่า', created_time: '2026-10-20T01:00:00+0000', permalink_url: 'https://www.facebook.com/9/posts/100000001', full_picture: 'https://new.jpg' },
+      { id: '9_100000002', message: 'ข่าวใหม่จากเพจ', created_time: '2026-11-02T01:00:00+0000', permalink_url: 'https://www.facebook.com/9/posts/100000002', full_picture: 'https://p2.jpg' },
+    ] }),
+  });
+
+  const preview = await syncFacebookPosts({ db, pageId: '9', token: 't', fetchImpl });
+  assert.equal(calls.length, 0, 'dry run writes nothing');
+  assert.deepEqual(preview.added.map(p => p.id), ['fb_9_100000002']);
+  assert.equal(preview.imagesRefreshed, 1);
+
+  await syncFacebookPosts({ db, pageId: '9', token: 't', fetchImpl, write: true });
+  assert.deepEqual(calls, [['create', 'fb_9_100000002'], ['update', 'fb_9_100000001', 'imageUrl,syncedAt']]);
+  assert.equal(docs.get('teacher1').title, 'ข่าวที่ครูลงเอง', "a teacher's news is untouched");
+});

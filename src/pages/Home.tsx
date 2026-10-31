@@ -323,7 +323,7 @@ function Home() {
                     <div style={{ fontSize: '0.88rem' }}>ข่าวใหม่จะแสดงที่นี่ทันทีเมื่อโรงเรียนเผยแพร่</div>
                   </div>
                 )}
-                {posts.slice(0, 4).map((post) => (
+                {posts.slice(0, 6).map((post) => (
                   <div key={post.id} className="col-md-6">
                     <div role="button" tabIndex={0} aria-label={`อ่านข่าว ${post.title}`}
                       onClick={() => openPost(post)}

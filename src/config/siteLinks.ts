@@ -16,3 +16,6 @@ export const DIRECTOR_POSITION = `ผู้อำนวยการ${SCHOOL_NAME
 // โรงเรียนไม่มีเบอร์กลาง จึงใช้เบอร์ผู้อำนวยการเป็นเบอร์ติดต่อของโรงเรียน
 export const SCHOOL_PHONE = '0880998990';
 export const SCHOOL_EMAIL = 'kmdschool198@gmail.com';
+
+// เพจ Facebook ทางการของโรงเรียน (ข่าวใหม่ลงที่นี่ก่อนเว็บ)
+export const SCHOOL_FACEBOOK_URL = 'https://www.facebook.com/BnKhlngMddang';

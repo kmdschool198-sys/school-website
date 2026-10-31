@@ -15,6 +15,7 @@
     "backup:firestore": "node scripts/backup_firestore.mjs",
     "backfill:links": "node scripts/backfill_links.mjs",
     "import:calendar": "node scripts/import_school_calendar.mjs",
+    "sync:facebook": "node scripts/sync_facebook_posts.mjs",
     "pdpa:retention-review": "node scripts/pdpa_retention_review.mjs"
   },
   "dependencies": {

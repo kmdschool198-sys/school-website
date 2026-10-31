@@ -19,7 +19,7 @@ const YoutubeIcon = ({ size = 18 }: { size?: number }) => (
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import DriveImage from './DriveImage';
-import { GOOGLE_SITE_URL, VERCEL_APP_URL, SCHOOL_EMAIL, SCHOOL_PHONE, SCHOOL_NAME, SCHOOL_ADDRESS } from '../config/siteLinks';
+import { GOOGLE_SITE_URL, VERCEL_APP_URL, SCHOOL_EMAIL, SCHOOL_PHONE, SCHOOL_NAME, SCHOOL_ADDRESS, SCHOOL_FACEBOOK_URL } from '../config/siteLinks';
 
 // TikTok icon (lucide doesn't have one)
 const TikTokIcon = ({ size = 18 }: { size?: number }) => (
@@ -99,7 +99,7 @@ export default function Footer() {
               {info.motto}
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <SocialBtn href="https://web.facebook.com/BnKhlngMddang" label="Facebook" color="#1877F2"><FacebookIcon size={18} /></SocialBtn>
+              <SocialBtn href={SCHOOL_FACEBOOK_URL} label="Facebook" color="#1877F2"><FacebookIcon size={18} /></SocialBtn>
               <SocialBtn href="https://www.tiktok.com/@kmdschool198" label="TikTok" color="#000"><TikTokIcon size={18} /></SocialBtn>
               <SocialBtn href="https://www.youtube.com/@KMDSchool" label="YouTube" color="#FF0000"><YoutubeIcon size={18} /></SocialBtn>
             </div>
@@ -148,7 +148,7 @@ export default function Footer() {
                 </ContactRow>
               )}
               <ContactRow icon={<FacebookIcon size={14} />}>
-                <a href="https://web.facebook.com/BnKhlngMddang" target="_blank" rel="noreferrer" style={contactLink}>
+                <a href={SCHOOL_FACEBOOK_URL} target="_blank" rel="noreferrer" style={contactLink}>
                   {info.facebook}
                 </a>
               </ContactRow>
