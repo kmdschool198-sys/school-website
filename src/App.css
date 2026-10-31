@@ -249,62 +249,102 @@
   gap: 0.75rem; /* Moves the arrow */
 }
 
-/* Admin usability */
-.admin-sidebar {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
-.admin-nav {
+/* Admin: lives inside SmartSchoolLayout like the teacher pages; its sections are a tab bar */
+.admin-topbar {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: #475569;
 }
 
-.admin-nav-group {
+.admin-topbar-user {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
-.admin-nav-label {
-  padding: 0 0.9rem;
-  color: #94A3B8;
-  font-size: 0.7rem;
+.admin-topbar-user strong {
+  color: #0F172A;
+}
+
+.admin-role-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #FED7AA;
+  background: #FFF7ED;
+  color: #C2410C;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.admin-topbar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  background: #FFFFFF;
+}
+
+.admin-tab-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-tab-group-label {
+  margin-right: 4px;
+  color: #64748B;
+  font-size: 0.75rem;
   font-weight: 800;
 }
 
-.admin-nav-button {
-  min-height: 44px;
-  display: flex;
+.admin-tab {
+  min-height: 38px;
+  display: inline-flex;
   align-items: center;
-  gap: 11px;
-  padding: 0.7rem 0.9rem;
+  gap: 7px;
+  padding: 0.45rem 0.8rem;
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #475569;
-  text-align: left;
-  font-size: 0.9rem;
+  color: #334155;
+  font-size: 0.88rem;
   font-weight: 700;
-  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.admin-nav-button:hover {
+.admin-tab:hover {
   background: #FFF7ED;
   color: #C2410C;
 }
 
-.admin-nav-button.is-active {
-  background: linear-gradient(135deg, #FF6A01, #FB923C);
+.admin-tab.is-active {
+  background: #C2410C;
   color: #FFFFFF;
-  box-shadow: 0 8px 18px rgba(255, 106, 1, 0.22);
 }
 
-.admin-nav-button:focus-visible,
+.admin-tabs-note {
+  margin: 0 0 18px;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.admin-tab:focus-visible,
 .admin-quick-action:focus-visible,
 .admin-advanced-toggle:focus-visible {
   outline: 3px solid rgba(59, 130, 246, 0.35);
@@ -708,92 +748,6 @@
   /* Make tables horizontally scroll on mobile */
   table {
     font-size: 0.78rem;
-  }
-  /* Admin sidebar collapses on mobile */
-  .admin-dashboard-layout {
-    flex-direction: column !important;
-  }
-  .admin-dashboard-layout > aside,
-  .admin-sidebar {
-    width: 100% !important;
-    height: auto !important;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    padding: 0.75rem !important;
-    border-right: none !important;
-    border-bottom: 1px solid #FFEDD5;
-    overflow: visible;
-  }
-  .admin-sidebar-brand {
-    margin-bottom: 0.65rem !important;
-    padding-right: 48px !important;
-  }
-  .admin-sidebar-brand h4 {
-    font-size: 1.1rem;
-  }
-  .admin-user-card {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.65rem !important;
-    padding: 0.35rem 0.25rem !important;
-    border: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-  }
-  .admin-user-card > .d-flex,
-  .admin-user-card > .small.text-muted {
-    display: none !important;
-  }
-  .admin-user-card > .fw-bold {
-    max-width: 230px;
-    font-size: 0.9rem;
-  }
-  .admin-user-card > .badge {
-    margin-top: 0 !important;
-  }
-  .admin-nav {
-    flex-direction: row;
-    gap: 0.45rem;
-    padding-bottom: 0.35rem;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: thin;
-  }
-  .admin-nav-group {
-    flex-direction: row;
-    gap: 0.45rem;
-  }
-  .admin-nav-label {
-    display: none;
-  }
-  .admin-nav-button {
-    flex: 0 0 auto;
-    min-height: 42px;
-    padding: 0.65rem 0.8rem;
-    white-space: nowrap;
-  }
-  .admin-sidebar-footer {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    padding-top: 0 !important;
-  }
-  .admin-sidebar-footer > div {
-    display: none !important;
-  }
-  .admin-sidebar-footer .btn {
-    width: 42px !important;
-    height: 42px;
-    min-height: 42px;
-    padding: 0 !important;
-    gap: 0 !important;
-    overflow: hidden;
-    font-size: 0;
-  }
-  .admin-main {
-    padding: 1.25rem 1rem !important;
   }
   .admin-main > header h2 {
     font-size: 1.55rem;

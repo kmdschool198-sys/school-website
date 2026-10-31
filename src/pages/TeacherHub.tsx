@@ -27,12 +27,12 @@ const PIN_STORAGE_KEY = 'kmd_teacher_hub_pinned_apps_v1';
 const SMART_APPS: SmartAppIcon[] = [
   { id: 'attendance', to: '/attendance', label: 'เช็คชื่อรายวัน', subtitle: 'เช็คชื่อ นม แปรงฟัน', category: 'daily', emoji: '✅', gradient: 'linear-gradient(135deg,#10B981,#059669)' },
   { id: 'porpor6', to: '/porpor6', label: 'พิมพ์ ปพ.6', subtitle: 'สมุดพกรายคน/ทั้งห้อง', category: 'academic', emoji: '📄', gradient: 'linear-gradient(135deg,#EF4444,#DC2626)', badge: 'A4' },
-  { id: 'porpor5', to: '/porpor5', label: 'บันทึก ปพ.5', subtitle: 'กรอกคะแนน 70/30', category: 'academic', emoji: '📝', gradient: 'linear-gradient(135deg,#0284C7,#0369A1)', badge: 'A4' },
+  { id: 'porpor5', to: '/porpor5', label: 'บันทึก ปพ.5', subtitle: 'คะแนนรายตัวชี้วัด แบบ SGS', category: 'academic', emoji: '📝', gradient: 'linear-gradient(135deg,#0284C7,#0369A1)', badge: 'A4' },
   { id: 'academic-summary', to: '/academic-summary', label: 'สรุปผลสัมฤทธิ์', subtitle: 'แยก 8 กลุ่มสาระฯ', category: 'academic', emoji: '📊', gradient: 'linear-gradient(135deg,#F59E0B,#D97706)' },
   { id: 'print-hub', to: '/print-hub', label: 'ศูนย์รวมการพิมพ์', subtitle: 'One-Stop Print Hub', category: 'print_admin', emoji: '🖨️', gradient: 'linear-gradient(135deg,#BE123C,#9F1239)', badge: 'HOT' },
   { id: 'behavior', to: '/behavior', label: 'ความประพฤติ', subtitle: 'ตัด-เพิ่มแต้ม/ใบเตือน', category: 'student', emoji: '🛡️', gradient: 'linear-gradient(135deg,#DC2626,#991B1B)', badge: 'ใหม่' },
-  { id: 'lunch', to: '/lunch', label: 'อาหารกลางวัน', subtitle: 'เมนูมื้อเที่ยง & งบ 22 บ.', category: 'daily', emoji: '🍱', gradient: 'linear-gradient(135deg,#EA580C,#C2410C)', badge: 'ใหม่' },
-  { id: 'duty', to: '/duty', label: 'เวรประจำวัน', subtitle: 'ตรวจ 11 เขต & เวรครู', category: 'daily', emoji: '🧹', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
+  { id: 'lunch', to: '/lunch', label: 'อาหารกลางวัน', subtitle: 'นับจากเช็คชื่อ · งบ 22 บ.', category: 'daily', emoji: '🍱', gradient: 'linear-gradient(135deg,#EA580C,#C2410C)', badge: 'ใหม่' },
+  { id: 'duty', to: '/duty', label: 'เวรประจำวัน', subtitle: 'นับจากเช็คชื่อ', category: 'daily', emoji: '🧹', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
   { id: 'janitor-tasks', to: '/janitor-tasks', label: 'งานนักการภารโรง', subtitle: 'เช็กงานเช้า-บ่าย & รูป', category: 'daily', emoji: '🛠️', gradient: 'linear-gradient(135deg,#D97706,#B45309)', badge: 'ใหม่' },
   { id: 'home-visit', to: '/home-visit', label: 'เยี่ยมบ้านนักเรียน', subtitle: 'คัดกรองทุน กสศ. & รูปบ้าน', category: 'student', emoji: '🏠', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
   { id: 'homeroom', to: '/homeroom', label: 'กิจกรรมโฮมรูม', subtitle: 'อบรมหน้าเสาธง/เช้า', category: 'daily', emoji: '🏫', gradient: 'linear-gradient(135deg,#38BDF8,#0284C7)' },
@@ -47,7 +47,8 @@ const SMART_APPS: SmartAppIcon[] = [
   { id: 'timetable', to: '/timetable', label: 'ตารางสอน & สอนแทน', subtitle: 'จัดตาราง/จัดสอนแทน 1 คลิก', category: 'academic', emoji: '📅', gradient: 'linear-gradient(135deg,#6366F1,#4F46E5)', badge: 'อัปเกรด' },
   { id: 'school-stats-report', to: '/school-stats-report', label: 'สถิติประจำเดือน', subtitle: 'สรุปการมาเรียนทั้ง ร.ร.', category: 'print_admin', emoji: '📋', gradient: 'linear-gradient(135deg,#A855F7,#9333EA)' },
   { id: 'school-calendar', to: '/school-calendar', label: 'ปฏิทิน ร.ร.', subtitle: 'วันหยุด-เรียนชดเชย', category: 'print_admin', emoji: '🗓️', gradient: 'linear-gradient(135deg,#F43F5E,#E11D48)' },
-  { id: 'admin', to: '/admin', label: 'ตั้งค่าระบบ', subtitle: 'จัดการข่าวสารเว็บไซต์', category: 'print_admin', emoji: '🔧', gradient: 'linear-gradient(135deg,#64748B,#475569)' },
+  { id: 'remedial', to: '/remedial', label: 'ผลการแก้ตัว', subtitle: 'ปิดบันทึกผล · แก้ 0/ร/มส', category: 'academic', emoji: '🔁', gradient: 'linear-gradient(135deg,#0EA5E9,#0369A1)' },
+  { id: 'admin', to: '/admin', label: 'จัดการเว็บไซต์', subtitle: 'ข่าว สไลด์ บุคลากร สิทธิ์ผู้ใช้', category: 'print_admin', emoji: '🔧', gradient: 'linear-gradient(135deg,#64748B,#475569)' },
 ];
 
 function readPinnedIds(): string[] {

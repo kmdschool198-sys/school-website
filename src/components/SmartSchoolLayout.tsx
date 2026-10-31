@@ -70,7 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/school-calendar', label: 'ปฏิทินการศึกษา', icon: <Calendar size={17} /> },
       { to: '/janitor-duty', label: 'ตารางเวร & รายงานนักการ', icon: <CalendarClock size={17} /> },
       { to: '/janitor-tasks', label: 'บันทึกงานนักการ (เช้า-บ่าย)', icon: <Wrench size={17} /> },
-      { to: '/admin', label: 'จัดการระบบส่วนกลาง', icon: <Settings size={17} /> },
+      { to: '/admin', label: 'จัดการเว็บไซต์ (ผู้ดูแล)', icon: <Settings size={17} /> },
     ],
   },
 ];

@@ -2,7 +2,6 @@ import { useState, useEffect, type ChangeEvent, type FormEvent, type ReactNode }
 import {
   Settings,
   Users,
-  Layout,
   ShieldCheck,
   LogOut,
   Trash2,
@@ -22,16 +21,13 @@ import {
   AlignLeft,
   Minus,
   Calendar as CalendarIcon,
-  ExternalLink,
   RefreshCw,
   MessageCircle,
   Search,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
-import TimetableSmart from '../components/TimetableSmart';
-import RosterManager from '../components/RosterManager';
-import ClubsManager from '../components/ClubsManager';
+import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import {
   collection, addDoc, getDocs, deleteDoc, doc, orderBy, query,
   updateDoc, setDoc, getDoc, writeBatch, onSnapshot
@@ -121,7 +117,7 @@ interface Highlight {
   order: number;
 }
 
-type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'branch-personnel' | 'contents' | 'activities' | 'students' | 'timetable' | 'roster' | 'clubs' | 'staff' | 'settings';
+type AdminTab = 'dashboard' | 'news' | 'highlights' | 'personnel' | 'branch-personnel' | 'contents' | 'activities' | 'students' | 'staff' | 'settings';
 
 interface StudentRow {
   class: string;
@@ -1173,7 +1169,7 @@ function Admin() {
       <div className="admin-login-layout" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #FF6A00 0%, #FFD400 100%)' }}>
         <div className="card shadow-lg p-5 text-center" style={{ maxWidth: '420px', width: '90%', borderRadius: '32px', border: 'none', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)' }}>
           <ShieldCheck size={48} className="text-warning mb-3 mx-auto" style={{ color: '#FF6A01' }} />
-          <h3 className="fw-bold">KMD Admin Console</h3>
+          <h3 className="fw-bold">จัดการเว็บไซต์ (ผู้ดูแลระบบ)</h3>
           <p className="text-muted mb-0">กำลังตรวจสอบสิทธิผู้ใช้งาน...</p>
         </div>
       </div>
@@ -1186,7 +1182,7 @@ function Admin() {
         <div className="card shadow-lg p-5" style={{ maxWidth: '420px', width: '90%', borderRadius: '32px', border: 'none', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)' }}>
           <div className="text-center mb-4">
             <ShieldCheck size={48} className="text-warning mb-3" style={{ color: '#FF6A01' }} />
-            <h3 className="fw-bold">KMD Admin Console</h3>
+            <h3 className="fw-bold">จัดการเว็บไซต์ (ผู้ดูแลระบบ)</h3>
             <p className="text-muted">เข้าสู่ระบบเพื่อจัดการเว็บไซต์</p>
           </div>
           {loginError && <div className="alert alert-danger p-2 text-center small mb-3">{loginError}</div>}
@@ -1207,10 +1203,10 @@ function Admin() {
             <div style={{ height: 1, background: '#E2E8F0', flex: 1 }} />
           </div>
           <form onSubmit={handleLogin}>
-            <input type="text" className="form-control mb-3" placeholder="Username or email" value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" required />
-            <input type="password" className="form-control mb-4" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
+            <input type="text" className="form-control mb-3" placeholder="ชื่อผู้ใช้หรืออีเมล" value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" required />
+            <input type="password" className="form-control mb-4" placeholder="รหัสผ่าน" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
             <button type="submit" disabled={loading} className="btn w-100 py-3 rounded-4 fw-bold text-white" style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', opacity: loading ? 0.8 : 1 }}>
-              {loading ? 'Signing in...' : 'Login'}
+              {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
             </button>
           </form>
         </div>
@@ -1227,9 +1223,6 @@ function Admin() {
     contents: 'จัดการเนื้อหาหน้าเว็บ',
     activities: 'ปฏิทินกิจกรรม / วันหยุด',
     students: 'จำนวนนักเรียน',
-    timetable: 'ตารางสอน-ตารางเรียน',
-    roster: 'รายชื่อนักเรียน (เช็คชื่อ)',
-    clubs: 'ชุมนุม / กิจกรรม / ลูกเสือ',
     staff: 'ผู้ใช้และสิทธิ์',
     settings: 'ตั้งค่าระบบ'
   };
@@ -1243,9 +1236,6 @@ function Admin() {
     contents: 'แก้ไขข้อความและภาพประกอบในแต่ละหน้าของเว็บไซต์',
     activities: 'เพิ่มกิจกรรม วันสำคัญ และวันหยุดของโรงเรียน',
     students: 'ปรับจำนวนและข้อมูลนักเรียนแยกตามชั้น',
-    timetable: 'ดูแลตารางสอนและตารางเรียน',
-    roster: 'จัดการรายชื่อนักเรียนสำหรับระบบเช็คชื่อ',
-    clubs: 'จัดการชุมนุม กิจกรรม และลูกเสือ',
     staff: 'กำหนดผู้ใช้งานและระดับสิทธิ์ของครู',
     settings: 'แก้ไขข้อมูลพื้นฐานและช่องทางติดต่อของโรงเรียน'
   };
@@ -1264,16 +1254,8 @@ function Admin() {
         ['personnel', <Users size={18} key="p" />, 'บุคลากร'],
         ['branch-personnel', <Users size={18} key="bp" />, 'ครูโรงเรียนสาขา'],
         ['contents', <Globe size={18} key="c" />, 'เนื้อหาหน้าเว็บ'],
-        ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม'],
-        ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน'],
-      ]
-    },
-    {
-      label: 'งานครู',
-      items: [
-        ['timetable', <CalendarIcon size={18} key="tt" />, 'ตารางสอน'],
-        ['roster', <Users size={18} key="r" />, 'รายชื่อ-เช็คชื่อ'],
-        ['clubs', <Users size={18} key="cb" />, 'ชุมนุม-กิจกรรม'],
+        ['activities', <CalendarIcon size={18} key="a" />, 'ปฏิทินกิจกรรม (หน้าเว็บ)'],
+        ['students', <Users size={18} key="st" />, 'จำนวนนักเรียน (หน้าเว็บ)'],
       ]
     },
     {
@@ -1296,38 +1278,38 @@ function Admin() {
     .some(value => value.trim() !== '');
 
   return (
-    <div className="admin-dashboard-layout" style={{ display: 'flex', minHeight: '100vh', background: 'linear-gradient(135deg,#FFF7ED 0%, #FFFFFF 50%, #FFF7ED 100%)' }}>
-      {/* Sidebar */}
-      <aside className="admin-sidebar" style={{ width: '280px', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderRight: '1px solid #FFEDD5', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-        <div className="admin-sidebar-brand d-flex align-items-center gap-3 mb-4 px-2">
-          <div style={{ background: 'linear-gradient(135deg,#FF6A01,#FB923C)', padding: '10px', borderRadius: '14px' }}>
-            <Layout size={22} color="white" />
+    <SmartSchoolLayout pageTitle="จัดการเว็บไซต์ (ผู้ดูแลระบบ)">
+      <div className="admin-main">
+        {/* Account and connection: this page signs in with the school Google account (website admin rights) */}
+        <div className="admin-topbar">
+          {currentStaff && (
+            <div className="admin-topbar-user">
+              <ShieldCheck size={16} color="#C2410C" />
+              <strong>{currentStaff.name}</strong>
+              <span>{currentStaff.email}</span>
+              <span className="admin-role-badge">{roleLabel(currentStaff.role)}</span>
+            </div>
+          )}
+          <div className="admin-topbar-status">
+            {dbStatus === 'online' && <CheckCircle2 size={16} color="#16A34A" />}
+            {dbStatus === 'offline' && <AlertTriangle size={16} color="#DC2626" />}
+            {dbStatus === 'checking' && <Database size={16} color="#C2410C" />}
+            Firestore {dbStatus === 'online' ? 'เชื่อมต่อแล้ว' : dbStatus === 'offline' ? 'ออฟไลน์' : 'กำลังตรวจสอบ...'}
           </div>
-          <h4 className="fw-bold mb-0" style={{ color: '#FF6A01' }}>KMD Console</h4>
+          <button onClick={handleLogout} className="btn btn-outline-danger btn-sm rounded-3 d-flex align-items-center gap-2" aria-label="ออกจากระบบจัดการเว็บไซต์">
+            <LogOut size={14} /> ออกจากระบบ
+          </button>
         </div>
 
-        {currentStaff && (
-          <div className="admin-user-card" style={{ ...GLASS_CARD, padding: '0.9rem', marginBottom: '1.25rem' }}>
-            <div className="d-flex align-items-center gap-2 mb-2">
-              <ShieldCheck size={16} color="#FF6A01" />
-              <div className="small fw-bold" style={{ color: '#0F172A' }}>กำลังใช้งาน</div>
-            </div>
-            <div className="fw-bold text-truncate" style={{ color: '#0F172A' }}>{currentStaff.name}</div>
-            <div className="small text-muted text-truncate">{currentStaff.email}</div>
-            <span className="badge mt-2" style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>
-              {roleLabel(currentStaff.role)}
-            </span>
-          </div>
-        )}
-
-        <nav className="admin-nav">
+        <nav className="admin-tabs" aria-label="ส่วนจัดการเว็บไซต์">
           {navGroups.map(group => (
-            <div className="admin-nav-group" key={group.label}>
-              <div className="admin-nav-label">{group.label}</div>
+            <div className="admin-tab-group" key={group.label}>
+              <span className="admin-tab-group-label">{group.label}</span>
               {group.items.map(([key, icon, label]) => (
                 <button
                   key={key}
-                  className={`admin-nav-button${activeTab === key ? ' is-active' : ''}`}
+                  type="button"
+                  className={`admin-tab${activeTab === key ? ' is-active' : ''}`}
                   onClick={() => setActiveTab(key)}
                   aria-current={activeTab === key ? 'page' : undefined}
                 >
@@ -1337,25 +1319,10 @@ function Admin() {
             </div>
           ))}
         </nav>
+        <p className="admin-tabs-note">
+          งานประจำของครู (เช็คชื่อ คะแนน ตารางสอน รายชื่อนักเรียน ชุมนุม) อยู่ที่ <a href="/teacher-hub">ระบบครู</a> · หน้านี้สำหรับเนื้อหาเว็บไซต์และสิทธิ์ผู้ใช้
+        </p>
 
-        <div className="admin-sidebar-footer mt-auto pt-4">
-          <div style={{ ...GLASS_CARD, padding: '0.9rem', marginBottom: '0.75rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {dbStatus === 'online' && <CheckCircle2 size={18} color="#22C55E" />}
-            {dbStatus === 'offline' && <AlertTriangle size={18} color="#EF4444" />}
-            {dbStatus === 'checking' && <Database size={18} color="#FB923C" />}
-            <div style={{ fontSize: '0.78rem' }}>
-              <div style={{ fontWeight: 700 }}>Firestore</div>
-              <div style={{ color: '#64748b' }}>{dbStatus === 'online' ? 'เชื่อมต่อแล้ว' : dbStatus === 'offline' ? 'ออฟไลน์' : 'กำลังตรวจสอบ...'}</div>
-            </div>
-          </div>
-          <button onClick={handleLogout} className="btn btn-outline-danger w-100 rounded-3 d-flex align-items-center justify-content-center gap-2 py-2" aria-label="ออกจากระบบ" title="ออกจากระบบ">
-            <LogOut size={16} /> ออกจากระบบ
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="admin-main" style={{ flex: 1, padding: '2.5rem 3rem', overflowY: 'auto' }}>
         <header className="mb-4">
           <h2 className="fw-bold mb-1">{tabTitle[activeTab]}</h2>
           <p className="text-muted mb-0">{tabDescription[activeTab]}</p>
@@ -1417,7 +1384,7 @@ function Admin() {
             <p className="text-muted mb-4">ใช้เมื่อต้องเพิ่มรูปจาก Google Drive หรืออัลบั้ม Google Photos</p>
             <div className="row g-3">
               <div className="col-md-4">
-                <div style={{ padding: '1.25rem', borderRadius: '18px', background: '#FFF7ED', borderLeft: '4px solid #FF6A01', height: '100%' }}>
+                <div style={{ padding: '1.25rem', borderRadius: '18px', background: '#FFF7ED', border: '1px solid #FED7AA', height: '100%' }}>
                   <div className="fw-bold mb-2">วิธีใช้รูปจาก Google Drive</div>
                   <div className="small text-muted" style={{ lineHeight: 1.6 }}>
                     1. อัปโหลดรูปไป Drive<br />
@@ -1428,7 +1395,7 @@ function Admin() {
                 </div>
               </div>
               <div className="col-md-4">
-                <div style={{ padding: '1.25rem', borderRadius: '18px', background: '#FFF7ED', borderLeft: '4px solid #FB923C', height: '100%' }}>
+                <div style={{ padding: '1.25rem', borderRadius: '18px', background: '#FFF7ED', border: '1px solid #FED7AA', height: '100%' }}>
                   <div className="fw-bold mb-2">วิธีใช้อัลบั้ม Google Photos</div>
                   <div className="small text-muted" style={{ lineHeight: 1.6 }}>
                     1. สร้างอัลบั้มใน Google Photos<br />
@@ -1439,7 +1406,7 @@ function Admin() {
                 </div>
               </div>
               <div className="col-md-4">
-                <div style={{ padding: '1.25rem', borderRadius: '18px', background: '#FFF7ED', borderLeft: '4px solid #F59E0B', height: '100%' }}>
+                <div style={{ padding: '1.25rem', borderRadius: '18px', background: '#FFF7ED', border: '1px solid #FED7AA', height: '100%' }}>
                   <div className="fw-bold mb-2">เคล็ดลับการใช้งาน</div>
                   <div className="small text-muted" style={{ lineHeight: 1.6 }}>
                     - กดปุ่ม <b>"ดูตัวอย่าง"</b> ทุกครั้งก่อนบันทึก<br />
@@ -2033,7 +2000,7 @@ function Admin() {
                 <h5 className="fw-bold mb-4">รายการกิจกรรม ({activities.length})</h5>
                 <div className="d-flex flex-column gap-2" style={{ maxHeight: '600px', overflowY: 'auto' }}>
                   {activities.map(a => (
-                    <div key={a.id} style={{ padding: '12px 14px', borderRadius: '12px', background: a.isHoliday ? '#FEE2E2' : '#FFF7ED', borderLeft: `5px solid ${a.isHoliday ? '#EF4444' : (a.color || '#FF6A01')}`, display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div key={a.id} style={{ padding: '12px 14px', borderRadius: '12px', background: a.isHoliday ? '#FEE2E2' : '#FFF7ED', border: `1px solid ${a.isHoliday ? '#FCA5A5' : '#FED7AA'}`, display: 'flex', gap: '12px', alignItems: 'center' }}>
                       <div style={{ minWidth: '95px' }}>
                         <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 700 }}>{a.date}</div>
                         {a.endDate && <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>→ {a.endDate}</div>}
@@ -2135,47 +2102,6 @@ function Admin() {
           </div>
         )}
 
-        {/* Timetable embed */}
-        {activeTab === 'timetable' && (
-          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
-            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-              <div>
-                <h5 className="fw-bold mb-1">📅 โปรแกรมจัดการตารางสอน</h5>
-                <p className="text-muted small mb-0">แก้ไขข้อมูลกลางของโรงเรียน นักเรียนและผู้ปกครองจะเห็นข้อมูลล่าสุดจากหน้าเดียวกัน</p>
-              </div>
-              <div className="d-flex gap-2">
-                <a href="/page/timetable" target="_blank" rel="noreferrer" className="btn btn-outline-primary fw-bold">
-                  <ExternalLink size={14} className="me-1" /> ดูหน้าตารางบนเว็บไซต์
-                </a>
-              </div>
-            </div>
-            <TimetableSmart />
-            <div className="alert alert-success small mt-3 mb-0">
-              <b>ข้อมูลเชื่อมกันแล้ว:</b> ตารางนี้บันทึกใน Firestore กลาง ไม่ผูกกับคอมพิวเตอร์เครื่องใดเครื่องหนึ่ง กด Export JSON เมื่อต้องการเก็บไฟล์สำรองเพิ่มเติม
-            </div>
-          </div>
-        )}
-
-        {/* Roster — students for attendance system */}
-        {activeTab === 'roster' && (
-          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
-            <div className="mb-3">
-              <h5 className="fw-bold mb-1">📋 รายชื่อนักเรียน (สำหรับระบบเช็คชื่อ)</h5>
-              <p className="text-muted small mb-0">เพิ่ม/แก้ไข/นำเข้ารายชื่อนักเรียนของแต่ละชั้น — ใช้ในหน้า /attendance</p>
-            </div>
-            <RosterManager />
-          </div>
-        )}
-        {/* Clubs / Activities / Scouts */}
-        {activeTab === 'clubs' && (
-          <div style={{ ...GLASS_CARD, padding: '1.5rem' }}>
-            <div className="mb-3">
-              <h5 className="fw-bold mb-1">🎯 ชุมนุม / กิจกรรม / ลูกเสือ</h5>
-              <p className="text-muted small mb-0">สร้างชุมนุม → เพิ่มสมาชิกข้ามชั้น → ครูเช็คชื่อที่หน้า /club-attendance</p>
-            </div>
-            <ClubsManager />
-          </div>
-        )}
         {/* Staff users */}
         {activeTab === 'staff' && canManageUsers && (
           <div className="row g-4">
@@ -2352,7 +2278,7 @@ function Admin() {
             </button>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Toast */}
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
@@ -2387,7 +2313,7 @@ function Admin() {
           </div>
         </div>
       )}
-    </div>
+    </SmartSchoolLayout>
   );
 }
 
