@@ -4,7 +4,7 @@ import {
   type ClassAcademicData,
   type AcademicStudentRecord,
 } from '../data/academicData';
-import { STUDENT_BIO_2569 } from '../data/studentBio2569';
+import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 export type SssPp6SheetKey =
@@ -34,10 +34,7 @@ export const SSS_PP6_SHEET_TABS: Array<{ key: SssPp6SheetKey; label: string }> =
   { key: 'achievement', label: '8. สรุปผลสัมฤทธิ์ทางการเรียน' },
 ];
 
-function splitNameParts(fullName: string, bio?: { prefix: string; firstName: string; lastName: string }) {
-  if (bio && bio.firstName) {
-    return { prefix: bio.prefix, firstName: bio.firstName, lastName: bio.lastName };
-  }
+function splitNameParts(fullName: string) {
   const prefixes = ['เด็กชาย', 'เด็กหญิง', 'ด.ช.', 'ด.ญ.', 'นาย', 'นางสาว', 'น.ส.'];
   let prefix = '';
   let rest = fullName.trim();
@@ -74,6 +71,8 @@ export default function SssPorPor6PrintBook({
   ranksMap: Record<string, { rank: number; total: number; gpa: number }>;
   defaultSheet?: SssPp6SheetKey;
 }) {
+  // citizen ID, birth date and guardian come from Firestore (staff-only), never the JS bundle
+  const studentDetails = useStudentDetails();
   const [sheet, setSheet] = useState<SssPp6SheetKey>(defaultSheet);
   const [includePage2Comment, setIncludePage2Comment] = useState<boolean>(true);
 
@@ -264,8 +263,8 @@ export default function SssPorPor6PrintBook({
             </thead>
             <tbody>
               {classData.students.map(st => {
-                const bio = STUDENT_BIO_2569[st.code];
-                const np = splitNameParts(st.name, bio);
+                const bio = findStudentDetails(studentDetails, st.code, st.name);
+                const np = splitNameParts(st.name);
                 return (
                   <tr key={st.code}>
                     <td style={{ ...cellTd, textAlign: 'center', fontWeight: 800 }}>{st.no}</td>
@@ -371,8 +370,7 @@ export default function SssPorPor6PrintBook({
             </thead>
             <tbody>
               {classData.students.map(st => {
-                const bio = STUDENT_BIO_2569[st.code];
-                const np = splitNameParts(st.name, bio);
+                const np = splitNameParts(st.name);
                 const tr = termRanks.t1[st.code] || { sum: 0, rank: st.no };
                 return (
                   <tr key={st.code}>
@@ -438,8 +436,7 @@ export default function SssPorPor6PrintBook({
             </thead>
             <tbody>
               {classData.students.map(st => {
-                const bio = STUDENT_BIO_2569[st.code];
-                const np = splitNameParts(st.name, bio);
+                const np = splitNameParts(st.name);
                 const tr = termRanks.t2[st.code] || { sum: 0, rank: st.no };
                 return (
                   <tr key={st.code}>
@@ -505,8 +502,7 @@ export default function SssPorPor6PrintBook({
             </thead>
             <tbody>
               {classData.students.map(st => {
-                const bio = STUDENT_BIO_2569[st.code];
-                const np = splitNameParts(st.name, bio);
+                const np = splitNameParts(st.name);
                 const tr = termRanks.ex[st.code] || { sum: 0, rank: st.no };
                 return (
                   <tr key={st.code}>
@@ -564,8 +560,7 @@ export default function SssPorPor6PrintBook({
             </thead>
             <tbody>
               {classData.students.map(st => {
-                const bio = STUDENT_BIO_2569[st.code];
-                const np = splitNameParts(st.name, bio);
+                const np = splitNameParts(st.name);
                 const actCode = st.activityResult === 'ผ่าน' ? '2 (ผ่าน)' : '1 (ไม่ผ่าน)';
                 const readCode = st.readThinkResult === 'ดีเยี่ยม' ? '3 (ดีเยี่ยม)' : st.readThinkResult === 'ดี' ? '2 (ดี)' : '1 (ผ่าน)';
                 const traitCode = st.traitResult === 'ดีเยี่ยม' ? '3 (ดีเยี่ยม)' : st.traitResult === 'ดี' ? '2 (ดี)' : '1 (ผ่าน)';
@@ -688,7 +683,7 @@ export default function SssPorPor6PrintBook({
           - แผ่นที่ 2 (Cols U-AK): ความคิดเห็นของครูประจำชั้น (ระหว่างเรียน 1 / 2) + ความคิดเห็นของผู้ปกครอง (ระหว่างเรียน 1 / 2)
           ===================================================================== */}
       {showStudentReports && targetStudents.map((student, idx) => {
-        const bio = STUDENT_BIO_2569[student.code];
+        const bio = findStudentDetails(studentDetails, student.code, student.name);
         const gpaStats = calculateStudentGPA(student, classData.subjects, true);
         const rankInfo = ranksMap[student.code] || { rank: idx + 1, total: classData.students.length, gpa: gpaStats.gpa };
         const isLastStudent = idx === targetStudents.length - 1;

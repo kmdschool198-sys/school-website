@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ClassAcademicData, AcademicSubject } from '../data/academicData';
-import { STUDENT_BIO_2569 } from '../data/studentBio2569';
+import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 export type SssPp5SheetKey =
@@ -107,6 +107,8 @@ export default function SssPorPor5PrintBook({
   activeSheet?: SssPp5SheetKey;
   onSelectSheet?: (s: SssPp5SheetKey) => void;
 }) {
+  // citizen ID, birth date and guardian come from Firestore (staff-only), never the JS bundle
+  const studentDetails = useStudentDetails();
   const [internalSheet, setInternalSheet] = useState<SssPp5SheetKey>('all_full');
   const sheet = controlledSheet ?? internalSheet;
   const setSheet = (s: SssPp5SheetKey) => {
@@ -478,7 +480,7 @@ export default function SssPorPor5PrintBook({
             </thead>
             <tbody>
               {currentClass.students.map(st => {
-                const bio = STUDENT_BIO_2569[st.code];
+                const bio = findStudentDetails(studentDetails, st.code, st.name);
                 const sc = st.scores[currentSubject.code] || { coursework: 0, finalExam: 0, total: 0, grade: '0' };
                 const sp = splitSssCoursework(sc.coursework);
                 return (
@@ -741,7 +743,7 @@ export default function SssPorPor5PrintBook({
             </thead>
             <tbody>
               {currentClass.students.map(st => {
-                const bio = STUDENT_BIO_2569[st.code];
+                const bio = findStudentDetails(studentDetails, st.code, st.name);
                 const sc = st.scores[currentSubject.code] || { coursework: 0, finalExam: 0, total: 0, grade: '0' };
                 const sp = splitSssCoursework(sc.coursework);
                 return (
