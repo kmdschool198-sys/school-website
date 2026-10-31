@@ -8,7 +8,6 @@ import {
 import { Link } from 'react-router-dom';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import '../App.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 

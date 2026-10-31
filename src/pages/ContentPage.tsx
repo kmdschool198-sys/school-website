@@ -12,7 +12,6 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION, SCHOOL_EMAIL, SCHOOL_PHONE } from '../config/siteLinks';
 import BranchPersonnel from '../components/BranchPersonnel';
-import '../App.css';
 import { sidebarMenus, pageContent } from '../data/pageContent';
 import { getDirectImageUrl, getDrivePreviewUrl } from '../utils/imageUtils';
 import DriveImage from '../components/DriveImage';

@@ -70,8 +70,6 @@ import {
   type StaffManageRole,
   type StaffProfile,
 } from '../utils/teacherAuth';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '../App.css';
 
 interface Post {
   id: string;

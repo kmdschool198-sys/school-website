@@ -5,7 +5,6 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, MapPin, Clock, 
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import DriveImage from '../components/DriveImage';
-import '../App.css';
 import { DEFAULT_ACTIVITIES, COLOR_ACTIVITY } from '../data/defaultActivities';
 
 interface Post {

@@ -374,3 +374,18 @@ test('Suite 7: Score saves are per cell, not whole-school overwrites', async (t)
     assert.deepEqual(added.scores, {});
   });
 });
+
+// -------------------------------------------------------------
+// Test Suite 8: Global styles load for every (lazy-loaded) page
+// -------------------------------------------------------------
+test('Suite 8: Site-wide CSS is imported once, at the entry, in cascade order', () => {
+  const main = fs.readFileSync(path.join(rootDir, 'src', 'main.tsx'), 'utf-8');
+  const order = ["'./index.css'", "'./App.css'", "'bootstrap/dist/css/bootstrap.min.css'"].map(s => main.indexOf(s));
+  assert.ok(order.every(i => i >= 0), 'main.tsx imports index.css, App.css and Bootstrap');
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'index.css, then App.css, then Bootstrap');
+
+  // a CSS import inside a lazy page only loads when that page is opened (e.g. Bootstrap only on /admin)
+  const pagesDir = path.join(rootDir, 'src', 'pages');
+  const offenders = fs.readdirSync(pagesDir).filter(f => /import\s+['"][^'"]+\.css['"]/.test(fs.readFileSync(path.join(pagesDir, f), 'utf-8')));
+  assert.deepEqual(offenders, [], `pages importing CSS: ${offenders.join(', ')}`);
+});
