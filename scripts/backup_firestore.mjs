@@ -11,6 +11,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 const root = process.cwd();
 
 const db = adminDb();
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'web-site-kmd';
 
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const outDir = path.join(root, 'private', 'backups', `firestore-${stamp}`);

@@ -16,7 +16,8 @@
     "backfill:links": "node scripts/backfill_links.mjs",
     "import:calendar": "node scripts/import_school_calendar.mjs",
     "sync:facebook": "node scripts/sync_facebook_posts.mjs",
-    "pdpa:retention-review": "node scripts/pdpa_retention_review.mjs"
+    "pdpa:retention-review": "node scripts/pdpa_retention_review.mjs",
+    "migrate:academic-scores": "node scripts/migrate_academic_scores.mjs"
   },
   "dependencies": {
     "bootstrap": "^5.0.2",
