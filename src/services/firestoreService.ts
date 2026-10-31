@@ -8,9 +8,37 @@ import {
 import { db } from '../firebase';
 import type { UnifiedClassRoster } from '../utils/useSchoolRoster';
 import type { BehaviorLogEntry } from '../pages/BehaviorPage';
-import type { DailyDutyMeta } from '../pages/DutyPage';
-import type { DailyLunchMeta } from '../pages/LunchPage';
 import type { ClassAcademicData } from '../data/academicData';
+
+// Daily records the old lunch and duty pages wrote to config/daily_lunch and config/daily_duty.
+// Those pages are now plain attendance reports, but the saved records stay readable here.
+export interface DailyLunchMeta {
+  date: string;
+  mainDish1: string;
+  mainDish2: string;
+  dessertOrFruit: string;
+  riceType: string;
+  caloriesKcal: number;
+  inspectTeacher: string;
+  cookName: string;
+  tasteRating: 'ดีมาก' | 'ดี' | 'พอใช้';
+  hygieneRating: 'ดีมาก' | 'ดี' | 'พอใช้';
+  quantityRating: 'เพียงพอ' | 'ไม่เพียงพอ';
+  note: string;
+  updatedAt?: number;
+}
+
+export interface DailyDutyMeta {
+  date: string;
+  dutyLeader: string;
+  dutyTeachers: string;
+  gateDutyMorning: string;
+  gateDutyEvening: string;
+  flagCeremonyStatus: 'เรียบร้อยดีมาก' | 'เรียบร้อย' | 'ปรับปรุง';
+  overallIncident: string;
+  zoneScores: Record<string, { rating: number; note: string }>;
+  updatedAt?: number;
+}
 
 // ==========================================
 // CENTRAL FIRESTORE CONSTANTS & TYPES
