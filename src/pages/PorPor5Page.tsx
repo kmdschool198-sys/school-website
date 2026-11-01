@@ -10,6 +10,7 @@ import TeacherLoginGate from '../components/TeacherLoginGate';
 import { canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
 import { useAssessmentPlans, useGradingStatus } from '../utils/assessmentStorage';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
+import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { DEFAULT_ACTIVITIES } from '../data/defaultActivities';
 import { attendanceCount, attendedHours, isUnderAttendance, termRange, type AttendanceDay } from '../utils/attendanceHours';
 import { READ_ITEMS, TRAIT_ITEMS } from '../utils/assessment';
@@ -59,6 +60,7 @@ function blankScore(hours: number) {
 function PorPor5Content() {
   const { classesData, loaded: scoresLoaded, updateStudentScore } = useAcademicData();
   const { classes: rosterClasses } = useSchoolRoster();
+  const studentDetails = useStudentDetails(); // birth dates for the public results lookup (staff-only)
   const auth = useTeacherAuth();
   const { plans, savePlan } = useAssessmentPlans();
   const { status: gradingStatus } = useGradingStatus();
@@ -231,6 +233,8 @@ function PorPor5Content() {
       const announcementId = `acad_${currentClass.classId}_2569_1`;
       const ranksMap = calculateClassRanks(currentClass.students, currentClass.subjects);
       const batch = writeBatch(db);
+      const publishedAt = Date.now();
+      const noBirthDate: string[] = [];
 
       const subjectsMeta = currentClass.subjects.map(s => ({
         name: `${s.code} ${s.name}`,
@@ -243,7 +247,7 @@ function PorPor5Content() {
         id: announcementId,
         title: `ประกาศผลการเรียน (${semesterLabel}) — ชั้น ${currentClass.className}`,
         className: `${currentClass.shortName}/${currentClass.room}`,
-        publishedAt: Date.now(),
+        publishedAt,
         visible: true,
         recordCount: currentClass.students.length,
         subjects: subjectsMeta,
@@ -257,19 +261,26 @@ function PorPor5Content() {
           if (total !== undefined) scoresObj[`${s.code} ${s.name}`] = total;
         }
         const rInfo = ranksMap[st.code];
-        const lookupId = resultLookupDocId(announcementId, normalizedCode);
+        // found with code + birth date; a student without a birth date on file cannot be looked up
+        const birthDate = findStudentDetails(studentDetails, st.code, st.name)?.birthDate;
+        const lookupId = birthDate ? await resultLookupDocId(announcementId, normalizedCode, birthDate) : null;
+        if (!lookupId) { noBirthDate.push(st.name); continue; }
         batch.set(doc(db, 'result_lookup', lookupId), {
           announcementId,
           code: normalizedCode,
           name: st.name,
           scores: scoresObj,
-          rank: rInfo?.rank || st.no,
           note: `เกรดเฉลี่ย (GPA): ${rInfo ? rInfo.gpa.toFixed(2) : '-'} · คุณลักษณะฯ: ${st.traitResult}`,
+          className: `${currentClass.shortName}/${currentClass.room}`,
+          publishedAt,
+          visible: true, // firestore.rules lets visitors read only visible results
+          recordCount: currentClass.students.length,
         });
       }
 
       await batch.commit();
-      toast.success(`เผยแพร่ผลสอบชั้น ${currentClass.shortName}/1 ขึ้นหน้าเว็บ /results สำเร็จ!`);
+      toast.success(`เผยแพร่ผลสอบชั้น ${currentClass.shortName}/1 ขึ้นหน้าเว็บ /results แล้ว (ค้นด้วยเลขประจำตัว + วันเกิด)` +
+        (noBirthDate.length ? ` · ไม่มีวันเกิดในระบบ ${noBirthDate.length} คน จึงยังค้นไม่ได้: ${noBirthDate.slice(0, 3).join(', ')}` : ''));
     } catch (err: any) {
       toast.error('เผยแพร่ผลสอบออนไลน์ไม่สำเร็จ: ' + (err?.message || err));
     } finally {

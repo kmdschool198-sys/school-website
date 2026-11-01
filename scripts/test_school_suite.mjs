@@ -738,3 +738,21 @@ test('Suite 20: student record rows, GPA over decided grades, earlier years by c
   assert.equal(r.findStudentInYear(saved, '1111'), null);
   assert.deepEqual(r.yearsBack('2569', 3), ['2568', '2567', '2566']);
 });
+
+// -------------------------------------------------------------
+// Test Suite 21: online results need the student code AND birth date
+// -------------------------------------------------------------
+test('Suite 21: result lookup id depends on code and birth date, never exposes them', async () => {
+  const { resultLookupDocId, normalizeBirthDate } = await import('../src/utils/resultLookup.ts');
+  assert.equal(normalizeBirthDate('1/2/2555'), '01/02/2555');
+  assert.equal(normalizeBirthDate(' 01 / 02 / 2555 '), '01/02/2555');
+  assert.equal(normalizeBirthDate('2012-02-01'), null);
+  assert.equal(normalizeBirthDate('32/01/2555'), null);
+
+  const a = await resultLookupDocId('acad_m1_2569_1', '3203', '1/2/2555');
+  assert.equal(a, await resultLookupDocId('acad_m1_2569_1', ' 3203 ', '01/02/2555'), 'same student, same id');
+  assert.notEqual(a, await resultLookupDocId('acad_m1_2569_1', '3203', '02/02/2555'), 'wrong birth date, other id');
+  assert.notEqual(a, await resultLookupDocId('acad_m1_2569_1', '3204', '01/02/2555'), 'next code, other id');
+  assert.ok(a.startsWith('acad_m1_2569_1__') && !a.includes('3203') && !a.includes('2555'), 'id shows neither code nor birth date');
+  assert.equal(await resultLookupDocId('acad_m1_2569_1', '3203', ''), null, 'no birth date, no lookup');
+});

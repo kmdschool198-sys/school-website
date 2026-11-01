@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { THAI_MONTHS } from '../utils/dates';
 import { ChevronLeft, Search, Calendar, X as XIcon, FileText, Award, Printer } from 'lucide-react';
 import type { PublicResultAnnouncement, ResultLookupDoc, ResultRow } from '../data/results';
 import { normalizeResultCode, resultLookupDocId, totalScore, pctColor } from '../data/results';
@@ -22,6 +23,8 @@ export default function ResultsPage() {
   const [announcements, setAnnouncements] = useState<PublicResultAnnouncement[]>([]);
   const [selected, setSelected] = useState<PublicResultAnnouncement | null>(null);
   const [code, setCode] = useState('');
+  // birth date as day / month / Buddhist year: results open only with code + birth date
+  const [birth, setBirth] = useState({ day: '', month: '', year: '' });
   const [foundRow, setFoundRow] = useState<ResultRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -76,9 +79,11 @@ export default function ResultsPage() {
   const lookup = async () => {
     const normalizedCode = normalizeResultCode(code);
     if (!selected || !normalizedCode) return;
+    const lookupId = await resultLookupDocId(selected.id, normalizedCode, `${birth.day}/${birth.month}/${birth.year}`);
+    if (!lookupId) { setFoundRow(null); setNotFound(true); return; }
     setLookupLoading(true);
     try {
-      const snap = await getDoc(doc(db, 'result_lookup', resultLookupDocId(selected.id, normalizedCode)));
+      const snap = await getDoc(doc(db, 'result_lookup', lookupId));
       if (snap.exists()) {
         const rec = snap.data() as ResultLookupDoc;
         if (rec.announcementId === selected.id && normalizeResultCode(rec.code) === normalizedCode) {
@@ -346,19 +351,36 @@ export default function ResultsPage() {
                       <Search size={16} /> {lookupLoading ? 'กำลังค้นหา' : 'ค้นหา'}
                     </button>
                   </div>
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>วันเดือนปีเกิด</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr 1.2fr', gap: 8 }}>
+                      <select aria-label="วันเกิด" value={birth.day} onChange={e => { setBirth(b => ({ ...b, day: e.target.value })); setNotFound(false); }} style={birthSelect}>
+                        <option value="">วัน</option>
+                        {Array.from({ length: 31 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+                      </select>
+                      <select aria-label="เดือนเกิด" value={birth.month} onChange={e => { setBirth(b => ({ ...b, month: e.target.value })); setNotFound(false); }} style={birthSelect}>
+                        <option value="">เดือน</option>
+                        {THAI_MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                      </select>
+                      <select aria-label="ปีเกิด (พ.ศ.)" value={birth.year} onChange={e => { setBirth(b => ({ ...b, year: e.target.value })); setNotFound(false); }} style={birthSelect}>
+                        <option value="">ปี พ.ศ.</option>
+                        {BIRTH_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </div>
+                  </div>
                   {notFound && (
                     <div style={{
                       marginTop: 14, padding: '12px 14px', background: '#FEE2E2', color: '#DC2626',
                       borderRadius: 10, fontSize: '0.9rem', fontWeight: 700,
                     }}>
-                      ❌ ไม่พบเลขประจำตัว <b>{code}</b> ในประกาศนี้ — ตรวจสอบหมายเลขอีกครั้ง
+                      ❌ ไม่พบผลของเลขประจำตัว <b>{code}</b> กับวันเกิดนี้ — ตรวจสอบเลขประจำตัวและวันเดือนปีเกิดอีกครั้ง
                     </div>
                   )}
                   <div style={{
                     marginTop: 16, padding: '10px 14px', background: '#FEF3C7', color: '#92400E',
                     borderRadius: 10, fontSize: '0.8rem',
                   }}>
-                    💡 เลขประจำตัวอยู่ในใบรายชื่อนักเรียน หรือถามคุณครู ถ้าจำไม่ได้
+                    💡 ใช้เลขประจำตัวนักเรียนคู่กับวันเดือนปีเกิด (พ.ศ.) เพื่อไม่ให้คนอื่นเปิดดูผลของนักเรียนได้ · เลขประจำตัวอยู่ในใบรายชื่อนักเรียน หรือถามคุณครู
                   </div>
                 </div>
               </>
@@ -488,7 +510,6 @@ function ReportCard({ announcement, row, onBack }: {
 
         {/* Stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
-          <Stat label="🏆 อันดับในชั้น" value={row.rank ? `${row.rank} / ${announcement.recordCount}` : '-'} />
           <Stat label="📊 คะแนนรวม" value={`${t.sum.toFixed(1)} / ${t.max}`} />
           <Stat label="💯 ร้อยละ" value={`${t.pct.toFixed(1)}%`} />
         </div>
@@ -548,3 +569,12 @@ function Stat({ label, value }: { label: string; value: string }) {
 const th: React.CSSProperties = { padding: '8px 10px', fontWeight: 800, fontSize: '0.82rem', borderRight: '1px solid rgba(255,255,255,0.2)' };
 const td: React.CSSProperties = { padding: '8px 10px', borderRight: '1px solid #E2E8F0' };
 const tdCenter: React.CSSProperties = { ...td, textAlign: 'center' };
+
+const BIRTH_YEARS = (() => {
+  const thisYear = new Date().getFullYear() + 543;
+  return Array.from({ length: 20 }, (_, i) => thisYear - 3 - i); // ages 3 to 22
+})();
+
+const birthSelect: React.CSSProperties = {
+  padding: '11px 10px', borderRadius: 12, border: '2px solid #E2E8F0', fontSize: '1rem', fontWeight: 700, background: 'white',
+};

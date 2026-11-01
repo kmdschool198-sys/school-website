@@ -15,6 +15,7 @@ import { syncDraftResultRows } from '../utils/studentRosterSync';
 import { toast } from './GlobalToast';
 import ExcelPasteModal from './ExcelPasteModal';
 import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
+import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 
 const KG = [{ id: 'kg_a2_1', label: 'อ.2/1' }, { id: 'kg_a3_1', label: 'อ.3/1' }];
 
@@ -46,25 +47,33 @@ async function deletePublicResult(announcementId: string) {
   ]);
 }
 
-async function syncPublicResult(result: ResultAnnouncement) {
+/**
+ * Publish an announcement. Each student's row is found with code + birth date (see
+ * resultLookupDocId); the class rank stays private. Returns the names that could not be
+ * published because no birth date is on file.
+ */
+async function syncPublicResult(result: ResultAnnouncement, birthOf: (row: ResultRow) => string | undefined): Promise<string[]> {
   await deletePublicResult(result.id);
-  if (!result.visible) return;
+  if (!result.visible) return [];
 
   const records = result.records
     .map(row => {
       const publicRow = { ...row };
       delete publicRow.studentId;
-      return { ...publicRow, code: normalizeResultCode(publicRow.code) };
+      delete publicRow.rank;
+      return { row, publicRow: { ...publicRow, code: normalizeResultCode(publicRow.code) } };
     })
-    .filter(row => row.code);
+    .filter(r => r.publicRow.code);
+  const withIds = await Promise.all(records.map(async r => ({ ...r, id: await resultLookupDocId(result.id, r.publicRow.code, birthOf(r.row) || '') })));
+  const missing = withIds.filter(r => !r.id).map(r => r.publicRow.name);
 
   await commitBatched([
     batch => batch.set(
       doc(db, 'result_announcements', result.id),
       publicAnnouncementFromResult(result, records.length),
     ),
-    ...records.map(row => (batch: ReturnType<typeof writeBatch>) => batch.set(
-      doc(db, 'result_lookup', resultLookupDocId(result.id, row.code)),
+    ...withIds.filter(r => r.id).map(({ publicRow: row, id }) => (batch: ReturnType<typeof writeBatch>) => batch.set(
+      doc(db, 'result_lookup', id!),
       {
         ...row,
         announcementId: result.id,
@@ -75,9 +84,15 @@ async function syncPublicResult(result: ResultAnnouncement) {
       },
     )),
   ]);
+  return missing;
 }
 
 export default function ResultsManager() {
+  const studentDetails = useStudentDetails();
+  const birthOf = (row: ResultRow) => findStudentDetails(studentDetails, row.studentId || row.code, row.name)?.birthDate;
+  const reportMissing = (missing: string[]) => {
+    if (missing.length) toast.warn(`ไม่มีวันเกิดในระบบ ${missing.length} คน จึงค้นผลออนไลน์ไม่ได้: ${missing.slice(0, 3).join(', ')}`);
+  };
   const [items, setItems] = useState<ResultAnnouncement[]>([]);
   const [editing, setEditing] = useState<ResultAnnouncement | null>(null);
   const [classes, setClasses] = useState<ClassRoster[]>([]);
@@ -138,7 +153,7 @@ export default function ResultsManager() {
       const records = a.records.map(r => ({ ...r, rank: rankMap.get(r.code) }));
       const next = { ...a, records };
       await setDoc(doc(db, 'results', a.id), next);
-      await syncPublicResult(next);
+      reportMissing(await syncPublicResult(next, birthOf));
       setEditing(null);
     } catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };
@@ -147,7 +162,7 @@ export default function ResultsManager() {
     try {
       const next = { ...a, visible: !a.visible };
       await setDoc(doc(db, 'results', a.id), next);
-      await syncPublicResult(next);
+      reportMissing(await syncPublicResult(next, birthOf));
     }
     catch (e: any) { alert('❌ ' + (e?.message || e)); }
   };

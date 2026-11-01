@@ -46,13 +46,7 @@ export interface ResultLookupDoc extends ResultRow {
   recordCount: number;
 }
 
-export function normalizeResultCode(code: string): string {
-  return code.trim();
-}
-
-export function resultLookupDocId(announcementId: string, code: string): string {
-  return `${announcementId}__${encodeURIComponent(normalizeResultCode(code))}`;
-}
+export { normalizeResultCode, normalizeBirthDate, resultLookupDocId } from '../utils/resultLookup';
 
 export function publicAnnouncementFromResult(
   result: ResultAnnouncement,
