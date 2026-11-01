@@ -45,7 +45,7 @@ const INSTANT_DOCS: Array<{
   color: string;
 }> = [
   { id: 'milk', label: 'บันทึกดื่มนม (รายเดือน)', icon: '🥛', orientation: 'landscape', color: '#2563EB' },
-  { id: 'brush', label: 'บันทึกแปรงฟัน (รายเดือน)', icon: '🪥', orientation: 'landscape', color: '#0891B2' },
+  { id: 'brush', label: 'บันทึกแปรงฟัน (รายเดือน)', icon: '🦷', orientation: 'landscape', color: '#0891B2' },
   { id: 'lunch', label: 'บันทึกอาหารกลางวัน (รายเดือน)', icon: '🍱', orientation: 'landscape', color: '#EA580C' },
   { id: 'duty', label: 'บันทึกเวรความสะอาด (รายเดือน)', icon: '🧹', orientation: 'landscape', color: '#16A34A' },
   { id: 'attendance', label: 'บันทึกเวลาเรียน/เช็คชื่อ (รายเดือน)', icon: '📋', orientation: 'landscape', color: '#4F46E5' },

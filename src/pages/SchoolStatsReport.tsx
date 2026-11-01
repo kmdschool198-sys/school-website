@@ -202,7 +202,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
           <StatCard label="นักเรียนทั้งหมด" value={schoolSummary.totalStudents} icon={<Users size={24} />} color="#FF6A01" />
           <StatCard label="มาเรียนเฉลี่ยทั้งโรงเรียน" value={`${schoolSummary.avgAttRate}%`} icon={<CheckCircle size={24} />} color="#10B981" />
           <StatCard label="ยอดรวมการแจกนม" value={`${schoolSummary.totalMilk} กล่อง`} icon="🥛" color="#3B82F6" />
-          <StatCard label="ยอดรวมการแปรงฟัน" value={`${schoolSummary.totalBrush} ครั้ง`} icon="🪥" color="#06B6D4" />
+          <StatCard label="ยอดรวมการแปรงฟัน" value={`${schoolSummary.totalBrush} ครั้ง`} icon="🦷" color="#06B6D4" />
         </div>
 
         {/* Detailed Table */}
@@ -225,7 +225,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
                     <th style={thCol}>มาเรียนเฉลี่ย/วัน</th>
                     <th style={thCol}>อัตราการมาเรียน</th>
                     <th style={thCol}>🥛 ยอดรวมดื่มนม</th>
-                    <th style={thCol}>🪥 ยอดรวมแปรงฟัน</th>
+                    <th style={thCol}>🦷 ยอดรวมแปรงฟัน</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -11,7 +11,7 @@ const MILK: TallyConfig = {
   rule: <>นักเรียนที่ <b>"มาเรียน"</b> = ได้รับนม</>,
   printFormType: 'milk',
   csvFilePrefix: 'รายงานนม',
-  extraLink: { to: '/brush-log', label: '🪥 → แปรงฟัน' },
+  extraLink: { to: '/brush-log', label: '🦷 → แปรงฟัน' },
 };
 
 export default function MilkReportPage() {

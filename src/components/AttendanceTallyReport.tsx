@@ -12,10 +12,10 @@ import { SCHOOL_NAME } from '../config/siteLinks';
 
 // A daily count that comes straight from attendance, with nothing extra for teachers to fill in:
 // a student marked "มาเรียน" counts (drank milk, ate lunch, did duty) unless the record was
-// flagged otherwise. Used by the milk, lunch and duty pages.
+// flagged otherwise. Used by the milk, brushing, lunch and duty pages.
 
-type ExceptionFlag = 'noMilk' | 'noLunch' | 'noDuty';
-interface AttRecord { status: string; noMilk?: boolean; noLunch?: boolean; noDuty?: boolean }
+type ExceptionFlag = 'noMilk' | 'noBrush' | 'noLunch' | 'noDuty';
+interface AttRecord { status: string; noMilk?: boolean; noBrush?: boolean; noLunch?: boolean; noDuty?: boolean }
 interface AttDoc { classId: string; date: string; records: Record<string, AttRecord>; }
 type CsvPeriod = 'month' | 'year';
 
@@ -32,7 +32,7 @@ export interface TallyConfig {
   unit: string;
   /** Explains the rule in the banner, e.g. <>นักเรียนที่ <b>"มาเรียน"</b> = ได้รับนม</> */
   rule: React.ReactNode;
-  printFormType: 'milk' | 'lunch' | 'duty';
+  printFormType: 'milk' | 'brush' | 'lunch' | 'duty';
   /** Budget per counted student per day (baht), shown when set */
   ratePerHead?: number;
   csvFilePrefix: string;

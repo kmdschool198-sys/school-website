@@ -717,7 +717,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                           }}
                         >
-                          🪥 {r?.noBrush ? 'ไม่แปรงฟัน' : 'แปรงฟัน'}
+                          🦷 {r?.noBrush ? 'ไม่แปรงฟัน' : 'แปรงฟัน'}
                         </button>
                       </div>
                     )}

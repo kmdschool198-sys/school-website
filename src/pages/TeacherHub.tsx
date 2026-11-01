@@ -37,7 +37,7 @@ const SMART_APPS: SmartAppIcon[] = [
   { id: 'home-visit', to: '/home-visit', label: 'เยี่ยมบ้านนักเรียน', subtitle: 'คัดกรองทุน กสศ. & รูปบ้าน', category: 'student', emoji: '🏠', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
   { id: 'homeroom', to: '/homeroom', label: 'กิจกรรมโฮมรูม', subtitle: 'อบรมหน้าเสาธง/เช้า', category: 'daily', emoji: '🏫', gradient: 'linear-gradient(135deg,#38BDF8,#0284C7)' },
   { id: 'milk-report', to: '/milk-report', label: 'รายงานดื่มนม', subtitle: 'ดึงจากเช็คชื่ออัตโนมัติ', category: 'daily', emoji: '🥛', gradient: 'linear-gradient(135deg,#60A5FA,#3B82F6)' },
-  { id: 'brush-log', to: '/brush-log', label: 'บันทึกแปรงฟัน', subtitle: 'หลังอาหารกลางวัน', category: 'daily', emoji: '🪥', gradient: 'linear-gradient(135deg,#06B6D4,#0891B2)' },
+  { id: 'brush-log', to: '/brush-log', label: 'รายงานแปรงฟัน', subtitle: 'ดึงจากเช็คชื่ออัตโนมัติ', category: 'daily', emoji: '🦷', gradient: 'linear-gradient(135deg,#06B6D4,#0891B2)' },
   { id: 'saving', to: '/saving', label: 'ระบบออมทรัพย์', subtitle: 'ฝาก-ถอนรายวัน', category: 'daily', emoji: '🐷', gradient: 'linear-gradient(135deg,#34D399,#10B981)' },
   { id: 'body-metrics', to: '/body-metrics', label: 'น้ำหนัก-ส่วนสูง', subtitle: 'คำนวณเกณฑ์ BMI', category: 'student', emoji: '⚖️', gradient: 'linear-gradient(135deg,#14B8A6,#0D9488)' },
   { id: 'club-attendance', to: '/club-attendance', label: 'เช็คชื่อชุมนุม', subtitle: 'ชุมนุม & ลูกเสือ', category: 'student', emoji: '🎯', gradient: 'linear-gradient(135deg,#0D9488,#115E59)' },
