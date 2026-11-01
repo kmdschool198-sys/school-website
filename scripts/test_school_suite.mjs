@@ -615,3 +615,17 @@ test('Suite 14: scores come from Firestore, the bundle only carries class struct
     assert.deepEqual(view.find(c => c.classId === 'p1').students, []);
   });
 });
+
+// -------------------------------------------------------------
+// Test Suite 15: score entry waits for the score document
+// -------------------------------------------------------------
+test('Suite 15: no score is saved before the scores have loaded', async () => {
+  const { scoresSnapshotReady } = await import('../src/utils/academicScores.ts');
+  // a new device: nothing cached yet, the server has not answered — editing now would save blanks
+  assert.equal(scoresSnapshotReady(false, true), false);
+  // a copy this device synced before, or anything from the server, is safe to edit
+  assert.equal(scoresSnapshotReady(true, true), true);
+  assert.equal(scoresSnapshotReady(true, false), true);
+  // the server says there is no score document yet: nothing to overwrite
+  assert.equal(scoresSnapshotReady(false, false), true);
+});

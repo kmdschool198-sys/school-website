@@ -16,10 +16,10 @@ export default function RemedialPage() {
 }
 
 function Remedial({ userName, isRegistrar }: { userName: string; isRegistrar: boolean }) {
-  const { classesData, updateStudentScore, updateStudentActivities } = useAcademicData();
+  const { classesData, loaded: scoresLoaded, updateStudentScore, updateStudentActivities } = useAcademicData();
   const { status, setEntryOpen } = useGradingStatus();
   const [classFilter, setClassFilter] = useState('all');
-  const canEdit = isRegistrar && !status.entryOpen;
+  const canEdit = isRegistrar && !status.entryOpen && scoresLoaded;
 
   const gradeCases = useMemo(() => classesData.flatMap(cls => cls.students.flatMap(st => cls.subjects
     .filter(subj => needsRemedial(st.scores[subj.code]?.grade))

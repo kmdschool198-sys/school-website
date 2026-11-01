@@ -55,12 +55,14 @@ function blankScore(hours: number) {
 }
 
 function PorPor5Content() {
-  const { classesData, updateStudentScore } = useAcademicData();
+  const { classesData, loaded: scoresLoaded, updateStudentScore } = useAcademicData();
   const auth = useTeacherAuth();
   const { plans, savePlan } = useAssessmentPlans();
   const { status: gradingStatus } = useGradingStatus();
   // SGS: once งานทะเบียน closes score entry only registrars can change scores
-  const entryLocked = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
+  const closedByRegistrar = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
+  // nothing is editable until the score document has loaded, or a save would be built from blanks
+  const entryLocked = closedByRegistrar || !scoresLoaded;
   const [entryTab, setEntryTab] = useState<'scores' | 'items'>('scores');
   const [planTerm, setPlanTerm] = useState(0);
   const [showPlanEditor, setShowPlanEditor] = useState(false);
@@ -775,7 +777,12 @@ function PorPor5Content() {
             </button>
           ))}
         </div>
-        {entryLocked && (
+        {!scoresLoaded && (
+          <div role="status" className="no-print" style={{ background: '#E0F2FE', border: '1px solid #7DD3FC', color: '#075985', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontWeight: 700 }}>
+            กำลังโหลดคะแนนจากระบบ… กรอกได้เมื่อโหลดเสร็จ
+          </div>
+        )}
+        {closedByRegistrar && (
           <div role="status" className="no-print" style={{ background: '#FEF3C7', border: '1px solid #FCD34D', color: '#78350F', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontWeight: 700 }}>
             งานทะเบียนปิดการบันทึกผลการเรียนแล้ว — ดูคะแนนได้ แก้ไขไม่ได้ (ติดต่องานทะเบียน/วัดผล)
           </div>

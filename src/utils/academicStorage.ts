@@ -14,9 +14,11 @@ import {
   evaluationWrite,
   mergeWrite,
   scoreWrite,
+  scoresSnapshotReady,
   type RosterByClass,
   type ScoreOverrides,
 } from './academicScores';
+import { toast } from '../components/GlobalToast';
 import { activityOverall, courseworkFromDetail, detailHasMarks, itemsLevel, type ActivityMark } from './assessment';
 
 // Teachers' entered scores (see academicScores.ts for the storage model). The local copy is
@@ -46,13 +48,20 @@ async function saveCell(write: ScoreOverrides) {
 
 export function useAcademicData() {
   const [overrides, setOverrides] = useState<ScoreOverrides>(readCache);
+  // false until the score document is known; every save waits for it (see scoresSnapshotReady)
+  const [loaded, setLoaded] = useState(false);
+  const loadedRef = useRef(false);
   const { classes: unifiedRosters } = useSchoolRoster();
 
-  useEffect(() => onSnapshot(SCORES_DOC, snap => {
+  // metadata changes too, so a cache miss followed by the server's answer still marks it loaded
+  useEffect(() => onSnapshot(SCORES_DOC, { includeMetadataChanges: true }, snap => {
+    if (!scoresSnapshotReady(snap.exists(), snap.metadata.fromCache)) return;
     const server = (snap.exists() ? snap.data() : {}) as ScoreOverrides;
     const next = { scores: server.scores || {}, evaluations: server.evaluations || {} };
     writeCache(next);
     setOverrides(next);
+    loadedRef.current = true;
+    setLoaded(true);
   }), []);
 
   // live roster order per academic class (classId 'm1' etc.), so new or moved students show up
@@ -75,6 +84,10 @@ export function useAcademicData() {
   useEffect(() => { viewRef.current = classesData; }, [classesData]);
 
   const applyLocally = useCallback((write: ScoreOverrides) => {
+    if (!loadedRef.current) {
+      toast.warn('กำลังโหลดคะแนนจากระบบ — รอสักครู่แล้วค่อยกรอก');
+      return;
+    }
     setOverrides(prev => {
       const next = mergeWrite(prev, write);
       writeCache(next);
@@ -152,6 +165,8 @@ export function useAcademicData() {
 
   return {
     classesData,
+    /** true once the score document is known; edit nothing before that */
+    loaded,
     updateStudentScore,
     updateStudentEvaluation,
     updateStudentActivities,

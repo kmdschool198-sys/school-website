@@ -32,11 +32,13 @@ export default function PorPor6Page() {
 }
 
 function PorPor6Content() {
-  const { classesData, updateStudentScore, updateStudentEvaluation, updateStudentActivities, resetToDefault } = useAcademicData();
+  const { classesData, loaded: scoresLoaded, updateStudentScore, updateStudentEvaluation, updateStudentActivities, resetToDefault } = useAcademicData();
   const auth = useTeacherAuth();
   const { status: gradingStatus } = useGradingStatus();
   const { plans } = useAssessmentPlans();
-  const entryLocked = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
+  const closedByRegistrar = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
+  // nothing is editable until the score document has loaded, or a save would be built from blanks
+  const entryLocked = closedByRegistrar || !scoresLoaded;
   const [showActivities, setShowActivities] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string>('m1');
   const [semesterLabel, setSemesterLabel] = useState<string>('เทอม 1/2569 (ปัจจุบัน)');
@@ -361,7 +363,8 @@ function PorPor6Content() {
           </button>
           {showActivities && (
             <div style={{ padding: '0 12px 12px' }}>
-              {entryLocked && <div role="status" style={{ background: '#FEF3C7', color: '#78350F', borderRadius: 8, padding: '8px 12px', marginBottom: 8, fontWeight: 700 }}>งานทะเบียนปิดการบันทึกผลแล้ว — แก้ไขไม่ได้</div>}
+              {!scoresLoaded && <div role="status" style={{ background: '#E0F2FE', color: '#075985', borderRadius: 8, padding: '8px 12px', marginBottom: 8, fontWeight: 700 }}>กำลังโหลดคะแนนจากระบบ… กรอกได้เมื่อโหลดเสร็จ</div>}
+              {closedByRegistrar && <div role="status" style={{ background: '#FEF3C7', color: '#78350F', borderRadius: 8, padding: '8px 12px', marginBottom: 8, fontWeight: 700 }}>งานทะเบียนปิดการบันทึกผลแล้ว — แก้ไขไม่ได้</div>}
               <ActivityGrid classData={currentClass} locked={entryLocked}
                 onSave={(code, activities) => updateStudentActivities(currentClass.classId, code, activities)} />
             </div>

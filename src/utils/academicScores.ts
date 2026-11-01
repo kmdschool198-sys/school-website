@@ -18,6 +18,13 @@ export interface ScoreOverrides {
 /** Roster students per academic classId, in roster order (from the live school roster). */
 export type RosterByClass = Record<string, Array<{ code: string; name: string; gender?: 'male' | 'female' }>>;
 
+/**
+ * Whether a snapshot of the score document can be shown and edited: anything from the server,
+ * or a copy this device synced before. A cache miss on a new device (no data, from cache) is not:
+ * a save then is built from blanks and would overwrite the real cell.
+ */
+export const scoresSnapshotReady = (exists: boolean, fromCache: boolean) => exists || !fromCache;
+
 /** The write for one score cell: a nested object that setDoc merge applies as a single leaf. */
 export function scoreWrite(classId: string, studentCode: string, subjectCode: string, score: StudentSubjectScore): ScoreOverrides {
   return { scores: { [classId]: { [studentCode]: { [subjectCode]: score } } } };
