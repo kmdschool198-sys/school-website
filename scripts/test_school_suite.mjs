@@ -642,3 +642,20 @@ test('Suite 16: homeroom attendance is counted against the students recorded tha
   assert.deepEqual(homeroomCounts({ a: { status: 'present' }, b: { status: 'absent' }, c: { status: 'leave' } }), { presentCount: 1, totalCount: 3 });
   assert.deepEqual(homeroomCounts({}), { presentCount: 0, totalCount: 0 });
 });
+
+// -------------------------------------------------------------
+// Test Suite 17: attendance is only recorded for days that happened and were school days
+// -------------------------------------------------------------
+test('Suite 17: attendance date guard', async () => {
+  const { attendanceDateIssue } = await import('../src/utils/dates.ts');
+  const today = '2026-07-01';
+  assert.equal(attendanceDateIssue('2026-07-01', today), null);            // Wednesday, today
+  assert.equal(attendanceDateIssue('2026-06-30', today), null);            // a past school day
+  assert.equal(attendanceDateIssue('2026-07-26', today), 'future');        // the record found on ป.6/1
+  assert.equal(attendanceDateIssue('2026-06-28', today), 'weekend');       // Sunday
+  assert.equal(attendanceDateIssue('2026-06-27', today, { open: true }), null);   // Saturday make-up day
+  assert.equal(attendanceDateIssue('2026-06-30', today, { open: false }), 'closed');
+  assert.equal(attendanceDateIssue('2026-06-30', today, undefined, 'วันหยุดราชการ'), 'closed');
+  assert.equal(attendanceDateIssue('2026-02-30', today), 'invalid');
+  assert.equal(attendanceDateIssue('30/06/2026', today), 'invalid');
+});

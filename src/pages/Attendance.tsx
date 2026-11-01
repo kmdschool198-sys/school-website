@@ -12,6 +12,7 @@ import TeacherLoginGate from '../components/TeacherLoginGate';
 import { PageLoading } from '../components/PageState';
 import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 import { SCHOOL_NAME } from '../config/siteLinks';
+import { attendanceDateIssue } from '../utils/dates';
 
 type Status = 'present' | 'absent' | 'leave';
 interface Student { id: string; code?: string; name: string; emoji?: string; }
@@ -91,6 +92,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
 
   const [history, setHistory] = useState<AttDoc[]>([]); // for stats
   const [holidays, setHolidays] = useState<Record<string, string>>({}); // date -> holiday name
+  const [schoolDays, setSchoolDays] = useState<Record<string, { open?: boolean }>>({}); // school_calendar: make-up / closed days
   const [recentDocs, setRecentDocs] = useState<AttDoc[]>([]);
 
   // Load class roster from Firestore (subscribe) and merge with DMC master fallback
@@ -122,6 +124,25 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
       setRecords(snap.exists() ? (snap.data() as AttDoc).records || {} : {});
     });
   }, [classId, date]);
+
+  // school_calendar: Saturdays opened for make-up classes and weekdays closed by the school
+  useEffect(() => onSnapshot(collection(db, 'school_calendar'), snap => {
+    const map: Record<string, { open?: boolean }> = {};
+    snap.forEach(d => { map[d.id] = d.data() as { open?: boolean }; });
+    setSchoolDays(map);
+  }), []);
+
+  // One check before every attendance write: never for a day that has not happened, and only after
+  // a confirm for a weekend or closed day (a Sunday record for ป.6/1 was typed in three weeks early).
+  const dateAllowed = (d: string) => {
+    const issue = attendanceDateIssue(d, todayStr(), schoolDays[d], holidays[d]);
+    if (issue === 'invalid') { alert('รูปแบบวันที่ไม่ถูกต้อง — ต้องเป็น YYYY-MM-DD'); return false; }
+    if (issue === 'future') { alert(`ยังไม่ถึงวันที่ ${d} — บันทึกเช็คชื่อล่วงหน้าไม่ได้`); return false; }
+    if (issue === 'weekend' || issue === 'closed') {
+      return confirm(`${d} เป็น${issue === 'weekend' ? 'วันเสาร์-อาทิตย์' : 'วันหยุด/วันปิดเรียน'} — ยืนยันบันทึกเช็คชื่อวันนี้?`);
+    }
+    return true;
+  };
 
   // Load holidays from activities collection (where isHoliday=true)
   useEffect(() => {
@@ -256,7 +277,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
   const clearAll = () => setRecords({});
 
   const save = async () => {
-    if (!classId) return;
+    if (!classId || !dateAllowed(date)) return;
     setSaving(true);
     try {
       const id = `${classId}_${date}`;
@@ -333,7 +354,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
     if (!classId) return;
     const inp = prompt('เพิ่มประวัติของวันที่ (YYYY-MM-DD):', todayStr());
     if (!inp) return;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(inp)) { alert('รูปแบบไม่ถูกต้อง — ต้องเป็น YYYY-MM-DD'); return; }
+    if (!dateAllowed(inp)) return;
     if (history.some(h => h.date === inp)) {
       if (!confirm('วันนี้มีข้อมูลอยู่แล้ว — เปิดเพื่อแก้ไข?')) return;
       setDate(inp);
@@ -569,7 +590,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
             <label style={lbl}>
               วันที่เช็คชื่อ {!isSuper && date !== today && <span style={{ color: '#EF4444', fontSize: '0.7rem' }}>(อ่านอย่างเดียว)</span>}
             </label>
-            <input type="date" value={date} max={isSuper ? undefined : today}
+            <input type="date" value={date} max={today}
               onChange={e => setDate(e.target.value)} style={inp} />
             <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: 4 }}>
               {fmtThai(date)}
