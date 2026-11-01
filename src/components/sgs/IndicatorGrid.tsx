@@ -12,9 +12,11 @@ type Patch = Partial<Pick<StudentSubjectScore, 'detail' | 'finalExam' | 'term2Fi
 
 interface Column { key: string; label: string; full: number; half: 'pre' | 'post' }
 
-export default function IndicatorGrid({ students, subjectCode, scheme, plan, term, locked, onSave }: {
+export default function IndicatorGrid({ students, subjectCode, subjectHours, scheme, plan, term, locked, onSave }: {
   students: AcademicStudentRecord[];
   subjectCode: string;
+  /** full study time; attended hours under 80% of it mean มส */
+  subjectHours: number;
   scheme: ScoreScheme;
   plan: SubjectPlan;
   /** 0 = ภาค 1 (or มัธยม's semester), 1 = ภาค 2 (ประถม) */
@@ -105,6 +107,7 @@ export default function IndicatorGrid({ students, subjectCode, scheme, plan, ter
             <tr style={{ background: '#1E293B', color: 'white' }}>
               <th style={{ ...th, width: 48 }}>เลขที่</th>
               <th style={{ ...th, textAlign: 'left', minWidth: 180 }}>ชื่อ-นามสกุล</th>
+              <th style={th}>เวลาเรียน<div style={{ fontWeight: 600, opacity: 0.9 }}>{subjectHours} ชม.</div></th>
               {shown.map(c => (
                 <th key={c.key} style={{ ...th, minWidth: 64, background: c.key === 'final' || c.key === 'mid' ? '#075985' : '#0369A1' }}>
                   {c.label}<div style={{ fontWeight: 600, opacity: 0.9 }}>{c.full}</div>
@@ -124,6 +127,7 @@ export default function IndicatorGrid({ students, subjectCode, scheme, plan, ter
                 <tr key={st.code} style={{ borderBottom: '1px solid #E2E8F0' }}>
                   <td style={{ ...td, fontWeight: 800 }}>{st.no}</td>
                   <td style={{ ...td, textAlign: 'left', fontWeight: 700 }}>{st.name}</td>
+                  <td style={{ ...td, fontWeight: 800, color: sc && sc.attendedHours < subjectHours * 0.8 ? '#B91C1C' : '#0F172A' }}>{sc?.attendedHours ?? '-'}</td>
                   {shown.map((c, col) => {
                     const v = read(st, c.key);
                     return (

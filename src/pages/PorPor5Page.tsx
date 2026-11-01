@@ -12,6 +12,7 @@ import { useAssessmentPlans, useGradingStatus } from '../utils/assessmentStorage
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { DEFAULT_ACTIVITIES } from '../data/defaultActivities';
 import { attendanceCount, attendedHours, isUnderAttendance, termRange, type AttendanceDay } from '../utils/attendanceHours';
+import { READ_ITEMS, TRAIT_ITEMS } from '../utils/assessment';
 import PlanEditor from '../components/sgs/PlanEditor';
 import IndicatorGrid from '../components/sgs/IndicatorGrid';
 import ItemsGrid from '../components/sgs/ItemsGrid';
@@ -148,6 +149,7 @@ function PorPor5Content() {
 
   // ================= 1. ซิงค์เวลาเรียนจริงจากระบบเช็คชื่อรายวัน =================
   const syncAttendanceFromCloud = async () => {
+    if (!canRunShortcut()) return;
     // the attendance check keys classes by their cloud id and students by "{classId}_{code}"
     const rosterClass = rosterClasses.find(r => r.acadId === currentClass.classId || r.shortClass === currentClass.shortName);
     if (!rosterClass) {
@@ -185,6 +187,7 @@ function PorPor5Content() {
         updated++;
       });
 
+      setEntryTab('scores');
       setSavedToast(true);
       setTimeout(() => setSavedToast(false), 2200);
       toast.success(
@@ -201,18 +204,21 @@ function PorPor5Content() {
 
   // ================= 2. ดึงแต้มความประพฤติมาแปลงเป็นคะแนนคุณลักษณะ (0-3) =================
   const syncTraitFromBehavior = () => {
+    if (!canRunShortcut()) return;
+    if (!window.confirm(`ตั้งคุณลักษณะทั้ง ${TRAIT_ITEMS.length} ข้อของทั้งห้องตามแต้มความประพฤติ (95+ = 3, 80+ = 2, 60+ = 1, ต่ำกว่า = 0)? ค่าที่กรอกไว้จะถูกแทนที่`)) return;
     currentClass.students.forEach(st => {
       const stLogs = behaviorLogs.filter(l => l.studentCode === st.code);
       const added = stLogs.filter(l => l.type === 'add').reduce((s, l) => s + l.points, 0);
       const deducted = stLogs.filter(l => l.type === 'deduct').reduce((s, l) => s + l.points, 0);
       const net = 100 + added - deducted;
       const autoTrait: 0 | 1 | 2 | 3 = net >= 95 ? 3 : net >= 80 ? 2 : net >= 60 ? 1 : 0;
-      updateStudentScore(currentClass.classId, st.code, currentSubject.code, { traitScore: autoTrait });
+      updateStudentScore(currentClass.classId, st.code, currentSubject.code, { traitItems: TRAIT_ITEMS.map(() => autoTrait) });
     });
 
+    setEntryTab('items');
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2000);
-    toast.success('คำนวณคุณลักษณะอันพึงประสงค์จากคะแนนความประพฤติจริงเรียบร้อย!');
+    toast.success('ตั้งคุณลักษณะจากแต้มความประพฤติแล้ว — ดูผลในแท็บคุณลักษณะ');
   };
 
   // ================= 3. ส่งคะแนน ปพ.5/ปพ.6 ขึ้นระบบประกาศผลสอบออนไลน์ (/results) ทันที =================
@@ -271,13 +277,26 @@ function PorPor5Content() {
     }
   };
 
+  /** Whole-class shortcuts write nothing while scores are loading or entry is closed */
+  const canRunShortcut = () => {
+    if (!scoresLoaded) { toast.warn('กำลังโหลดคะแนนจากระบบ — รอสักครู่แล้วลองใหม่'); return false; }
+    if (closedByRegistrar) { toast.warn('งานทะเบียนปิดการบันทึกผลแล้ว — แก้ไขไม่ได้'); return false; }
+    return true;
+  };
+
+  // Each shortcut fills what its tab shows: the 8 trait items, the 5 reading items, or study time
   const bulkSetSubjectField = (mode: 'full_hours' | 'trait_3' | 'read_3') => {
+    if (!canRunShortcut()) return;
+    const label = mode === 'full_hours' ? `เวลาเรียนเต็ม ${currentSubject.hours} ชม.`
+      : mode === 'trait_3' ? `คุณลักษณะทั้ง ${TRAIT_ITEMS.length} ข้อ = 3` : `อ่าน คิด เขียนทั้ง ${READ_ITEMS.length} ข้อ = 3`;
+    if (!window.confirm(`ตั้ง${label} ให้ทั้งห้อง (${currentClass.students.length} คน)? ค่าที่กรอกไว้จะถูกแทนที่`)) return;
     const patch = mode === 'full_hours' ? { attendedHours: currentSubject.hours }
-      : mode === 'trait_3' ? { traitScore: 3 } : { readThinkScore: 3 };
+      : mode === 'trait_3' ? { traitItems: TRAIT_ITEMS.map(() => 3) } : { readItems: READ_ITEMS.map(() => 3) };
     currentClass.students.forEach(st => updateStudentScore(currentClass.classId, st.code, currentSubject.code, patch));
+    setEntryTab(mode === 'full_hours' ? 'scores' : 'items');
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2000);
-    toast.success('ตั้งค่าทั้งห้องเรียบร้อยแล้ว');
+    toast.success(`ตั้ง${label} ทั้งห้องแล้ว`);
   };
 
   // ── Spreadsheet-style entry ─────────────────────────────────────────────
@@ -805,6 +824,7 @@ function PorPor5Content() {
             <IndicatorGrid
               students={currentClass.students}
               subjectCode={currentSubject.code}
+              subjectHours={currentSubject.hours}
               scheme={scheme}
               plan={subjectPlan}
               term={scheme.yearly ? planTerm : 0}
