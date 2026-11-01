@@ -36,6 +36,25 @@ export function attendanceDateIssue(
   return d.getDay() === 0 || d.getDay() === 6 ? 'weekend' : null;
 }
 
+/**
+ * Holiday dates from calendar entries, one per day: an entry with endDate (e.g. ปิดภาคเรียน
+ * 11-31 ต.ค.) closes every day from date to endDate.
+ */
+export function holidayDates(entries: { date?: string; endDate?: string; isHoliday?: boolean; title?: string }[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const e of entries) {
+    if (!e.isHoliday || !e.date) continue;
+    const end = e.endDate && e.endDate > e.date ? e.endDate : e.date;
+    const d = new Date(`${e.date}T00:00:00`);
+    for (let iso = e.date; iso <= end; ) {
+      map[iso] = e.title || 'วันหยุด';
+      d.setDate(d.getDate() + 1);
+      iso = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    }
+  }
+  return map;
+}
+
 /** The current month as YYYY-MM */
 export function currentMonth(): string {
   return todayIso().slice(0, 7);

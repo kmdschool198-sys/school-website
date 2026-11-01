@@ -688,3 +688,28 @@ test('Suite 18: attendance hours use real ids, the term only, and the 80% rule',
   assert.equal(h.isUnderAttendance(31, 40), true);
   assert.equal(h.isUnderAttendance(32, 40), false);
 });
+
+// -------------------------------------------------------------
+// Test Suite 19: closed days come from the calendar, term breaks included
+// -------------------------------------------------------------
+test('Suite 19: no attendance is due on weekends, holidays or the term break', async () => {
+  const { holidayDates, attendanceDateIssue } = await import('../src/utils/dates.ts');
+  const holidays = holidayDates([
+    { date: '2026-10-11', endDate: '2026-10-31', isHoliday: true, title: 'ปิดภาคเรียนที่ 1/2569' },
+    { date: '2026-10-23', isHoliday: true, title: 'วันปิยมหาราช' },
+    { date: '2026-11-02', title: 'เปิดภาคเรียนที่ 2/2569' }, // not a holiday
+  ]);
+  assert.equal(holidays['2026-10-11'], 'ปิดภาคเรียนที่ 1/2569');
+  assert.equal(holidays['2026-10-30'], 'ปิดภาคเรียนที่ 1/2569');
+  assert.equal(holidays['2026-10-31'], 'ปิดภาคเรียนที่ 1/2569');
+  assert.equal(holidays['2026-11-01'], undefined);
+  assert.equal(holidays['2026-11-02'], undefined);
+  assert.equal(Object.keys(holidays).length, 21);
+
+  const today = '2026-11-03';
+  const due = d => attendanceDateIssue(d, today, undefined, holidays[d]) === null;
+  assert.equal(due('2026-10-30'), false, 'Friday in the term break');
+  assert.equal(due('2026-11-01'), false, 'Sunday');
+  assert.equal(due('2026-11-02'), true, 'first day of term 2');
+  assert.equal(attendanceDateIssue('2026-10-30', today, { open: true }, holidays['2026-10-30']), null, 'school_calendar can open a closed day');
+});

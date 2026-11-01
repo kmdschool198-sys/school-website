@@ -13,6 +13,7 @@ import { PageLoading } from '../components/PageState';
 import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 import { SCHOOL_NAME } from '../config/siteLinks';
 import { attendanceDateIssue } from '../utils/dates';
+import { useSchoolDays } from '../utils/useSchoolDays';
 
 type Status = 'present' | 'absent' | 'leave';
 interface Student { id: string; code?: string; name: string; emoji?: string; }
@@ -91,7 +92,8 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
 
 
   const [history, setHistory] = useState<AttDoc[]>([]); // for stats
-  const [holidays, setHolidays] = useState<Record<string, string>>({}); // date -> holiday name
+  // date -> holiday name, from the school calendar (term breaks included)
+  const { holidays } = useSchoolDays();
   const [schoolDays, setSchoolDays] = useState<Record<string, { open?: boolean }>>({}); // school_calendar: make-up / closed days
   const [recentDocs, setRecentDocs] = useState<AttDoc[]>([]);
 
@@ -144,17 +146,9 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
     return true;
   };
 
-  // Load holidays from activities collection (where isHoliday=true)
-  useEffect(() => {
-    return onSnapshot(collection(db, 'activities'), snap => {
-      const map: Record<string, string> = {};
-      snap.forEach(d => {
-        const a = d.data() as any;
-        if (a.isHoliday && a.date) map[a.date] = a.title || 'วันหยุด';
-      });
-      setHolidays(map);
-    });
-  }, []);
+  // A day needs a check only when the school is open: not a weekend, holiday or ปิดภาคเรียน day
+  // (unless school_calendar opens it), and not in the future
+  const isOpenDay = (d: string) => attendanceDateIssue(d, todayStr(), schoolDays[d], holidays[d]) === null;
 
   // Calculate recent dates (last 5 weekdays)
   const recentDates = useMemo(() => {
@@ -198,8 +192,8 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
   const pastPending = useMemo(() => {
     const result: Array<{ date: string; pendingClasses: ClassRoster[] }> = [];
     
-    // Filter out today and holidays from recent dates
-    const pastDates = recentDates.filter(d => d !== today && !holidays[d]);
+    // Only past school days can be overdue
+    const pastDates = recentDates.filter(d => d !== today && isOpenDay(d));
 
     pastDates.forEach(d => {
       // Find docs for this date
@@ -220,7 +214,8 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
     });
 
     return result;
-  }, [recentDates, recentDocs, holidays, classes, today]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isOpenDay reads holidays / schoolDays, listed here
+  }, [recentDates, recentDocs, holidays, schoolDays, classes, today]);
 
   // Load all history for this class (for stats)
   useEffect(() => {
@@ -484,8 +479,9 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '1.25rem' }}>
         {/* Check-in status banner (with past backlog warnings) */}
         {(() => {
-          const pending = classes.filter(c => !todayDocs.has(c.classId));
-          const done = classes.length - pending.length;
+          const todayOpen = isOpenDay(today);
+          const pending = todayOpen ? classes.filter(c => !todayDocs.has(c.classId)) : [];
+          const done = classes.length - classes.filter(c => !todayDocs.has(c.classId)).length;
           if (classes.length === 0) return null;
           const allDone = pending.length === 0;
           const hasBacklogs = pastPending.length > 0;
@@ -519,7 +515,9 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
                 <span style={{ fontSize: '1.4rem' }}>{isSuccessful ? '✅' : '⚠️'}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 900, color: isSuccessful ? '#166534' : '#92400E', fontSize: '0.95rem' }}>
-                    {allDone
+                    {!todayOpen
+                      ? `วันนี้ไม่มีเรียน (${holidays[today] || (schoolDays[today]?.open === false ? 'ปิดเรียน' : 'เสาร์-อาทิตย์')}) — ไม่ต้องเช็คชื่อ`
+                      : allDone
                       ? `เช็คชื่อครบทุกชั้นแล้ววันนี้ (${done}/${classes.length})`
                       : `ยังไม่ได้เช็คชื่อ ${pending.length} ชั้นวันนี้ — เช็คแล้ว ${done}/${classes.length}`}
                   </div>
