@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TimetableSmart from '../components/TimetableSmart';
 import { useTeacherAuth } from '../utils/teacherAuth';
+import { useSignedIn } from '../utils/useSignedIn';
 import { Calendar, Eye, Edit3, Printer, Lock, ExternalLink, AlertCircle } from 'lucide-react';
 import { SCHOOL_NAME } from '../config/siteLinks';
 
@@ -13,7 +14,10 @@ export default function TimetablePage() {
   const [editMode, setEditMode] = useState(false);
   const [activeLeaves, setActiveLeaves] = useState<Array<{ id: string; teacherName: string; type: string; startDate: string; endDate: string; substitute?: string }>>([]);
 
+  // leave records are staff data; visitors see the timetable without today's substitutes
+  const signedIn = useSignedIn();
   useEffect(() => {
+    if (!signedIn) return;
     const today = new Date().toISOString().slice(0, 10);
     return onSnapshot(query(collection(db, 'teacher_leaves'), where('status', '==', 'อนุมัติ')), snap => {
       const list: typeof activeLeaves = [];
@@ -25,7 +29,7 @@ export default function TimetablePage() {
       });
       setActiveLeaves(list);
     });
-  }, []);
+  }, [signedIn]);
 
   // If not logged in as teacher/admin, force readOnly = true
   const isReadOnly = !teacherAuth.authed || !editMode;

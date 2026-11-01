@@ -9,12 +9,16 @@ import ShareBar from '../components/ShareBar';
 import { useAcademicData } from '../utils/academicStorage';
 import { calculateStudentGPA, calculateClassRanks } from '../data/academicData';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
+import { useSignedIn } from '../utils/useSignedIn';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
 
 const BRAND = '#FF6A01';
 
 export default function ResultsPage() {
   const studentDetails = useStudentDetails();
+  // a 4-digit student code is not a secret, so the full-record lookup below is staff-only;
+  // visitors use the published announcements (result_lookup), which show only what was released
+  const signedIn = useSignedIn();
   const [announcements, setAnnouncements] = useState<PublicResultAnnouncement[]>([]);
   const [selected, setSelected] = useState<PublicResultAnnouncement | null>(null);
   const [code, setCode] = useState('');
@@ -122,8 +126,9 @@ export default function ResultsPage() {
       </header>
 
       <main className="no-print" style={{ maxWidth: 1100, margin: '-1.5rem auto 3rem', padding: '0 1.25rem' }}>
-        {/* 360 Student Portal Card */}
+        {/* 360 Student Portal Card (staff only) */}
         <div style={{
+          display: signedIn ? undefined : 'none',
           background: 'white', borderRadius: 20, padding: '1.5rem', marginBottom: 20,
           border: '2px solid #FFEDD5', boxShadow: '0 12px 30px rgba(255,106,1,0.08)',
         }}>

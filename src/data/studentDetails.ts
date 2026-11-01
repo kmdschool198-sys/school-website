@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { findDmcStudent } from './dmcStudentMaster';
+import { useSignedIn } from '../utils/useSignedIn';
 
 // Personal and health fields from the DMC 1/2569 student file. They are PDPA-protected, so they
 // live in Firestore (staff-only by firestore.rules) instead of the public JS bundle.
@@ -62,7 +63,9 @@ export function findStudentDetails(map: StudentDetailsMap, codeOrId?: string, na
 
 /** Details keyed by DMC student id (e.g. "student_3206"); empty for visitors who are not staff. */
 export function useStudentDetails(): StudentDetailsMap {
+  const signedIn = useSignedIn();
   const [map, setMap] = useState<StudentDetailsMap>(cache);
-  useEffect(() => subscribe(setMap), []);
-  return map;
+  // a visitor's browser never asks for the details at all
+  useEffect(() => (signedIn ? subscribe(setMap) : undefined), [signedIn]);
+  return signedIn ? map : {};
 }

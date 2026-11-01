@@ -132,14 +132,14 @@ function Home() {
       setPostsLoaded(true);
     }, () => setPostsLoaded(true));
 
-    // จำนวนนักเรียนและห้องเรียน นับจากรายชื่อจริงที่ครูใช้เช็คชื่อ
-    // (ฐานเดียวกับทุกระบบ ไม่ต้องมากรอกซ้ำให้ตัวเลขขัดกันเอง)
-    const unsubRoster = onSnapshot(doc(db, 'config', 'attendance_classes'), snap => {
-      const classes = (snap.data()?.classes || []) as Array<{ students?: unknown[] }>;
-      const withStudents = classes.filter(c => (c.students?.length || 0) > 0);
-      const total = withStudents.reduce((sum, c) => sum + (c.students?.length || 0), 0);
+    // จำนวนนักเรียนและห้องเรียน จากสรุป config/students_count ที่หน้าจัดการรายชื่ออัปเดตทุกครั้งที่บันทึกรายชื่อ
+    // (เลขเดียวกับรายชื่อเช็คชื่อ แต่ไม่มีชื่อนักเรียน — หน้าแรกเปิดให้ทุกคน จึงไม่ดึงรายชื่อจริง)
+    const unsubRoster = onSnapshot(doc(db, 'config', 'students_count'), snap => {
+      const rows = (snap.data()?.rows || []) as Array<{ male?: number; female?: number }>;
+      const sizes = rows.map(r => (Number(r.male) || 0) + (Number(r.female) || 0)).filter(n => n > 0);
+      const total = sizes.reduce((sum, n) => sum + n, 0);
       setStudentCount(total > 0 ? total : null);
-      setClassCount(withStudents.length > 0 ? withStudents.length : null);
+      setClassCount(sizes.length > 0 ? sizes.length : null);
     }, error => {
       console.error('Unable to load roster count', error);
     });

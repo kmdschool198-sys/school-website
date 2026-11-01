@@ -8,6 +8,7 @@ import {
   type DmcStudentMaster,
 } from '../data/dmcStudentMaster';
 import { useStudentDetails, type StudentDetailsMap } from '../data/studentDetails';
+import { useSignedIn } from './useSignedIn';
 
 export interface UnifiedStudent {
   id: string;
@@ -138,8 +139,14 @@ export function mergeWithFirestoreClasses(
 export function useSchoolRoster() {
   const [cloudClasses, setCloudClasses] = useState<Array<{ classId: string; label: string; students?: Array<{ id: string; code?: string; name: string; emoji?: string }> }>>([]);
   const [loaded, setLoaded] = useState(false);
+  const signedIn = useSignedIn();
 
+  // the live roster is staff data; visitors keep the built-in seed list
   useEffect(() => {
+    if (!signedIn) {
+      setLoaded(true);
+      return;
+    }
     return onSnapshot(
       doc(db, 'config', 'attendance_classes'),
       snap => {
@@ -153,7 +160,7 @@ export function useSchoolRoster() {
       },
       () => setLoaded(true)
     );
-  }, []);
+  }, [signedIn]);
 
   const details = useStudentDetails();
   const classes = useMemo(() => mergeWithFirestoreClasses(cloudClasses, details), [cloudClasses, details]);

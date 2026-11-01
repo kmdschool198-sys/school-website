@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
 import { useSchoolRoster, type UnifiedClassRoster } from '../utils/useSchoolRoster';
 import { getCachedRoster, batchSaveClassRoster, getPrintHubCompositeData, type CompositePrintHubData } from '../services/firestoreService';
+import { useSignedIn } from '../utils/useSignedIn';
 
 interface SchoolDataContextType {
   classes: UnifiedClassRoster[];
@@ -17,9 +18,14 @@ export function SchoolDataProvider({ children }: { children: ReactNode }) {
   const { classes: dynamicClasses } = useSchoolRoster();
   const [cachedClasses, setCachedClasses] = useState<UnifiedClassRoster[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const signedIn = useSignedIn();
 
-  // Sync with initial cached rosters
+  // Sync with initial cached rosters (staff data: never fetched for a visitor)
   useEffect(() => {
+    if (!signedIn) {
+      setLoading(false);
+      return;
+    }
     let mounted = true;
     (async () => {
       try {
@@ -32,7 +38,7 @@ export function SchoolDataProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [signedIn]);
 
   // Use dynamicClasses as live source, fallback to cached
   const effectiveClasses = useMemo(() => {

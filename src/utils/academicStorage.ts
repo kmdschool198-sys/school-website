@@ -19,6 +19,7 @@ import {
   type ScoreOverrides,
 } from './academicScores';
 import { toast } from '../components/GlobalToast';
+import { useSignedIn } from './useSignedIn';
 import { activityOverall, courseworkFromDetail, detailHasMarks, itemsLevel, type ActivityMark } from './assessment';
 
 // Teachers' entered scores (see academicScores.ts for the storage model). The local copy is
@@ -52,9 +53,11 @@ export function useAcademicData() {
   const [loaded, setLoaded] = useState(false);
   const loadedRef = useRef(false);
   const { classes: unifiedRosters } = useSchoolRoster();
+  const signedIn = useSignedIn();
 
-  // metadata changes too, so a cache miss followed by the server's answer still marks it loaded
-  useEffect(() => onSnapshot(SCORES_DOC, { includeMetadataChanges: true }, snap => {
+  // scores are staff data: a visitor's browser never asks for them.
+  // Metadata changes too, so a cache miss followed by the server's answer still marks it loaded.
+  useEffect(() => (!signedIn ? undefined : onSnapshot(SCORES_DOC, { includeMetadataChanges: true }, snap => {
     if (!scoresSnapshotReady(snap.exists(), snap.metadata.fromCache)) return;
     const server = (snap.exists() ? snap.data() : {}) as ScoreOverrides;
     const next = { scores: server.scores || {}, evaluations: server.evaluations || {} };
@@ -62,7 +65,7 @@ export function useAcademicData() {
     setOverrides(next);
     loadedRef.current = true;
     setLoaded(true);
-  }), []);
+  })), [signedIn]);
 
   // live roster order per academic class (classId 'm1' etc.), so new or moved students show up
   const rosterByClass = useMemo<RosterByClass>(() => {
