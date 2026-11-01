@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, doc, onSnapshot, setDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { sameStudent } from '../utils/studentKey';
 import { useSchoolRoster, type UnifiedClassRoster } from '../utils/useSchoolRoster';
@@ -50,48 +50,6 @@ const ADD_PRESETS = [
   { label: '🏆 สร้างชื่อเสียงให้โรงเรียน / เป็นผู้นำกิจกรรมนักเรียน', points: 10 },
 ];
 
-const INITIAL_SAMPLE_LOGS: BehaviorLogEntry[] = [
-  {
-    id: 'beh_seed_1',
-    studentCode: '2538',
-    studentName: 'เด็กหญิงณัชชา คงทน',
-    classId: 'm1_1',
-    classLabel: 'ม.1/1',
-    date: '2026-10-20',
-    type: 'add',
-    points: 10,
-    reason: '🌟 ช่วยเหลืองานครูอาจารย์และเป็นแกนนำจัดบอร์ดวิชาการ',
-    teacher: 'นางสาวจิราภา พานชัย',
-    createdAt: 1792460000000,
-  },
-  {
-    id: 'beh_seed_2',
-    studentCode: '2536',
-    studentName: 'เด็กชายเอกพล รักชาติ',
-    classId: 'm1_1',
-    classLabel: 'ม.1/1',
-    date: '2026-10-21',
-    type: 'deduct',
-    points: 5,
-    reason: '👕 แต่งกาย / ทรงผม ผิดระเบียบโรงเรียน',
-    teacher: 'นายอนันตชัย เพ็ชรรี่',
-    createdAt: 1792550000000,
-  },
-  {
-    id: 'beh_seed_3',
-    studentCode: '2533',
-    studentName: 'เด็กชายพัชรพล ภูเด่นตา',
-    classId: 'm1_1',
-    classLabel: 'ม.1/1',
-    date: '2026-10-22',
-    type: 'deduct',
-    points: 3,
-    reason: '⏰ มาเรียนสายเกินเวลาเข้าแถวเคารพธงชาติ',
-    teacher: 'นายอนันตชัย เพ็ชรรี่',
-    createdAt: 1792630000000,
-  },
-];
-
 type PrintDocMode = 'none' | 'warning' | 'award' | 'class_summary';
 
 export default function BehaviorPage() {
@@ -119,7 +77,7 @@ function BehaviorContent({ userName }: { userName: string }) {
         if (Array.isArray(parsed)) return parsed;
       }
     } catch { /* ignore */ }
-    return INITIAL_SAMPLE_LOGS;
+    return []; // nothing cached yet: wait for Firestore, never show made-up entries
   });
 
   // Action Modal state
@@ -158,18 +116,29 @@ function BehaviorContent({ userName }: { userName: string }) {
     });
   }, []);
 
-  const persistLogs = async (nextLogs: BehaviorLogEntry[]) => {
-    setLogs(nextLogs);
+  // Each change adds or removes only its own entry (arrayUnion / arrayRemove), so two teachers
+  // recording at the same time both keep their entries, and an old copy on one device can never
+  // overwrite the school's list. The snapshot above brings everyone's entries back.
+  const BEHAVIOR_DOC = doc(db, 'config', 'behavior_logs');
+  const saveChange = async (remove: BehaviorLogEntry | null, add: BehaviorLogEntry | null) => {
+    setLogs(prev => {
+      const without = remove ? prev.filter(l => l.id !== remove.id) : prev;
+      return add ? [add, ...without.filter(l => l.id !== add.id)] : without;
+    });
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextLogs));
-    } catch { /* fallback localStorage */ }
-    try {
-      await setDoc(doc(db, 'config', 'behavior_logs'), {
-        logs: nextLogs,
-        updatedAt: Date.now()
-      }, { merge: true });
+      if (remove && add) {
+        const batch = writeBatch(db);
+        batch.update(BEHAVIOR_DOC, { logs: arrayRemove(remove) });
+        batch.update(BEHAVIOR_DOC, { logs: arrayUnion(add), updatedAt: Date.now() });
+        await batch.commit();
+      } else if (add) {
+        await setDoc(BEHAVIOR_DOC, { logs: arrayUnion(add), updatedAt: Date.now() }, { merge: true });
+      } else if (remove) {
+        await setDoc(BEHAVIOR_DOC, { logs: arrayRemove(remove), updatedAt: Date.now() }, { merge: true });
+      }
     } catch (err) {
-      console.error('Failed to save behavior logs to Firestore:', err);
+      console.error('Failed to save behavior log to Firestore:', err);
+      setToast('บันทึกไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
     }
   };
 
@@ -241,8 +210,7 @@ function BehaviorContent({ userName }: { userName: string }) {
       teacher: userName || currentClass.homeroomTeacher || 'ครูเวรประจำวัน',
       createdAt: Date.now(),
     };
-    const next = [entry, ...logs];
-    await persistLogs(next);
+    await saveChange(null, entry);
     setModalStudent(null);
     setCustomReason('');
     setToast(
@@ -254,8 +222,8 @@ function BehaviorContent({ userName }: { userName: string }) {
   };
 
   const handleDeleteLog = async (id: string) => {
-    const next = logs.filter(l => l.id !== id);
-    await persistLogs(next);
+    const old = logs.find(l => l.id === id);
+    if (old) await saveChange(old, null);
     setDeleteConfirmId(null);
     setToast('ลบรายการประวัติความประพฤติเรียบร้อย');
     setTimeout(() => setToast(null), 2500);
@@ -264,8 +232,8 @@ function BehaviorContent({ userName }: { userName: string }) {
   const handleUpdateLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLog) return;
-    const next = logs.map(l => l.id === editingLog.id ? editingLog : l);
-    await persistLogs(next);
+    const old = logs.find(l => l.id === editingLog.id);
+    await saveChange(old || null, editingLog);
     setEditingLog(null);
     setToast(`อัปเดตประวัติความประพฤติของ ${editingLog.studentName} แล้ว`);
     setTimeout(() => setToast(null), 2500);

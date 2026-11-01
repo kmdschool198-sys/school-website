@@ -83,7 +83,8 @@ function HomeVisitContent() {
     setRecords(nextMap);
     try { localStorage.setItem(STORAGE_HOME_VISIT_KEY, JSON.stringify(nextMap)); } catch { /* ignore */ }
     try {
-      await setDoc(doc(db, 'config', 'home_visits'), { records: nextMap, updatedAt: Date.now() }, { merge: true });
+      // only this student's record: a stale copy of other students on this device never overwrites theirs
+      await setDoc(doc(db, 'config', 'home_visits'), { records: { [studentCode]: nextRec }, updatedAt: Date.now() }, { merge: true });
       setSavedToast('บันทึกข้อมูลการเยี่ยมบ้านแล้ว');
     } catch {
       setSavedToast('บันทึกในเครื่องแล้ว');
