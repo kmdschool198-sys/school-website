@@ -24,17 +24,24 @@ interface SmartAppIcon {
 
 const PIN_STORAGE_KEY = 'kmd_teacher_hub_pinned_apps_v1';
 
+const CATEGORY_LABELS: Record<SmartAppIcon['category'], string> = {
+  daily: 'งานประจำวัน',
+  academic: 'วิชาการ & วัดผล',
+  student: 'ดูแลนักเรียน',
+  print_admin: 'รายงาน & บริหาร',
+};
+
 const SMART_APPS: SmartAppIcon[] = [
   { id: 'attendance', to: '/attendance', label: 'เช็คชื่อรายวัน', subtitle: 'เช็คชื่อ นม แปรงฟัน', category: 'daily', emoji: '✅', gradient: 'linear-gradient(135deg,#10B981,#059669)' },
   { id: 'porpor6', to: '/porpor6', label: 'พิมพ์ ปพ.6', subtitle: 'สมุดพกรายคน/ทั้งห้อง', category: 'academic', emoji: '📄', gradient: 'linear-gradient(135deg,#EF4444,#DC2626)', badge: 'A4' },
   { id: 'porpor5', to: '/porpor5', label: 'บันทึก ปพ.5', subtitle: 'คะแนนรายตัวชี้วัด แบบ SGS', category: 'academic', emoji: '📝', gradient: 'linear-gradient(135deg,#0284C7,#0369A1)', badge: 'A4' },
   { id: 'academic-summary', to: '/academic-summary', label: 'สรุปผลสัมฤทธิ์', subtitle: 'แยก 8 กลุ่มสาระฯ', category: 'academic', emoji: '📊', gradient: 'linear-gradient(135deg,#F59E0B,#D97706)' },
-  { id: 'print-hub', to: '/print-hub', label: 'ศูนย์รวมการพิมพ์', subtitle: 'One-Stop Print Hub', category: 'print_admin', emoji: '🖨️', gradient: 'linear-gradient(135deg,#BE123C,#9F1239)', badge: 'HOT' },
-  { id: 'behavior', to: '/behavior', label: 'ความประพฤติ', subtitle: 'ตัด-เพิ่มแต้ม/ใบเตือน', category: 'student', emoji: '🛡️', gradient: 'linear-gradient(135deg,#DC2626,#991B1B)', badge: 'ใหม่' },
-  { id: 'lunch', to: '/lunch', label: 'อาหารกลางวัน', subtitle: 'นับจากเช็คชื่อ · งบ 22 บ.', category: 'daily', emoji: '🍱', gradient: 'linear-gradient(135deg,#EA580C,#C2410C)', badge: 'ใหม่' },
-  { id: 'duty', to: '/duty', label: 'เวรประจำวัน', subtitle: 'นับจากเช็คชื่อ', category: 'daily', emoji: '🧹', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
-  { id: 'janitor-tasks', to: '/janitor-tasks', label: 'งานนักการภารโรง', subtitle: 'เช็กงานเช้า-บ่าย & รูป', category: 'daily', emoji: '🛠️', gradient: 'linear-gradient(135deg,#D97706,#B45309)', badge: 'ใหม่' },
-  { id: 'home-visit', to: '/home-visit', label: 'เยี่ยมบ้านนักเรียน', subtitle: 'คัดกรองทุน กสศ. & รูปบ้าน', category: 'student', emoji: '🏠', gradient: 'linear-gradient(135deg,#059669,#047857)', badge: 'ใหม่' },
+  { id: 'print-hub', to: '/print-hub', label: 'ศูนย์รวมการพิมพ์', subtitle: 'One-Stop Print Hub', category: 'print_admin', emoji: '🖨️', gradient: 'linear-gradient(135deg,#BE123C,#9F1239)' },
+  { id: 'behavior', to: '/behavior', label: 'ความประพฤติ', subtitle: 'ตัด-เพิ่มแต้ม/ใบเตือน', category: 'student', emoji: '🛡️', gradient: 'linear-gradient(135deg,#DC2626,#991B1B)' },
+  { id: 'lunch', to: '/lunch', label: 'อาหารกลางวัน', subtitle: 'นับจากเช็คชื่อ · งบ 22 บ.', category: 'daily', emoji: '🍱', gradient: 'linear-gradient(135deg,#EA580C,#C2410C)' },
+  { id: 'duty', to: '/duty', label: 'เวรประจำวัน', subtitle: 'นับจากเช็คชื่อ', category: 'daily', emoji: '🧹', gradient: 'linear-gradient(135deg,#059669,#047857)' },
+  { id: 'janitor-tasks', to: '/janitor-tasks', label: 'งานนักการภารโรง', subtitle: 'เช็กงานเช้า-บ่าย & รูป', category: 'print_admin', emoji: '🛠️', gradient: 'linear-gradient(135deg,#D97706,#B45309)' },
+  { id: 'home-visit', to: '/home-visit', label: 'เยี่ยมบ้านนักเรียน', subtitle: 'คัดกรองทุน กสศ. & รูปบ้าน', category: 'student', emoji: '🏠', gradient: 'linear-gradient(135deg,#059669,#047857)' },
   { id: 'homeroom', to: '/homeroom', label: 'กิจกรรมโฮมรูม', subtitle: 'อบรมหน้าเสาธง/เช้า', category: 'daily', emoji: '🏫', gradient: 'linear-gradient(135deg,#38BDF8,#0284C7)' },
   { id: 'milk-report', to: '/milk-report', label: 'รายงานดื่มนม', subtitle: 'ดึงจากเช็คชื่ออัตโนมัติ', category: 'daily', emoji: '🥛', gradient: 'linear-gradient(135deg,#60A5FA,#3B82F6)' },
   { id: 'brush-log', to: '/brush-log', label: 'รายงานแปรงฟัน', subtitle: 'ดึงจากเช็คชื่ออัตโนมัติ', category: 'daily', emoji: '🦷', gradient: 'linear-gradient(135deg,#06B6D4,#0891B2)' },
@@ -44,7 +51,7 @@ const SMART_APPS: SmartAppIcon[] = [
   { id: 'manage-clubs', to: '/manage-clubs', label: 'จัดการชุมนุม', subtitle: 'จัดสมาชิกชุมนุม', category: 'student', emoji: '⚙️', gradient: 'linear-gradient(135deg,#8B5CF6,#7C3AED)' },
   { id: 'class-dashboard', to: '/class-dashboard', label: 'แดชบอร์ดชั้น', subtitle: 'ภาพรวมประจำห้อง', category: 'student', emoji: '📈', gradient: 'linear-gradient(135deg,#F97316,#EA580C)' },
   { id: 'manage-roster', to: '/manage-roster', label: 'รายชื่อนักเรียน', subtitle: 'ตรวจสอบทะเบียนชั้น', category: 'student', emoji: '👥', gradient: 'linear-gradient(135deg,#EC4899,#DB2777)' },
-  { id: 'timetable', to: '/timetable', label: 'ตารางสอน & สอนแทน', subtitle: 'จัดตาราง/จัดสอนแทน 1 คลิก', category: 'academic', emoji: '📅', gradient: 'linear-gradient(135deg,#6366F1,#4F46E5)', badge: 'อัปเกรด' },
+  { id: 'timetable', to: '/timetable', label: 'ตารางสอน & สอนแทน', subtitle: 'จัดตาราง/จัดสอนแทน 1 คลิก', category: 'academic', emoji: '📅', gradient: 'linear-gradient(135deg,#6366F1,#4F46E5)' },
   { id: 'school-stats-report', to: '/school-stats-report', label: 'สถิติประจำเดือน', subtitle: 'สรุปการมาเรียนทั้ง ร.ร.', category: 'print_admin', emoji: '📋', gradient: 'linear-gradient(135deg,#A855F7,#9333EA)' },
   { id: 'school-calendar', to: '/school-calendar', label: 'ปฏิทิน ร.ร.', subtitle: 'วันหยุด-เรียนชดเชย', category: 'print_admin', emoji: '🗓️', gradient: 'linear-gradient(135deg,#F43F5E,#E11D48)' },
   { id: 'remedial', to: '/remedial', label: 'ผลการแก้ตัว', subtitle: 'ปิดบันทึกผล · แก้ 0/ร/มส', category: 'academic', emoji: '🔁', gradient: 'linear-gradient(135deg,#0EA5E9,#0369A1)' },
@@ -299,12 +306,12 @@ function DashboardView({ userName, role }: { userName: string; role: string }) {
         {/* Category Filter Pills */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
           {([
-            ['all', '🌐 ทั้งหมด (18 ระบบ)'],
-            ['pinned', `📌 ปักหมุด (${pinnedIds.length})`],
-            ['daily', '✅ งานประจำวัน (เช็คชื่อ/นม/อาหาร)'],
-            ['academic', '📘 งานวัดผล (ปพ.5 / ปพ.6 / ตารางสอน)'],
-            ['student', '🛡️ กิจการนักเรียน (ความประพฤติ/สุขภาพ/ชุมนุม)'],
-            ['print_admin', '🖨️ ศูนย์การพิมพ์ & บริหาร'],
+            ['all', `ทั้งหมด (${SMART_APPS.length})`],
+            ['pinned', `ปักหมุด (${pinnedIds.length})`],
+            ['daily', CATEGORY_LABELS.daily],
+            ['academic', CATEGORY_LABELS.academic],
+            ['student', CATEGORY_LABELS.student],
+            ['print_admin', CATEGORY_LABELS.print_admin],
           ] as const).map(([key, label]) => {
             const active = activeCategory === key;
             return (
@@ -329,13 +336,24 @@ function DashboardView({ userName, role }: { userName: string; role: string }) {
           })}
         </div>
 
-        {/* Apps Grid */}
+        {/* Apps: grouped by category when showing everything, one grid when filtered or searching */}
+        {(activeCategory === 'all' && !searchQuery.trim()
+          ? [
+            ...(pinnedIds.length ? [{ key: 'pinned', title: 'ปักหมุดไว้', apps: filteredApps.filter(a => pinnedIds.includes(a.id)) }] : []),
+            ...(Object.keys(CATEGORY_LABELS) as SmartAppIcon['category'][]).map(cat => ({
+              key: cat, title: CATEGORY_LABELS[cat], apps: filteredApps.filter(a => a.category === cat && !pinnedIds.includes(a.id)),
+            })),
+          ]
+          : [{ key: 'list', title: '', apps: filteredApps }]
+        ).filter(group => group.apps.length > 0).map(group => (
+        <section key={group.key} style={{ marginBottom: 18 }}>
+          {group.title && <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', margin: '0 0 10px' }}>{group.title}</h3>}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(125px, 1fr))',
           gap: 14,
         }}>
-          {filteredApps.map(app => {
+          {group.apps.map(app => {
             const isPinned = pinnedIds.includes(app.id);
             return (
               <Link
@@ -434,6 +452,11 @@ function DashboardView({ userName, role }: { userName: string; role: string }) {
             );
           })}
         </div>
+        </section>
+        ))}
+        {filteredApps.length === 0 && (
+          <p style={{ color: '#475569', textAlign: 'center', padding: '1.5rem 0' }}>ไม่พบเครื่องมือที่ค้นหา</p>
+        )}
       </div>
 
       {/* Bottom 3 Statistical Cards */}
