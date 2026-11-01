@@ -66,8 +66,6 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
       { path: '/porpor6', label: '📄 พิมพ์ ปพ.6 (สมุดพก)' },
       { path: '/porpor5', label: '📝 บันทึก ปพ.5 (คะแนน)' },
       { path: '/behavior', label: '🛡️ คะแนนความประพฤติ & ใบเตือน' },
-      { path: '/lunch', label: '🍱 รายงานอาหารกลางวัน' },
-      { path: '/duty', label: '🧹 เวรประจำวัน & เขตพื้นที่' },
       { path: '/class-dashboard', label: '📊 แดชบอร์ดรายชั้นเรียน' },
     ]
   }
