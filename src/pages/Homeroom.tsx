@@ -12,7 +12,7 @@ import TeacherLoginGate from '../components/TeacherLoginGate';
 import QuickDate from '../components/QuickDate';
 import { toast } from '../components/GlobalToast';
 import type { HomeroomDoc } from '../data/homeroom';
-import { HOMEROOM_TOPICS, COMMON_PROBLEMS, COMMON_SOLUTIONS, homeroomDocId } from '../data/homeroom';
+import { HOMEROOM_TOPICS, COMMON_PROBLEMS, COMMON_SOLUTIONS, homeroomCounts, homeroomDocId } from '../data/homeroom';
 import {
   SCHOOL_CALENDAR_COLLECTION,
   resolveSchoolDay,
@@ -134,10 +134,8 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         updatedAt: Date.now(),
       };
       if (suggestions.trim()) payload.suggestions = suggestions.trim();
-      if (attForDay) {
-        payload.presentCount = attForDay.present;
-        payload.totalCount = current.students.length;
-      }
+      const dayAttendance = attDocs.find(x => x.classId === classId && x.date === date);
+      if (dayAttendance) Object.assign(payload, homeroomCounts(dayAttendance.records || {}));
       const writePromise = setDoc(doc(db, 'homeroom', payload.id), payload, { merge: true });
       const timeoutPromise = new Promise<'offline_cached'>(resolve => setTimeout(() => resolve('offline_cached'), 1500));
       const res = await Promise.race([writePromise.then(() => 'synced' as const), timeoutPromise]);
@@ -216,7 +214,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         {tab === 'entry' && (
           <EntryForm
             date={date} setDate={setDate}
-            attForDay={attForDay} totalStudents={current?.students.length || 0}
+            attForDay={attForDay}
             topic={topic} setTopic={setTopic}
             problems={problems} setProblems={setProblems}
             solutions={solutions} setSolutions={setSolutions}
@@ -242,7 +240,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
 
 // ════════════════════════════════════════════════════════════════
 function EntryForm({
-  date, setDate, attForDay, totalStudents,
+  date, setDate, attForDay,
   topic, setTopic, problems, setProblems, solutions, setSolutions,
   suggestions, setSuggestions, existing, saving, onSave,
 }: any) {
@@ -266,7 +264,7 @@ function EntryForm({
               <MiniStat label="เข้าโฮมรูม" value={attForDay.present} color="#10B981" />
               <MiniStat label="ขาด" value={attForDay.absent} color="#EF4444" />
               <MiniStat label="ลา" value={attForDay.leave} color="#F59E0B" />
-              <MiniStat label="ทั้งหมด" value={totalStudents} color="#0F172A" />
+              <MiniStat label="ทั้งหมด" value={attForDay.total} color="#0F172A" />
             </div>
           ) : (
             <div style={{ background: '#FEF3C7', color: '#92400E', padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem' }}>

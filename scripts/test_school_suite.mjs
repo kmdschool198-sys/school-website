@@ -629,3 +629,16 @@ test('Suite 15: no score is saved before the scores have loaded', async () => {
   // the server says there is no score document yet: nothing to overwrite
   assert.equal(scoresSnapshotReady(false, false), true);
 });
+
+// -------------------------------------------------------------
+// Test Suite 16: homeroom counts come from that day's attendance
+// -------------------------------------------------------------
+test('Suite 16: homeroom attendance is counted against the students recorded that day', async () => {
+  const { homeroomCounts } = await import('../src/data/homeroom.ts');
+  // 13 recorded on 2026-05-05, one of whom has since left the roster (today 12)
+  const records = Object.fromEntries(Array.from({ length: 13 }, (_, i) => [`m1_${2530 + i}`, { status: 'present' }]));
+  assert.deepEqual(homeroomCounts(records), { presentCount: 13, totalCount: 13 });
+  // absent and leave count towards the total, not towards present
+  assert.deepEqual(homeroomCounts({ a: { status: 'present' }, b: { status: 'absent' }, c: { status: 'leave' } }), { presentCount: 1, totalCount: 3 });
+  assert.deepEqual(homeroomCounts({}), { presentCount: 0, totalCount: 0 });
+});

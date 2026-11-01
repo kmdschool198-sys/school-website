@@ -64,6 +64,19 @@ export function homeroomDocId(classId: string, date: string) {
   return `${classId}_${date}`;
 }
 
+/**
+ * Present / total for a homeroom log, both from that day's attendance records. The total is the
+ * students recorded that day, not today's roster: someone who has since left still counts on the
+ * days they were there (counting them as present but not in the total gave 13 of 12).
+ */
+export function homeroomCounts(records: Record<string, { status?: string }>): { presentCount: number; totalCount: number } {
+  const all = Object.values(records || {});
+  return {
+    presentCount: all.filter(r => r.status === 'present').length,
+    totalCount: all.filter(r => r.status === 'present' || r.status === 'absent' || r.status === 'leave').length,
+  };
+}
+
 /** ภาคเรียนจากเดือน: 1 = พ.ค.–ต.ค., 2 = พ.ย.–เม.ย. */
 export function termOfDate(iso: string): 1 | 2 {
   const m = Number(iso.slice(5, 7));
