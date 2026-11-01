@@ -9,6 +9,9 @@ import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
 import { useAssessmentPlans, useGradingStatus } from '../utils/assessmentStorage';
+import { useSchoolRoster } from '../utils/useSchoolRoster';
+import { DEFAULT_ACTIVITIES } from '../data/defaultActivities';
+import { attendanceCount, attendedHours, isUnderAttendance, termRange, type AttendanceDay } from '../utils/attendanceHours';
 import PlanEditor from '../components/sgs/PlanEditor';
 import IndicatorGrid from '../components/sgs/IndicatorGrid';
 import ItemsGrid from '../components/sgs/ItemsGrid';
@@ -25,8 +28,6 @@ import SgsPorPor5PrintBook from '../components/SgsPorPor5PrintBook';
 const DEPUTY_DIRECTOR_NAME = 'นางสาวเจนจีรา บุญเกตุ';
 
 // แปลงรหัสชั้นวิชาการ (เช่น m1, p1) เป็นรหัสห้องเช็คชื่อ (เช่น m1_1, p1_1)
-const toRosterClassId = (acadClassId: string) =>
-  acadClassId.includes('_') ? acadClassId : `${acadClassId}_1`;
 
 export default function PorPor5Page() {
   const auth = useTeacherAuth();
@@ -56,6 +57,7 @@ function blankScore(hours: number) {
 
 function PorPor5Content() {
   const { classesData, loaded: scoresLoaded, updateStudentScore } = useAcademicData();
+  const { classes: rosterClasses } = useSchoolRoster();
   const auth = useTeacherAuth();
   const { plans, savePlan } = useAssessmentPlans();
   const { status: gradingStatus } = useGradingStatus();
@@ -146,58 +148,52 @@ function PorPor5Content() {
 
   // ================= 1. ซิงค์เวลาเรียนจริงจากระบบเช็คชื่อรายวัน =================
   const syncAttendanceFromCloud = async () => {
+    // the attendance check keys classes by their cloud id and students by "{classId}_{code}"
+    const rosterClass = rosterClasses.find(r => r.acadId === currentClass.classId || r.shortClass === currentClass.shortName);
+    if (!rosterClass) {
+      toast.error(`ไม่พบชั้น ${currentClass.shortName} ในรายชื่อที่ใช้เช็คชื่อ — ยังไม่ได้เปลี่ยนเวลาเรียน`);
+      return;
+    }
     setSyncingAtt(true);
     try {
-      const rosterClassId = toRosterClassId(currentClass.classId);
-      const snap = await getDocs(
-        query(collection(db, 'attendance'), where('classId', '==', rosterClassId))
-      );
-      const attDocs: Array<{ date: string; records: Record<string, { status: string }> }> = [];
-      snap.forEach(d => attDocs.push(d.data() as any));
+      const term = semesterLabel.includes('ภาคเรียนที่ 2') ? 2 : 1;
+      const range = termRange(DEFAULT_ACTIVITIES, term);
+      const snap = await getDocs(query(collection(db, 'attendance'), where('classId', '==', rosterClass.id)));
+      const days: AttendanceDay[] = snap.docs.map(d => d.data() as AttendanceDay)
+        .filter(d => d.date >= range.from && d.date <= range.to);
 
-      if (attDocs.length === 0) {
-        toast.info(`ยังไม่มีประวัติเช็คชื่อในระบบของชั้น ${currentClass.shortName}/1 — ตั้งค่าเวลาเรียนเต็ม ${currentSubject.hours} ชม.`);
-        bulkSetSubjectField('full_hours');
+      if (days.length === 0) {
+        toast.info(`ยังไม่มีการเช็คชื่อชั้น ${currentClass.shortName} ในภาคเรียนที่ ${term} — ยังไม่ได้เปลี่ยนเวลาเรียน`);
         return;
       }
 
-      let lowAttendanceCount = 0;
+      let updated = 0;
+      let lowAttendance = 0;
+      const unmatched: string[] = [];
       currentClass.students.forEach(st => {
-        let presentDays = 0;
-        let totalRecordedDays = 0;
-        attDocs.forEach(docItem => {
-          const rec =
-            docItem.records?.[st.code] ||
-            docItem.records?.[`s_${st.code}`] ||
-            docItem.records?.[String(st.no)];
-          if (rec) {
-            totalRecordedDays += 1;
-            if (rec.status === 'present') presentDays += 1;
-          }
-        });
-
-        const ratio = totalRecordedDays > 0 ? presentDays / totalRecordedDays : 1;
-        const calcHours = Math.round(ratio * currentSubject.hours);
-        const sc = st.scores[currentSubject.code] || blankScore(currentSubject.hours);
-
-        const specialGrade = calcHours < currentSubject.hours * 0.8 ? 'มส' : undefined;
-        if (specialGrade === 'มส') lowAttendanceCount += 1;
-
-        // set มส when attendance is under 80%, lift an earlier มส once it is not; ร stays
+        const rosterStudent = rosterClass.students.find(r => r.code === st.code) || rosterClass.students.find(r => r.name.trim() === st.name.trim());
+        const hours = rosterStudent ? attendedHours(attendanceCount(days, rosterStudent.id, range), currentSubject.hours) : null;
+        if (hours === null) { unmatched.push(st.name); return; }
+        const under = isUnderAttendance(hours, currentSubject.hours);
+        if (under) lowAttendance++;
+        const sc = st.scores[currentSubject.code];
+        // set มส under 80%, lift an earlier มส once attendance is enough; ร stays
         updateStudentScore(currentClass.classId, st.code, currentSubject.code, {
-          attendedHours: calcHours,
-          specialGrade: specialGrade ?? (sc.grade === 'มส' ? null : undefined),
+          attendedHours: hours,
+          specialGrade: under ? 'มส' : sc?.grade === 'มส' ? null : undefined,
         });
+        updated++;
       });
 
       setSavedToast(true);
       setTimeout(() => setSavedToast(false), 2200);
       toast.success(
-        `ซิงค์เวลาเรียนจากระบบเช็คชื่อ (${attDocs.length} วัน) สำเร็จ!` +
-        (lowAttendanceCount > 0 ? ` พบเวลาเรียนต่ำกว่า 80% จำนวน ${lowAttendanceCount} คน` : '')
+        `ดึงเวลาเรียนจากการเช็คชื่อ ${days.length} วัน (ภาคเรียนที่ ${term}) ให้ ${updated} คน` +
+        (lowAttendance > 0 ? ` · มาเรียนไม่ถึง 80% ${lowAttendance} คน (ติด มส)` : '') +
+        (unmatched.length > 0 ? ` · ไม่พบข้อมูลเช็คชื่อของ ${unmatched.length} คน: ${unmatched.slice(0, 3).join(', ')}${unmatched.length > 3 ? '…' : ''}` : '')
       );
     } catch (err: any) {
-      toast.error('ซิงค์เวลาเรียนไม่สำเร็จ: ' + (err?.message || err));
+      toast.error('ดึงเวลาเรียนไม่สำเร็จ: ' + (err?.message || err));
     } finally {
       setSyncingAtt(false);
     }

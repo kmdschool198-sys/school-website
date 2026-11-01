@@ -659,3 +659,32 @@ test('Suite 17: attendance date guard', async () => {
   assert.equal(attendanceDateIssue('2026-02-30', today), 'invalid');
   assert.equal(attendanceDateIssue('30/06/2026', today), 'invalid');
 });
+
+// -------------------------------------------------------------
+// Test Suite 18: ปพ.5 study time comes from the daily attendance check
+// -------------------------------------------------------------
+test('Suite 18: attendance hours use real ids, the term only, and the 80% rule', async () => {
+  const h = await import('../src/utils/attendanceHours.ts');
+  const calendar = [
+    { id: 'd-open-1-69', date: '2026-05-18' }, { id: 'd-close-1-69', date: '2026-10-11' },
+    { id: 'd-open-2-69', date: '2026-11-02' }, { id: 'd-close-2-69', date: '2027-04-01' },
+  ];
+  assert.deepEqual(h.termRange(calendar, 1), { from: '2026-05-18', to: '2026-10-10' });
+  assert.deepEqual(h.termRange(calendar, 2), { from: '2026-11-02', to: '2027-03-31' });
+
+  const id = 'mnnbhd8om45cr_3203';
+  const days = [
+    { date: '2026-05-18', records: { [id]: { status: 'present' } } },
+    { date: '2026-05-19', records: { [id]: { status: 'absent' } } },
+    { date: '2026-05-20', records: { [id]: { status: 'leave' } } },
+    { date: '2026-05-21', records: { [id]: {} } },                        // no status = present
+    { date: '2026-05-22', records: { other_1: { status: 'present' } } },  // not checked for this student
+    { date: '2026-11-03', records: { [id]: { status: 'absent' } } },      // term 2, not counted in term 1
+  ];
+  const count = h.attendanceCount(days, id, h.termRange(calendar, 1));
+  assert.deepEqual(count, { checked: 4, present: 2 });
+  assert.equal(h.attendedHours(count, 40), 20);
+  assert.equal(h.attendedHours({ checked: 0, present: 0 }, 40), null, 'no data is not full time');
+  assert.equal(h.isUnderAttendance(31, 40), true);
+  assert.equal(h.isUnderAttendance(32, 40), false);
+});
