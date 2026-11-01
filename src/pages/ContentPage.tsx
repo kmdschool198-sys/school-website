@@ -858,18 +858,6 @@ function ContentPage() {
             }}>
               ระยะเวลา 1 ปี (พ.ศ. 2570)
             </span>
-            <button
-              onClick={() => window.print()}
-              style={{
-                marginLeft: 'auto', background: 'white', color: '#0F172A',
-                border: 'none', padding: '8px 16px', borderRadius: 12,
-                fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer',
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              }}
-            >
-              <Printer size={15} /> พิมพ์เอกสารราชการ
-            </button>
           </div>
 
           <h1 style={{ fontSize: '2rem', fontWeight: 900, margin: '8px 0 16px', lineHeight: 1.3 }}>
