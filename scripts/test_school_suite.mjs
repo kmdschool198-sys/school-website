@@ -713,3 +713,28 @@ test('Suite 19: no attendance is due on weekends, holidays or the term break', a
   assert.equal(due('2026-11-02'), true, 'first day of term 2');
   assert.equal(attendanceDateIssue('2026-10-30', today, { open: true }, holidays['2026-10-30']), null, 'school_calendar can open a closed day');
 });
+
+// -------------------------------------------------------------
+// Test Suite 20: per-student year view and history
+// -------------------------------------------------------------
+test('Suite 20: student record rows, GPA over decided grades, earlier years by code', async () => {
+  const r = await import('../src/utils/studentRecord.ts');
+  const subj = (code, credits, semester) => ({ code, name: code, type: 'พื้นฐาน', group: '', credits, hours: 40, teacher: '', ...(semester ? { semester } : {}) });
+  const sec = { level: 'มัธยม', semester: '1', subjects: [subj('ท21101', 1.5), subj('ค21101', 1.5), subj('ท21102', 1.5, '2')] };
+  const st = { scores: {
+    ท21101: { grade: '4' }, ค21101: { grade: '0', remedial: { grade: '1' } }, ท21102: { grade: '' },
+  } };
+  const rows = r.yearRows(sec, st);
+  assert.deepEqual(rows.map(x => [x.subject.code, x.term, x.grade]), [['ท21101', '1', '4'], ['ค21101', '1', '1'], ['ท21102', '2', '']]);
+  assert.deepEqual(r.gpaOf(rows.filter(x => x.term === '1')), { gpa: 2.5, credits: 3, pending: 0 });
+  assert.deepEqual(r.gpaOf(rows), { gpa: 2.5, credits: 3, pending: 1 }, 'a subject without a result is pending, not 0');
+  assert.deepEqual(r.gpaOf([{ grade: 'ร', subject: subj('x', 1) }]), { gpa: null, credits: 0, pending: 1 });
+
+  const pri = { level: 'ประถม', semester: '1', subjects: [subj('ท11101', 4)] };
+  assert.equal(r.yearRows(pri, { scores: {} })[0].term, 'ปี');
+
+  const saved = { p5: { '3203': { ท15101: { grade: '3' } } }, p6: { '9999': {} } };
+  assert.equal(r.findStudentInYear(saved, '3203').classId, 'p5');
+  assert.equal(r.findStudentInYear(saved, '1111'), null);
+  assert.deepEqual(r.yearsBack('2569', 3), ['2568', '2567', '2566']);
+});

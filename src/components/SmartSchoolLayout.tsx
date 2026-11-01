@@ -49,6 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/porpor6', label: 'พิมพ์ ปพ.6 (ครูประจำชั้น)', icon: <FileText size={17} />, highlightColor: '#DC2626', badge: 'A4' },
       { to: '/porpor5', label: 'วิชาที่ฉันสอน (ปพ.5)', icon: <BookOpen size={17} />, highlightColor: '#0284C7' },
       { to: '/academic-summary', label: 'สรุปผลสัมฤทธิ์ (8 กลุ่มสาระฯ)', icon: <BarChart2 size={17} />, highlightColor: '#D97706' },
+      { to: '/student-record', label: 'ผลการเรียนรายบุคคล (รายปี/ย้อนหลัง)', icon: <FileText size={17} /> },
       { to: '/remedial', label: 'ปิดบันทึกผล & ผลการแก้ตัว', icon: <FileCheck size={17} /> },
     ],
   },

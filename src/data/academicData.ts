@@ -13,6 +13,8 @@ export interface AcademicSubject {
   credits: number;
   hours: number;
   teacher: string;
+  /** มัธยม: the semester this subject is taught; defaults to the class's semester */
+  semester?: '1' | '2';
 }
 
 export interface StudentSubjectScore {

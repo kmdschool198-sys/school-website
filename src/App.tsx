@@ -41,6 +41,7 @@ const BehaviorPage = lazy(() => import('./pages/BehaviorPage'));
 const LunchPage = lazy(() => import('./pages/LunchPage'));
 const DutyPage = lazy(() => import('./pages/DutyPage'));
 const RemedialPage = lazy(() => import('./pages/RemedialPage'));
+const StudentRecordPage = lazy(() => import('./pages/StudentRecordPage'));
 const TimetablePage = lazy(() => import('./pages/TimetablePage'));
 const JanitorTaskPage = lazy(() => import('./pages/JanitorTaskPage'));
 const JanitorDutyPage = lazy(() => import('./pages/JanitorDutyPage'));
@@ -82,6 +83,7 @@ function App() {
           <Route path="/porpor6" element={<PorPor6Page />} />
           <Route path="/academic-summary" element={<AcademicSummaryPage />} />
           <Route path="/remedial" element={<RemedialPage />} />
+          <Route path="/student-record" element={<StudentRecordPage />} />
           <Route path="/porpor5" element={<PorPor5Page />} />
           <Route path="/print-hub" element={<PrintHubPage />} />
           <Route path="/behavior" element={<BehaviorPage />} />

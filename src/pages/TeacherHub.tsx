@@ -54,6 +54,7 @@ const SMART_APPS: SmartAppIcon[] = [
   { id: 'timetable', to: '/timetable', label: 'ตารางสอน & สอนแทน', subtitle: 'จัดตาราง/จัดสอนแทน 1 คลิก', category: 'academic', emoji: '📅', gradient: 'linear-gradient(135deg,#6366F1,#4F46E5)' },
   { id: 'school-stats-report', to: '/school-stats-report', label: 'สถิติประจำเดือน', subtitle: 'สรุปการมาเรียนทั้ง ร.ร.', category: 'print_admin', emoji: '📋', gradient: 'linear-gradient(135deg,#A855F7,#9333EA)' },
   { id: 'school-calendar', to: '/school-calendar', label: 'ปฏิทิน ร.ร.', subtitle: 'วันหยุด-เรียนชดเชย', category: 'print_admin', emoji: '🗓️', gradient: 'linear-gradient(135deg,#F43F5E,#E11D48)' },
+  { id: 'student-record', to: '/student-record', label: 'ผลการเรียนรายคน', subtitle: 'รายปี · ทั้งห้อง · ย้อนหลัง', category: 'academic', emoji: '🎓', gradient: 'linear-gradient(135deg,#7C3AED,#5B21B6)', badge: 'A4' },
   { id: 'remedial', to: '/remedial', label: 'ผลการแก้ตัว', subtitle: 'ปิดบันทึกผล · แก้ 0/ร/มส', category: 'academic', emoji: '🔁', gradient: 'linear-gradient(135deg,#0EA5E9,#0369A1)' },
   { id: 'admin', to: '/admin', label: 'จัดการเว็บไซต์', subtitle: 'ข่าว สไลด์ บุคลากร สิทธิ์ผู้ใช้', category: 'print_admin', emoji: '🔧', gradient: 'linear-gradient(135deg,#64748B,#475569)' },
 ];
