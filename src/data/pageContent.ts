@@ -55,7 +55,6 @@ export const sidebarMenus: Record<string, { icon: string; links: { path: string;
     links: [
       { path: '/timetable', label: '📅 ตารางสอน-ตารางเรียน' },
       { path: '/results', label: '🏆 ประกาศผลการเรียน' },
-      { path: '/lunch', label: '🍱 เมนูอาหารกลางวันวันนี้' },
     ]
   },
   'E-Service ครู': {
