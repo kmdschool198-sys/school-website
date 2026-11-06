@@ -1,3 +1,4 @@
+// Images are Google Drive links (folder of kmdschool198@gmail.com), never files in public/.
 import { adminDb } from './lib/adminApp.mjs';
 
 const db = adminDb();
@@ -8,7 +9,7 @@ const postsToImport = [
     date: '2026-11-02',
     category: 'ข่าวประชาสัมพันธ์',
     content: `🌸 ขอแสดงความยินดี 🌸\n\nวันที่ 29 ตุลาคม 2569 โรงเรียนบ้านคลองมดแดงและสาขา ร่วมส่งและแสดงความยินดีกับ นางสาวอรประภา หมื่นอภัย เนื่องในโอกาสย้ายไปดำรงตำแหน่งครู ณ โรงเรียนวัดศรีกัลยาณุสรณ์ สำนักงานเขตพื้นที่การศึกษาประถมศึกษานครสวรรค์ เขต 2\n\nขออวยพรให้คุณครูอรประภาประสบความสำเร็จในหน้าที่การงาน มีความสุข ความเจริญก้าวหน้าในเส้นทางวิชาชีพครู และเป็นกำลังสำคัญในการพัฒนาคุณภาพการศึกษาให้ก้าวหน้ายิ่งขึ้น\n\nแม้เส้นทางการทำงานจะเปลี่ยนแปลงไป แต่ความรัก ความผูกพัน และความทรงจำดี ๆ ของครอบครัวโรงเรียนบ้านคลองมดแดงจะยังคงอยู่เสมอ\n\nด้วยความรักและความปรารถนาดีจากผู้อำนวยการ คณะครู และบุคลากรทางการศึกษา โรงเรียนบ้านคลองมดแดง`,
-    imageUrl: '/news/fb_congrats_transfer_welcome.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1GqmF6IOO_UUaFWt0Zpy5uB_L5k4aGTKM/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid0G5SDqMBztdHutyNvMiYzaqDepcaFir7NMQZCdCqpyWmxgmdJksaShW8qbGve7yyFl',
     source: 'facebook'
@@ -18,7 +19,7 @@ const postsToImport = [
     date: '2026-11-02',
     category: 'ข่าวประชาสัมพันธ์',
     content: `💐 ขอแสดงความยินดี 💐\n\nโรงเรียนบ้านคลองมดแดง ขอแสดงความยินดีกับ นางสาวอรประภา หมื่นอภัย เนื่องในโอกาสย้ายไปดำรงตำแหน่งครู ณ โรงเรียนวัดศรีกัลยาณุสรณ์ สำนักงานเขตพื้นที่การศึกษาประถมศึกษานครสวรรค์ เขต 2\n\nขออวยพรให้คุณครูประสบความสำเร็จในหน้าที่การงาน มีความสุข ความเจริญก้าวหน้าในเส้นทางวิชาชีพครู และเป็นกำลังสำคัญในการพัฒนาผู้เรียนและการศึกษาสืบไป\n\nด้วยความรัก ความปรารถนาดี และความผูกพันจากครอบครัวโรงเรียนบ้านคลองมดแดง`,
-    imageUrl: '/news/fb_congrats_kru_onprapha.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1noAaXX_wzi63sq89hDdPunQbpnaW6V1M/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid0nQ9xX7SbMdS4bvLfojRkQX51WNgdbthmaJ7F2F7sJmGoMLyPMR8DJ7gQ8VHX9cEsl',
     source: 'facebook'
@@ -28,7 +29,7 @@ const postsToImport = [
     date: '2026-10-29',
     category: 'ข่าวประชาสัมพันธ์',
     content: `🙏 โรงเรียนบ้านคลองมดแดง ขอขอบพระคุณทุกภาคส่วนด้วยความซาบซึ้งใจ 🙏\n\nโรงเรียนบ้านคลองมดแดงได้รับเกียรติให้เป็นสถานที่จัดหน่วยแพทย์อาสา สมเด็จพระศรีนครินทราบรมราชชนนี (พอ.สว.) และหน่วยทันตกรรมเคลื่อนที่ ซึ่งได้ให้บริการตรวจสุขภาพและดูแลสุขภาพช่องปากแก่คณะครู นักเรียน และประชาชนในพื้นที่ นับเป็นโอกาสอันดีที่ช่วยส่งเสริมสุขภาพและยกระดับคุณภาพชีวิตของคนในชุมชน\n\nโรงเรียนขอขอบพระคุณทุกหน่วยงาน คณะผู้จัดงาน ผู้สนับสนุน ผู้ร่วมออกบูธ และจิตอาสาทุกท่าน ที่ร่วมแรงร่วมใจ อำนวยความสะดวก ตลอดจนนำสิ่งของ อาหาร และความช่วยเหลือต่าง ๆ มามอบให้แก่โรงเรียน นักเรียน และชุมชน ขอขอบพระคุณในน้ำใจอันงดงามและความเอื้อเฟื้อที่มีให้กันเสมอมา\n\n🎬 พิเศษ! ขอเชิญร่วมชมหนังกลางแปลงกับทีมงานซ่อมสร้างยุธภาพยนต์ เริ่มฉายเวลา 18.30 น. เป็นต้นไป ณ โรงเรียนบ้านคลองมดแดง มีป๊อปคอร์นและสายไหมแจกฟรี!\n\nเพราะทุกน้ำใจคือพลังแห่งการแบ่งปัน และทุกความร่วมมือคือรากฐานสำคัญในการพัฒนาโรงเรียนและชุมชนให้เข้มแข็ง เพื่อคุณภาพชีวิตที่ดีของลูกหลานของเรา`,
-    imageUrl: '/news/fb_thanks_all_sectors.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1QtfUNbHfxsvQ48uJQzwT0Yo7A6k5V2q9/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid02GLqJmwMACcvQ6cP7pTpaPqSQVBpFSCkfD8Tje97Gq8mGEWqiAVH8XxdUnFjySnU1l',
     source: 'facebook'
@@ -38,7 +39,7 @@ const postsToImport = [
     date: '2026-10-27',
     category: 'ข่าวประชาสัมพันธ์',
     content: `📚 ประชาสัมพันธ์กิจกรรมโรงเรียนบ้านคลองมดแดง 📚\n\nประชุมครูประจำเดือน ต้อนรับการเปิดภาคเรียนที่ 2 ปีการศึกษา 2569 พร้อมกิจกรรม Big Cleaning Day\n\nวันที่ 27 ตุลาคม 2569 ณ ห้องประชุมโรงเรียนบ้านคลองมดแดง นำโดย ผอ.ปรัชญา ปรางค์ชัยภูมิ พร้อมด้วยคณะครูและบุคลากรทางการศึกษา ร่วมประชุมวางแผนการดำเนินงาน เตรียมความพร้อมสำหรับการเปิดภาคเรียนที่ 2 เพื่อพัฒนาคุณภาพการจัดการศึกษาและส่งเสริมการเรียนรู้ของนักเรียนอย่างมีประสิทธิภาพ\n\nนอกจากนี้ คณะครูและบุคลากรยังได้ร่วมแรงร่วมใจกันจัดกิจกรรม Big Cleaning Day ทำความสะอาดและปรับปรุงภูมิทัศน์บริเวณโรงเรียนให้สะอาด เป็นระเบียบเรียบร้อย และมีสภาพแวดล้อมที่เอื้อต่อการเรียนรู้ พร้อมต้อนรับนักเรียนสู่ภาคเรียนใหม่อย่างมีความสุข\n\n"บ้านและโรงเรียนร่วมมือ เพื่อลูกหลานของเรา"`,
-    imageUrl: '/news/fb_term2_cleaning_meeting.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1M8uePgL2BbpoQ-Jzp-PePdF5_LNJNlMP/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid02yoCjAdxFLwfer8D78kUuvYeVZXssEBZySACFwiSotcageQjxTFvLEfiP8SZ31Vqjl',
     source: 'facebook'
@@ -48,7 +49,7 @@ const postsToImport = [
     date: '2026-10-28',
     category: 'ข่าวประชาสัมพันธ์',
     content: `📢 ประชาสัมพันธ์จากโรงเรียนบ้านคลองมดแดง 📢\n\nเปิดภาคเรียนที่ 2 ปีการศึกษา 2569\n\nโรงเรียนบ้านคลองมดแดง ขอแจ้งกำหนดการเปิดภาคเรียนและการประชุมผู้ปกครองนักเรียน ดังนี้:\n\n🔔 วันจันทร์ที่ 2 พฤศจิกายน 2569 : เปิดภาคเรียนที่ 2 ปีการศึกษา 2569\n🔔 วันอังคารที่ 3 พฤศจิกายน 2569 : เวลา 09.00 น. เป็นต้นไป ประชุมผู้ปกครองนักเรียน\n\nขอความร่วมมือผู้ปกครองทุกท่านเข้าร่วมประชุมตามวันและเวลาดังกล่าว เพื่อร่วมแลกเปลี่ยนข้อมูลและประสานความร่วมมือในการดูแล ส่งเสริม และพัฒนาการเรียนรู้ของนักเรียนให้เป็นไปอย่างมีประสิทธิภาพ\n\nโรงเรียนบ้านคลองมดแดงขอขอบพระคุณผู้ปกครองทุกท่านที่ให้ความร่วมมือและสนับสนุนการจัดการศึกษาด้วยดีเสมอมา`,
-    imageUrl: '/news/fb_term2_welcome_school.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1bmeMAmto-jn7hraPlGWI4nTJH_oZU5gJ/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid02LDohvCTnoYRUTuybkTJiqzmCmfuZFcfyPf2agTQqneZEmBitxBS8ToziTUVEx1rBl',
     source: 'facebook'
@@ -58,7 +59,7 @@ const postsToImport = [
     date: '2026-09-28',
     category: 'ข่าวประชาสัมพันธ์',
     content: `⚠️ ประกาศโรงเรียนบ้านคลองมดแดง ⚠️\n\nเนื่องจากสถานการณ์ ฝนตกหนักและดินสไลด์ปิดทับเส้นทาง ส่งผลให้การเดินทางมาโรงเรียนไม่ปลอดภัย โรงเรียนจึงประกาศ ปิดสถานศึกษาด้วยเหตุพิเศษ ตั้งแต่วันที่ 28 กันยายน 2569 เป็นต้นไป และจะแจ้งกำหนดการเปิดเรียนให้ทราบอีกครั้งเมื่อสถานการณ์กลับสู่ภาวะปกติ\n\n📅 กำหนดปิด–เปิดภาคเรียน ประจำปีการศึกษา 2569:\n- ปิดภาคเรียนที่ 1 ตั้งแต่ 30 กันยายน 2569\n- เปิดภาคเรียนที่ 2 วันจันทร์ที่ 2 พฤศจิกายน 2569\n\nขอความร่วมมือผู้ปกครองดูแลความปลอดภัยของนักเรียนอย่างใกล้ชิด และติดตามข่าวสารจากทางโรงเรียนอย่างต่อเนื่อง`,
-    imageUrl: '/news/fb_kmd_announcement_sep28.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1GNNNgfWbLLx9FY9OD-QfZe3VlFqV0yA3/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid02dbVF4DQGsQR7G8GeYEuZY7pQZ4tgwrLUMkYrfhMsJn6Ysd8235Q2G2GpykSZHUqql',
     source: 'facebook'
@@ -68,7 +69,7 @@ const postsToImport = [
     date: '2026-09-27',
     category: 'ข่าวประชาสัมพันธ์',
     content: `🏆 กฤษณาเกมส์ 2569 🏆\n\nโรงเรียนบ้านคลองมดแดง ขอขอบพระคุณ ผู้ปกครองของน้องแก้ม มานิตา แซ่เตี๋ย ที่ได้มอบเงินสนับสนุน ค่าขนมและเครื่องดื่ม จำนวน 4,000 บาท เพื่อสนับสนุนการจัดกิจกรรมการแข่งขันกีฬาสีภายในโรงเรียน “กฤษณาเกมส์”\n\nโรงเรียนบ้านคลองมดแดง ขอขอบพระคุณในน้ำใจและการสนับสนุนกิจกรรมของนักเรียนเป็นอย่างสูง กีฬา สร้างความสามัคคี มีน้ำใจ และสร้างความสุขให้กับเด็ก ๆ`,
-    imageUrl: '/news/fb_kritsana_games_2569.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1D6W6NFrXbDkhdZRaOSCc7SIW3IgKnom2/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid023VZE6nobLZDTMRa4Hh6v6V9S2XsDSpYdccpM8QHeseqGHCWwp3G9KipvoQsafaol',
     source: 'facebook'
@@ -78,7 +79,7 @@ const postsToImport = [
     date: '2026-09-26',
     category: 'ข่าวประชาสัมพันธ์',
     content: `🏆 กฤษณาเกมส์ 🏆\n\nโรงเรียนบ้านคลองมดแดง ขอขอบพระคุณ ร้านสื่ออักษร ที่ได้มอบเงินสนับสนุนการจัดกิจกรรม การแข่งขันกีฬาสีภายในโรงเรียน “กฤษณาเกมส์” จำนวน 2,000 บาท\n\nการสนับสนุนในครั้งนี้มีส่วนสำคัญในการส่งเสริมกิจกรรมกีฬา สร้างความสามัคคี ความมีน้ำใจนักกีฬา และเปิดโอกาสให้นักเรียนได้แสดงศักยภาพอย่างเต็มที่ โรงเรียนบ้านคลองมดแดง ขอขอบพระคุณร้านสื่ออักษรเป็นอย่างสูงมา ณ โอกาสนี้`,
-    imageUrl: '/news/fb_kritsana_games_opening.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1-GEDIza94tbhjQoS4890vBP49tC_joMM/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid0RfXvWZwVzHLNWavLEvYMjh33eqDGzEGajQV62DF2dBmJAZ2gXysuAB7Kg5UktU1jl',
     source: 'facebook'
@@ -88,7 +89,7 @@ const postsToImport = [
     date: '2026-09-21',
     category: 'ข่าวประชาสัมพันธ์',
     content: `✨ การมอบเกียรติบัตรแก่นักเรียนผู้เข้าร่วมโครงการส่งเสริมศีลธรรม วัฒนธรรม ครั้งที่ 24 ประจำปี 2569 ✨\n\nโรงเรียนบ้านคลองมดแดง ได้จัดพิธีมอบเกียรติบัตรแก่นักเรียนที่ได้เข้าร่วมกิจกรรมและสร้างชื่อเสียงให้กับโรงเรียนในโครงการส่งเสริมศีลธรรม วัฒนธรรม เพื่อเสริมสร้างคุณธรรมจริยธรรมให้นักเรียนได้เรียนรู้หลักธรรม ฝึกสมาธิ มีระเบียบวินัย รู้จักการทำงานร่วมกับผู้อื่น และสืบสานคุณค่าทางศีลธรรมและวัฒนธรรมไทย\n\nขอชื่นชมในความตั้งใจ ความมุ่งมั่น และความภาคภูมิใจของนักเรียนทุกคนที่ได้ร่วมเป็นส่วนหนึ่งของกิจกรรมในครั้งนี้`,
-    imageUrl: '/news/fb_moral_certificate_24.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1FV7M_Tp7y7m0xw18hea45-4IIdMAx0y1/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid02ggUyUPQtTvTQ8odcMbaxwYa1uQXfFobwebpsyNsgzx34D8UvxecpjmtjAy186P3gl',
     source: 'facebook'
@@ -98,7 +99,7 @@ const postsToImport = [
     date: '2026-09-21',
     category: 'ผลงานรางวัล',
     content: `🥇 ขอแสดงความยินดีกับความสำเร็จและความภาคภูมิใจของโรงเรียนบ้านคลองมดแดง 🥇\n\nขอแสดงความยินดีกับ นายอนันตชัย เพ็ชรรี่ โรงเรียนบ้านคลองมดแดง ที่ได้รับ รางวัลชนะเลิศ ระดับเหรียญทอง จากการประกวด รางวัลครูผู้สร้างเกมกระดานดิจิทัล (Digital Board Games) เพื่อส่งเสริมการยกระดับสมรรถนะความฉลาดรู้ของผู้เรียน ระดับมัธยมศึกษาตอนต้น\n\nผลงาน Digital City Quest : ภารกิจกู้มหานครอัจฉริยะ นวัตกรรมเกมเพื่อการเรียนรู้ที่มุ่งส่งเสริมการคิด การวางแผน การแก้ปัญหา และพัฒนาสมรรถนะของผู้เรียนผ่านการเรียนรู้อย่างสร้างสรรค์\n\nอีกหนึ่งความสำเร็จที่สะท้อนถึงการนำเทคโนโลยีและนวัตกรรมมาพัฒนาการจัดการเรียนรู้ เพื่อเปิดโอกาสให้ผู้เรียน “เรียนรู้ผ่านการเล่น คิดเป็น แก้ปัญหาเป็น และสร้างสรรค์เป็น”`,
-    imageUrl: '/news/fb_congrats_pride_awards.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1-vVMnlFLLN7nIYBp47WTy2fNTwo05g0x/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid0hYW6GRyq6LELKaHbsWEQNuoAJA3b2KGGKfg2sdPdcxmRYph2RUiSWPW125K9xaUpl',
     source: 'facebook'
@@ -108,7 +109,7 @@ const postsToImport = [
     date: '2026-09-19',
     category: 'ข่าวประชาสัมพันธ์',
     content: `🏆 กฤษณาเกมส์ 🏆\n\nโรงเรียนบ้านคลองมดแดง ขอขอบพระคุณ บริษัท สยามสไมล์ โบรกเกอร์ (ประเทศไทย) จำกัด ที่ให้การสนับสนุนกิจกรรมการแข่งขันกีฬาสีภายในโรงเรียน เป็นจำนวนเงิน 1,000 บาท\n\nการสนับสนุนในครั้งนี้เป็นส่วนสำคัญในการส่งเสริมให้นักเรียนได้แสดงความสามารถด้านกีฬา รู้จักความสามัคคี มีน้ำใจนักกีฬา และใช้เวลาว่างให้เกิดประโยชน์ โรงเรียนบ้านคลองมดแดงขอขอบพระคุณเป็นอย่างสูงมา ณ โอกาสนี้`,
-    imageUrl: '/news/fb_siam_smile_sponsor.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1yF55FWILOHSQ0qUBhywVjoUtslsd0X47/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid0DKfJnr1ignc3oHptiNkvLJmfU97FwH3CbdHLNrAKnreidMii44m2DWxhApEPJ4zHl',
     source: 'facebook'
@@ -118,7 +119,7 @@ const postsToImport = [
     date: '2026-09-11',
     category: 'ผลงานรางวัล',
     content: `🎉 ขอแสดงความยินดีกับคนเก่ง โรงเรียนบ้านคลองมดแดง! 🎉\n\nขอปรบมือและชื่นชมความสามารถของนักเรียนทุกคน ที่ได้เข้าร่วมการแข่งขันตาม โครงการส่งเสริมศีลธรรม (แข่งขันตอบปัญหาธรรมะ, สวดมนต์หมู่ทำนองสรภัญญะ, บรรยายธรรม และมรรคนายกน้อย) ณ วัดถาวรวัฒนาใต้ ตำบลถาวรวัฒนา อำเภอทรายทองวัฒนา จังหวัดกำแพงเพชร\n\nเด็ก ๆ ตั้งใจและทำเต็มที่จนสามารถคว้ารางวัลแห่งความภาคภูมิใจมาฝากพวกเราทุกคน ขอชื่นชมในความเพียรพยายามและความสามารถของลูกหลานคลองมดแดงทุกคนครับ`,
-    imageUrl: '/news/fb_congrats_talented_students_sep11.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1BHWNdy8lxlGhk4lRYVaUQ7TFMV3PBIX8/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid02PT6qRmqGxRe8LFQbnYXVCmEHRmrJvq9pfUJEW9ApVx1Yenx2At7g7BYonKUL2WQsl',
     source: 'facebook'
@@ -128,7 +129,7 @@ const postsToImport = [
     date: '2026-09-10',
     category: 'ข่าวประชาสัมพันธ์',
     content: `🌱 โรงเรียนบ้านคลองมดแดง จัดกิจกรรมประกวดสื่อการเรียนรู้บูรณาการตามหลักปรัชญาของเศรษฐกิจพอเพียง 🌱\n\nวันที่ 10 กันยายน พ.ศ. 2569 โรงเรียนบ้านคลองมดแดง จัดกิจกรรม ประกวดสื่อการเรียนรู้บูรณาการตามหลักปรัชญาของเศรษฐกิจพอเพียง เพื่อส่งเสริมให้นักเรียนได้เรียนรู้ผ่านการลงมือปฏิบัติจริง พร้อมทั้งปลูกฝังแนวคิดการใช้ทรัพยากรอย่างคุ้มค่า การประหยัด และการอนุรักษ์สิ่งแวดล้อม\n\nกิจกรรมภายในงานประกอบด้วย:\n1. ประกวดกระปุกออมสินจากวัสดุเหลือใช้และวัสดุธรรมชาติ\n2. กิจกรรม “ขยะแลกไข่”\n\n“ใช้ทรัพยากรอย่างรู้คุณค่า ประหยัด พอเพียง และยั่งยืน”`,
-    imageUrl: '/news/fb_sufficiency_media_contest_sep10.jpg',
+    imageUrl: 'https://drive.google.com/file/d/1erfBqlq4qLUXNwQSj11HAaTG-Kdk4p_3/view?usp=sharing',
     imageType: 'image',
     facebookUrl: 'https://www.facebook.com/BnKhlngMddang/posts/pfbid0skK3ggtXvcmqRbG6Hf6iR7rnvToBv9ibsvQEg4hU8oQCUAxQFpL3zCBs8cPvs15Rl',
     source: 'facebook'

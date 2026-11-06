@@ -16,11 +16,17 @@
 เว็บจริงจึงส่งหน้า HTML กลับมาแทนรูป และข่าว 13 รายการนี้แสดงเป็นรูปกล้องขีดฆ่า
 ส่วนข่าวอื่นอีก 94 รายการใช้ลิงก์ Drive อยู่แล้ว และแสดงรูปได้ปกติ
 
-## งานที่ค้าง (สถานะ 6 พ.ย. 2569)
+## สิ่งที่ทำแล้ว (6 พ.ย. 2569) — ใช้เป็นขั้นตอนครั้งถัดไป
 
-ยังไม่ได้ทำ: Google Drive connector ในแอปขึ้นว่าเชื่อมต่อแล้ว แต่เรียกใช้แล้วได้ "requires authentication"
+**ทำเสร็จแล้ว:** อัปโหลดรูป 14 ไฟล์เข้าโฟลเดอร์ `news-to-drive`
+(https://drive.google.com/drive/folders/1gKabyfUWIGtEFHDT0z8Josf2X-uGaCpd) แชร์ "ทุกคนที่มีลิงก์" แล้ว
+และเปลี่ยนรูปของข่าวทั้ง 14 รายการเป็นลิงก์ Drive (`private/news-drive-map.json`, สำรองข้อมูลเดิมไว้ใน `private/backups/news-image-relink-*.json`)
+ตอนนี้ข่าวทั้ง 108 รายการใช้ลิงก์ Drive ทั้งหมด ลบรูป 13 ไฟล์ออกจาก `public/news/` แล้ว
+และ `scripts/import_fb_news_live.mjs` ใช้ลิงก์ Drive แทนไฟล์ในเว็บแล้ว
+รูปอีก 12 ไฟล์ที่ยังอยู่ใน `public/news/` เป็นของงานข่าวเดือน ส.ค.–ก.ย.
+(`scripts/prepare_drive_upload_folder.mjs`) ซึ่งยังไม่มีข่าวไหนใช้
 
-1. อัปโหลด 13 ไฟล์จาก `public/news/` เข้าโฟลเดอร์ด้านบน แล้วตั้งแชร์ "ทุกคนที่มีลิงก์"
+1. อัปโหลด 14 ไฟล์จาก `private/news-to-drive/` เข้าโฟลเดอร์ด้านบน แล้วตั้งแชร์ "ทุกคนที่มีลิงก์"
 
    | ไฟล์ | โพสต์ (Firestore `posts/`) |
    |---|---|
@@ -37,7 +43,7 @@
    | fb_thanks_all_sectors.jpg | WkNLwVqCnBdsHnyQReqr |
    | fb_moral_certificate_24.jpg | adyZ7siqsqRL3On6Bw03 |
    | fb_sufficiency_media_contest_sep10.jpg | hErUbR86fa0tCeDE36js |
-   | fb_safe_school_award_2569.jpg (อยู่ที่ `private/news-pending/`) | SibHuYKW6Qm5X5orOpJG (ข่าว 4 พ.ย. 69 ยังไม่มีรูป ใน mapping ใช้ post id เป็น key) |
+   | fb_safe_school_award_2569.jpg | SibHuYKW6Qm5X5orOpJG (ข่าว 4 พ.ย. 69 ยังไม่มีรูป ใน mapping ใช้ post id เป็น key) |
 
 2. ทำไฟล์ mapping ชื่อไฟล์ → รหัสไฟล์ Drive หรือลิงก์ Drive เช่น `private/news-drive-map.json`
 
