@@ -2,7 +2,8 @@
 // Replaces post imageUrl values that point at a file on the website (/news/xxx.jpg) with the
 // Drive link of the file with the same name.
 //
-// Mapping file: JSON { "fb_xxx.jpg": "<Drive file id or link>", ... }
+// Mapping file: JSON { "fb_xxx.jpg": "<Drive file id or link>", "<post id>": "<link>", ... }
+// A post with no image yet is matched by its post id.
 // Every touched post is saved to private/backups/ first. Dry run unless --write.
 //
 // Usage: node scripts/relink_news_images.mjs <mapping.json> [--write]
@@ -28,9 +29,10 @@ const snap = await db.collection('posts').get();
 const updates = [];
 const missing = [];
 for (const d of snap.docs) {
-  const url = d.data().imageUrl;
-  if (typeof url !== 'string' || !url.startsWith('/')) continue;
-  const name = path.posix.basename(url);
+  const url = d.data().imageUrl || '';
+  if (url && !url.startsWith('/')) continue;
+  if (!url && !mapping[d.id]) continue;
+  const name = url ? path.posix.basename(url) : d.id;
   const link = mapping[name] ? driveLink(mapping[name]) : null;
   if (!link) { missing.push(`${d.id} ${url}`); continue; }
   updates.push({ ref: d.ref, id: d.id, before: d.data(), link });

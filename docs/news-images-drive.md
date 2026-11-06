@@ -37,6 +37,7 @@
    | fb_thanks_all_sectors.jpg | WkNLwVqCnBdsHnyQReqr |
    | fb_moral_certificate_24.jpg | adyZ7siqsqRL3On6Bw03 |
    | fb_sufficiency_media_contest_sep10.jpg | hErUbR86fa0tCeDE36js |
+   | fb_safe_school_award_2569.jpg (อยู่ที่ `private/news-pending/`) | SibHuYKW6Qm5X5orOpJG (ข่าว 4 พ.ย. 69 ยังไม่มีรูป ใน mapping ใช้ post id เป็น key) |
 
 2. ทำไฟล์ mapping ชื่อไฟล์ → รหัสไฟล์ Drive หรือลิงก์ Drive เช่น `private/news-drive-map.json`
 
