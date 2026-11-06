@@ -144,7 +144,8 @@ export interface SupervisionRecord {
   round: SupervisionRound;
   aspect: SupervisionAspectId;
   date: string;               // YYYY-MM-DD
-  teacherEmail: string;       // ตัวเล็ก ใช้จับคู่กับบัญชีครู
+  teacherKey?: string;        // pos<เลขที่ตำแหน่ง> จากรายชื่อบุคลากร
+  teacherEmail: string;       // ตัวเล็ก ใช้จับคู่กับบัญชีครู (ว่างได้ ถ้าครูยังไม่มี Gmail)
   teacherName: string;
   teaching: string;           // รับผิดชอบงานสอน
   homeroom: string;           // งานประจำชั้น

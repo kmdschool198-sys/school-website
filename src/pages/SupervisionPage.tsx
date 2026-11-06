@@ -9,6 +9,7 @@ import TeacherLoginGate from '../components/TeacherLoginGate';
 import DriveImage from '../components/DriveImage';
 import { OfficialDocument, OfficialHeader } from '../components/print/Official';
 import { officialTd, officialTdLeft, officialTh } from '../components/print/officialStyles';
+import { OFFICIAL_PERSONNEL, normalizePersonName } from '../data/personnelRoster';
 import { STAFF_USERS_COLLECTION, canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
 import {
   SUPERVISION_ASPECTS, SUPERVISION_COLLECTION, SUPERVISION_LEVELS, SUPERVISION_ROUNDS,
@@ -32,7 +33,19 @@ const todayIso = () => {
 };
 const levelColor = (percent: number) => supervisionLevel(percent).color;
 
-interface StaffOption { email: string; name: string }
+/** ครูผู้รับการนิเทศ: จากรายชื่อบุคลากรของโรงเรียน (ครูเท่านั้น ไม่รวมผู้บริหาร/ธุรการ) */
+interface TeacherOption { key: string; name: string; email: string }
+
+const displayName = (name: string) => name.replace(/^(นางสาว|นาง|นาย)\s+/, '$1').replace(/\s+/g, ' ').trim();
+
+/** key = เลขที่ตำแหน่ง จึงบันทึกผลได้แม้ครูยังไม่มี Gmail; อีเมลจับคู่จากบัญชีผู้ใช้ด้วยชื่อ */
+function officialTeachers(staff: Array<{ email: string; name: string }>): TeacherOption[] {
+  return OFFICIAL_PERSONNEL.filter(p => p.cat === 'teacher').map(p => ({
+    key: `pos${p.posNum}`,
+    name: displayName(p.name),
+    email: staff.find(s => normalizePersonName(s.name) === normalizePersonName(p.name))?.email || '',
+  }));
+}
 
 const card: CSSProperties = { background: '#fff', borderRadius: 16, border: '1px solid #E2E8F0', padding: 20, marginBottom: 18 };
 const input: CSSProperties = { width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid #CBD5E1', fontSize: 15, fontFamily: 'inherit', boxSizing: 'border-box' };
@@ -409,6 +422,7 @@ function TeacherView({ email, name }: { email: string; name: string }) {
 // ─────────────────────────────── admin view ───────────────────────────────
 
 interface Draft {
+  teacherKey: string;
   teacherEmail: string;
   teacherName: string;
   round: SupervisionRound;
@@ -426,7 +440,8 @@ interface Draft {
   secretary: string;
 }
 
-const emptyDraft = (round: SupervisionRound = 1, teacher?: StaffOption): Draft => ({
+const emptyDraft = (round: SupervisionRound = 1, teacher?: TeacherOption): Draft => ({
+  teacherKey: teacher?.key || '',
   teacherEmail: teacher?.email || '',
   teacherName: teacher?.name || '',
   round,
@@ -445,6 +460,7 @@ const emptyDraft = (round: SupervisionRound = 1, teacher?: StaffOption): Draft =
 });
 
 const draftFromRecord = (r: SupervisionRecord): Draft => ({
+  teacherKey: r.teacherKey || r.teacherEmail,
   teacherEmail: r.teacherEmail,
   teacherName: r.teacherName,
   round: r.round,
@@ -465,7 +481,7 @@ const draftFromRecord = (r: SupervisionRecord): Draft => ({
 function AdminView({ adminName, adminEmail }: { adminName: string; adminEmail: string }) {
   const [year, setYear] = useState(CURRENT_YEAR);
   const [records, setRecords] = useState<SupervisionRecord[]>([]);
-  const [staff, setStaff] = useState<StaffOption[]>([]);
+  const [staff, setStaff] = useState<Array<{ email: string; name: string }>>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [viewing, setViewing] = useState<SupervisionRecord | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -488,18 +504,13 @@ function AdminView({ adminName, adminEmail }: { adminName: string; adminEmail: s
     }).catch(err => console.error('staff list failed', err));
   }, []);
 
-  // ครูที่แสดงในตาราง: ทุกคนในรายชื่อบุคลากร + คนที่มีผลการนิเทศแล้วแต่ไม่อยู่ในรายชื่อ
-  const teachers = useMemo(() => {
-    const map = new Map<string, StaffOption>();
-    staff.forEach(s => map.set(s.email, s));
-    records.forEach(r => { if (!map.has(r.teacherEmail)) map.set(r.teacherEmail, { email: r.teacherEmail, name: r.teacherName }); });
-    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'th'));
-  }, [staff, records]);
+  // ครูที่แสดงในตาราง: ครูตามรายชื่อบุคลากรของโรงเรียนเท่านั้น
+  const teachers = useMemo(() => officialTeachers(staff), [staff]);
+  const keyOf = (r: SupervisionRecord) => r.teacherKey || r.teacherEmail;
+  const recordFor = (key: string, round: SupervisionRound) => records.find(r => keyOf(r) === key && r.round === round);
 
-  const recordFor = (email: string, round: SupervisionRound) => records.find(r => r.teacherEmail === email && r.round === round);
-
-  const openCell = (t: StaffOption, round: SupervisionRound) => {
-    const r = recordFor(t.email, round);
+  const openCell = (t: TeacherOption, round: SupervisionRound) => {
+    const r = recordFor(t.key, round);
     setMsg(null);
     if (r) { setViewing(r); setDraft(null); } else { setDraft(emptyDraft(round, t)); setViewing(null); }
     setTimeout(() => document.getElementById('sup-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
@@ -541,12 +552,12 @@ function AdminView({ adminName, adminEmail }: { adminName: string; adminEmail: s
               <tbody>
                 {teachers.length === 0 && <tr><td style={td} colSpan={6}>ยังไม่มีรายชื่อครู (เพิ่มได้ที่ จัดการเว็บไซต์ › ผู้ใช้งาน) หรือกด "บันทึกผลการนิเทศ" แล้วกรอกอีเมลครู</td></tr>}
                 {teachers.map(t => {
-                  const s = summarizeSupervision(records.filter(r => r.teacherEmail === t.email), year);
+                  const s = summarizeSupervision(records.filter(r => keyOf(r) === t.key), year);
                   return (
-                    <tr key={t.email}>
+                    <tr key={t.key}>
                       <td style={{ ...td, textAlign: 'left' }}>
                         <div style={{ fontWeight: 700 }}>{t.name}</div>
-                        <div style={{ fontSize: 12, color: '#94A3B8' }}>{t.email}</div>
+                        <div style={{ fontSize: 12, color: t.email ? '#94A3B8' : '#B45309' }}>{t.email || 'ยังไม่มี Gmail (ครูยังเปิดดูผลเองไม่ได้)'}</div>
                       </td>
                       {s.rounds.map(({ round, record }) => (
                         <td key={round} style={{ ...td, cursor: 'pointer' }} onClick={() => openCell(t, round)}>
@@ -583,10 +594,10 @@ function AdminView({ adminName, adminEmail }: { adminName: string; adminEmail: s
                 </div>
               </div>
               <SummaryTable
-                records={records.filter(r => r.teacherEmail === viewing.teacherEmail)}
+                records={records.filter(r => keyOf(r) === keyOf(viewing))}
                 year={year}
                 selectedRound={viewing.round}
-                onOpen={round => { const r = recordFor(viewing.teacherEmail, round); if (r) setViewing(r); }}
+                onOpen={round => { const r = recordFor(keyOf(viewing), round); if (r) setViewing(r); }}
               />
               <div style={{ height: 18 }} />
               <RecordDetail record={viewing} />
@@ -594,7 +605,7 @@ function AdminView({ adminName, adminEmail }: { adminName: string; adminEmail: s
           )}
           {draft && (
             <EntryForm
-              key={`${draft.teacherEmail}_${draft.round}`}
+              key={`${draft.teacherKey}_${draft.round}`}
               initial={draft}
               year={year}
               staff={teachers}
@@ -602,15 +613,16 @@ function AdminView({ adminName, adminEmail }: { adminName: string; adminEmail: s
               saving={saving}
               onCancel={() => setDraft(null)}
               onSave={async d => {
-                const email = normalizeEmail(d.teacherEmail);
-                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setMsg({ ok: false, text: 'กรุณาเลือกครู หรือกรอกอีเมลครูให้ถูกต้อง' }); return; }
-                if (!d.teacherName.trim()) { setMsg({ ok: false, text: 'กรุณากรอกชื่อผู้รับการนิเทศ' }); return; }
+                const teacher = teachers.find(t => t.key === d.teacherKey);
+                if (!teacher) { setMsg({ ok: false, text: 'กรุณาเลือกครูผู้รับการนิเทศ' }); return; }
+                // อีเมลล่าสุดจากบัญชีผู้ใช้: ครูที่เพิ่งได้ Gmail จะเห็นผลหลังบันทึกครั้งถัดไป
+                const email = normalizeEmail(teacher.email);
                 const result = scoreSupervision(d.aspect, d.scores);
                 if (result.missing) { setMsg({ ok: false, text: `ยังไม่ได้ให้คะแนน ${result.missing} ข้อ` }); return; }
-                const id = supervisionDocId(year, email, d.round);
+                const id = supervisionDocId(year, teacher.key, d.round);
                 const record: SupervisionRecord = {
                   id, year, round: d.round, aspect: d.aspect, date: d.date || todayIso(),
-                  teacherEmail: email, teacherName: d.teacherName.trim(),
+                  teacherKey: teacher.key, teacherEmail: email, teacherName: teacher.name,
                   teaching: d.teaching.trim(), homeroom: d.homeroom.trim(),
                   scores: d.scores,
                   itemNotes: Object.fromEntries(Object.entries(d.itemNotes).filter(([, v]) => v.trim())),
@@ -634,7 +646,7 @@ function AdminView({ adminName, adminEmail }: { adminName: string; adminEmail: s
                 }
               }}
               onDelete={async d => {
-                const id = supervisionDocId(year, d.teacherEmail, d.round);
+                const id = supervisionDocId(year, d.teacherKey, d.round);
                 if (!window.confirm(`ลบผลการนิเทศครั้งที่ ${d.round} ของ ${d.teacherName}?`)) return;
                 try {
                   await deleteDoc(doc(db, SUPERVISION_COLLECTION, id));
@@ -657,7 +669,7 @@ function AdminView({ adminName, adminEmail }: { adminName: string; adminEmail: s
 function EntryForm({ initial, year, staff, records, saving, onCancel, onSave, onDelete }: {
   initial: Draft;
   year: number;
-  staff: StaffOption[];
+  staff: TeacherOption[];
   records: SupervisionRecord[];
   saving: boolean;
   onCancel: () => void;
@@ -668,9 +680,9 @@ function EntryForm({ initial, year, staff, records, saving, onCancel, onSave, on
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD(prev => ({ ...prev, [k]: v }));
   const aspect = getAspect(d.aspect)!;
   const result = scoreSupervision(d.aspect, d.scores);
-  const existing = records.find(r => r.teacherEmail === normalizeEmail(d.teacherEmail) && r.round === d.round);
+  const existing = records.find(r => (r.teacherKey || r.teacherEmail) === d.teacherKey && r.round === d.round);
+  const chosen = staff.find(s => s.key === d.teacherKey);
   const links = cleanPhotoLinks(d.photoText);
-  const inStaff = staff.some(s => s.email === normalizeEmail(d.teacherEmail));
 
   return (
     <div style={{ ...card, borderColor: '#C4B5FD' }}>
@@ -685,23 +697,20 @@ function EntryForm({ initial, year, staff, records, saving, onCancel, onSave, on
           <select
             id="sup-teacher"
             style={input}
-            value={inStaff ? normalizeEmail(d.teacherEmail) : '__other'}
+            value={d.teacherKey}
             onChange={e => {
-              const s = staff.find(x => x.email === e.target.value);
-              setD(prev => ({ ...prev, teacherEmail: s ? s.email : '', teacherName: s ? s.name : '' }));
+              const t = staff.find(x => x.key === e.target.value);
+              setD(prev => ({ ...prev, teacherKey: t?.key || '', teacherName: t?.name || '', teacherEmail: t?.email || '' }));
             }}
           >
-            <option value="__other">— เลือกครู / กรอกเอง —</option>
-            {staff.map(s => <option key={s.email} value={s.email}>{s.name}</option>)}
+            <option value="">— เลือกครู —</option>
+            {staff.map(s => <option key={s.key} value={s.key}>{s.name}</option>)}
           </select>
-        </div>
-        <div>
-          <label style={label} htmlFor="sup-name">ชื่อ-สกุล (พิมพ์ในแบบนิเทศ)</label>
-          <input id="sup-name" style={input} value={d.teacherName} onChange={e => set('teacherName', e.target.value)} />
-        </div>
-        <div>
-          <label style={label} htmlFor="sup-email">อีเมลบัญชีครู (ใช้ให้ครูเห็นผลของตนเอง)</label>
-          <input id="sup-email" style={input} type="email" value={d.teacherEmail} onChange={e => set('teacherEmail', e.target.value)} />
+          {chosen && (
+            <div style={{ fontSize: 12, marginTop: 4, color: chosen.email ? '#64748B' : '#B45309' }}>
+              {chosen.email ? `ครูดูผลได้ด้วยบัญชี ${chosen.email}` : 'ยังไม่มี Gmail ในระบบ: บันทึกได้ แต่ครูจะเปิดดูผลเองไม่ได้จนกว่าจะเพิ่มบัญชี'}
+            </div>
+          )}
         </div>
         <div>
           <label style={label} htmlFor="sup-round">นิเทศครั้งที่</label>
