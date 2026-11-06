@@ -14,7 +14,7 @@ import { useTeacherAuth } from '../utils/teacherAuth';
 import { downloadCsvReport } from '../utils/csvReport';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION, DIRECTOR_NAME } from '../config/siteLinks';
 import { janitorDocId } from '../data/janitor';
-import { usePersonnel, personnelIdByName } from '../utils/usePersonnel';
+import { usePersonnel, personnelIdByName, isJanitor } from '../utils/usePersonnel';
 const STORAGE_JANITOR_KEY = 'kmd_janitor_tasks_v1';
 
 export type ComplianceStatus = 'ตามคำสั่งครบถ้วน' | 'ทำได้บางส่วน' | 'ไม่ตรงตามคำสั่ง' | 'รอตรวจประเมิน';
@@ -87,14 +87,14 @@ function JanitorTaskContent({ userName }: { userName: string }) {
     return {};
   });
 
-  // ดึงรายชื่อสายสนับสนุน (support) จากคอลเลกชัน personnel อัตโนมัติ
+  // ดึงรายชื่อนักการภารโรงจากคอลเลกชัน personnel อัตโนมัติ (ไม่รวมธุรการ)
   useEffect(() => {
     const q = query(collection(db, 'personnel'), orderBy('order', 'asc'));
     return onSnapshot(q, snap => {
       const supports: string[] = [];
       snap.forEach(d => {
         const data = d.data() as any;
-        if (data.category === 'support' && data.name) {
+        if (isJanitor(data) && data.name) {
           supports.push(data.name);
         }
       });

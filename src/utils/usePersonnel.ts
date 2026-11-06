@@ -28,6 +28,11 @@ export function usePersonnel(category?: string): PersonnelRef[] {
   return list;
 }
 
+/** นักการภารโรง: สายสนับสนุนที่ไม่ใช่งานธุรการ (ธุรการไม่ได้อยู่ในตารางเวรและบันทึกงานนักการ) */
+export function isJanitor(p: { category?: string; position?: string }): boolean {
+  return p.category === 'support' && !/ธุรการ/.test(p.position || '');
+}
+
 /** Personnel doc id for a typed or selected name ('' when the name is not in the register). */
 export function personnelIdByName(list: PersonnelRef[], name?: string): string {
   const key = normalizeThaiName(name);

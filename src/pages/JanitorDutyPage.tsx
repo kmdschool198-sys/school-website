@@ -9,7 +9,7 @@ import { CalendarClock, Plus, Printer, Save, Trash2, Wrench } from 'lucide-react
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { useTeacherAuth } from '../utils/teacherAuth';
-import { usePersonnel, personnelIdByName, samePerson, type PersonnelRef } from '../utils/usePersonnel';
+import { usePersonnel, personnelIdByName, samePerson, type PersonnelRef, isJanitor } from '../utils/usePersonnel';
 import { useSchoolDays } from '../utils/useSchoolDays';
 import { resolveSchoolDay } from '../data/schoolCalendar';
 import {
@@ -48,7 +48,8 @@ function slotText(s: DutySlot) {
 function JanitorDuty({ userName }: { userName: string }) {
   const [tab, setTab] = useState<Tab>('roster');
   const [month, setMonth] = useState(currentMonth());
-  const people = usePersonnel('support');
+  const supportStaff = usePersonnel('support');
+  const people = useMemo(() => supportStaff.filter(isJanitor), [supportStaff]);
   const staffList = useMemo(() => people.map(p => p.name), [people]);
   const [roster, setRoster] = useState<JanitorRoster>(EMPTY_ROSTER);
   const [dirty, setDirty] = useState(false);
