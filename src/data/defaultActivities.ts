@@ -12,7 +12,9 @@ export const COLOR_ACTIVITY = '#3B82F6';  // blue - school activities (default)
  */
 export const DEFAULT_ACTIVITIES: Activity[] = [
   // ===== Term boundaries =====
-  { id: 'd-open-1-69', date: '2026-05-18', title: 'เปิดภาคเรียนที่ 1/2569', isHoliday: false, color: COLOR_TERM, description: 'เริ่มต้นภาคเรียนที่ 1 ปีการศึกษา 2569' },
+  // โรงเรียนเปิดเรียนจริง 5 พ.ค. 69 (ประกาศโรงเรียน + มีการเช็คชื่อตั้งแต่วันนั้น); ปฏิทิน สพป. ระบุ 18 พ.ค.
+  { id: 'd-open-1-69', date: '2026-05-05', title: 'เปิดภาคเรียนที่ 1/2569', isHoliday: false, color: COLOR_TERM, description: 'เริ่มต้นภาคเรียนที่ 1 ปีการศึกษา 2569' },
+  { id: 'c-landslide-69', date: '2026-09-28', endDate: '2026-09-30', title: 'ปิดสถานศึกษาด้วยเหตุพิเศษ (ฝนตกหนัก ดินสไลด์ปิดทับเส้นทาง)', isHoliday: true, color: COLOR_TERM, description: 'ประกาศโรงเรียนบ้านคลองมดแดง 28 ก.ย. 69' },
   { id: 'd-close-1-69', date: '2026-10-11', endDate: '2026-10-31', title: 'ปิดภาคเรียนที่ 1/2569', isHoliday: true, color: COLOR_TERM, description: 'ปิดภาคเรียนที่ 1 ปีการศึกษา 2569' },
   { id: 'd-open-2-69', date: '2026-11-02', title: 'เปิดภาคเรียนที่ 2/2569', isHoliday: false, color: COLOR_TERM, description: 'เริ่มต้นภาคเรียนที่ 2 ปีการศึกษา 2569' },
   { id: 'd-close-2-69', date: '2027-04-01', endDate: '2027-04-30', title: 'ปิดภาคเรียนที่ 2/2569', isHoliday: true, color: COLOR_TERM, description: 'ปิดภาคเรียนปลายปีการศึกษา 2569' },
