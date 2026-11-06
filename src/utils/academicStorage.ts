@@ -47,6 +47,8 @@ async function saveCell(write: ScoreOverrides) {
   }
 }
 
+type ScorePatch = Partial<Omit<StudentSubjectScore, 'total' | 'grade'>> & { specialGrade?: string | null };
+
 export function useAcademicData() {
   const [overrides, setOverrides] = useState<ScoreOverrides>(readCache);
   // false until the score document is known; every save waits for it (see scoresSnapshotReady)
@@ -104,12 +106,12 @@ export function useAcademicData() {
    * are always recomputed for the class level (ประถม: from both terms, มัธยม: this semester).
    * specialGrade: 'ร' / 'มส' to set one, null to clear it, undefined to keep the current one.
    */
-  const updateStudentScore = useCallback((
+  const buildScoreWrite = useCallback((
     classId: string,
     studentCode: string,
     subjectCode: string,
-    patch: Partial<Omit<StudentSubjectScore, 'total' | 'grade'>> & { specialGrade?: string | null },
-  ) => {
+    patch: ScorePatch,
+  ): ScoreOverrides => {
     const cls = viewRef.current.find(c => c.classId === classId);
     const prev: Partial<StudentSubjectScore> = cls?.students.find(s => s.code === studentCode)?.scores[subjectCode] || {};
     const hours = cls?.subjects.find(s => s.code === subjectCode)?.hours ?? 40;
@@ -136,6 +138,8 @@ export function useAcademicData() {
       traitScore: next.traitScore ?? 3,
       readThinkScore: next.readThinkScore ?? 3,
       attendedHours: next.attendedHours ?? hours,
+      // always written: the merge save cannot remove a key, so clearing must store false
+      attendedHoursManual: !!next.attendedHoursManual,
       detail: next.detail,
       remedial: next.remedial,
       traitItems: next.traitItems,
@@ -145,8 +149,20 @@ export function useAcademicData() {
     for (const key of Object.keys(write) as (keyof StudentSubjectScore)[]) {
       if (write[key] === undefined) delete write[key];
     }
-    applyLocally(scoreWrite(classId, studentCode, subjectCode, write));
-  }, [applyLocally]);
+    return scoreWrite(classId, studentCode, subjectCode, write);
+  }, []);
+
+  const updateStudentScore = useCallback((classId: string, studentCode: string, subjectCode: string, patch: ScorePatch) => {
+    applyLocally(buildScoreWrite(classId, studentCode, subjectCode, patch));
+  }, [applyLocally, buildScoreWrite]);
+
+  /** Many cells in one save (the automatic study-time fill): one Firestore write instead of one per cell */
+  const updateStudentScores = useCallback((cells: Array<{ classId: string; studentCode: string; subjectCode: string; patch: ScorePatch }>) => {
+    if (!cells.length) return;
+    const write = cells.reduce<ScoreOverrides>(
+      (acc, c) => mergeWrite(acc, buildScoreWrite(c.classId, c.studentCode, c.subjectCode, c.patch)), {});
+    applyLocally(write);
+  }, [applyLocally, buildScoreWrite]);
 
   const updateStudentEvaluation = useCallback((
     classId: string,
@@ -171,6 +187,7 @@ export function useAcademicData() {
     /** true once the score document is known; edit nothing before that */
     loaded,
     updateStudentScore,
+    updateStudentScores,
     updateStudentEvaluation,
     updateStudentActivities,
     /** Re-read every entered score from the server. Never deletes or overwrites anyone's data. */

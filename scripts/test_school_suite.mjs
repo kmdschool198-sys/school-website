@@ -824,3 +824,24 @@ test('Suite 24: week of a date runs Monday to Sunday, label in Thai', async () =
   assert.equal(thaiWeekLabel(w), '2 - 8 พฤศจิกายน พ.ศ. 2569');
   assert.equal(thaiWeekLabel(weekDates('2026-12-31')), '28 ธันวาคม พ.ศ. 2569 - 3 มกราคม พ.ศ. 2570');
 });
+
+// -------------------------------------------------------------
+// Test Suite 25: ปพ.5 study time follows attendance automatically
+// -------------------------------------------------------------
+test('Suite 25: automatic study time keeps typed hours, sets มส only with enough days', async () => {
+  const { autoHoursPatch, attendanceRangeFor, MIN_CHECKED_DAYS_FOR_MS } = await import('../src/utils/attendanceHours.ts');
+  const { DEFAULT_ACTIVITIES } = await import('../src/data/defaultActivities.ts');
+  // 90 of 95 days -> 95% of 80 h = 76 h
+  assert.deepEqual(autoHoursPatch({ attendedHours: 80, grade: '3' }, { checked: 95, present: 90 }, 80), { attendedHours: 76 });
+  assert.equal(autoHoursPatch({ attendedHours: 76, grade: '3' }, { checked: 95, present: 90 }, 80), null, 'no change, no write');
+  assert.equal(autoHoursPatch({ attendedHours: 80, attendedHoursManual: true }, { checked: 95, present: 10 }, 80), null, 'typed hours stay');
+  assert.equal(autoHoursPatch({ attendedHours: 80 }, { checked: 0, present: 0 }, 80), null, 'no check-ins, nothing to say');
+  // under 80%: มส once enough days are checked, not after a few days
+  assert.deepEqual(autoHoursPatch({ attendedHours: 80, grade: '2' }, { checked: 40, present: 20 }, 80), { attendedHours: 40, specialGrade: 'มส' });
+  assert.deepEqual(autoHoursPatch({ attendedHours: 80, grade: '' }, { checked: MIN_CHECKED_DAYS_FOR_MS - 1, present: 10 }, 80), { attendedHours: 42 });
+  assert.deepEqual(autoHoursPatch({ attendedHours: 40, grade: 'มส' }, { checked: 40, present: 38 }, 80), { attendedHours: 76, specialGrade: null }, 'มส lifted');
+  assert.deepEqual(autoHoursPatch({ attendedHours: 80, grade: 'ร' }, { checked: 40, present: 20 }, 80), { attendedHours: 40 }, 'ร stays');
+  // term 1 opened 5 May 2569; ประถม counts the whole year
+  assert.deepEqual(attendanceRangeFor(DEFAULT_ACTIVITIES, false, 1), { from: '2026-05-05', to: '2026-10-10' });
+  assert.deepEqual(attendanceRangeFor(DEFAULT_ACTIVITIES, true, 1), { from: '2026-05-05', to: '2027-03-31' });
+});

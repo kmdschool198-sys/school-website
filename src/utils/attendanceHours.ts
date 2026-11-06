@@ -44,3 +44,34 @@ export function attendedHours(count: { checked: number; present: number }, subje
 }
 
 export const isUnderAttendance = (hours: number, subjectHours: number) => hours < subjectHours * MIN_ATTENDANCE_RATIO;
+
+/** มส is set automatically only once this many days are checked, so one absence in the first week never fails a subject */
+export const MIN_CHECKED_DAYS_FOR_MS = 20;
+
+/** Attendance range a ปพ.5 sheet counts: ประถม grades the whole year, มัธยม one semester */
+export function attendanceRangeFor(calendar: { id: string; date: string }[], yearly: boolean, term: 1 | 2) {
+  if (!yearly) return termRange(calendar, term);
+  return { from: termRange(calendar, 1).from, to: termRange(calendar, 2).to };
+}
+
+/**
+ * The automatic study-time update for one student and subject, or null when nothing changes.
+ * Hours a teacher typed (attendedHoursManual) are never replaced. มส follows attendance once
+ * enough days are checked; an earlier มส is lifted when attendance is enough; ร stays.
+ */
+export function autoHoursPatch(
+  current: { attendedHours?: number; attendedHoursManual?: boolean; grade?: string } | undefined,
+  count: { checked: number; present: number },
+  subjectHours: number,
+): { attendedHours: number; specialGrade?: 'มส' | null } | null {
+  if (current?.attendedHoursManual) return null;
+  const hours = attendedHours(count, subjectHours);
+  if (hours === null) return null;
+  const under = isUnderAttendance(hours, subjectHours);
+  const grade = current?.grade;
+  let specialGrade: 'มส' | null | undefined;
+  if (under && count.checked >= MIN_CHECKED_DAYS_FOR_MS && grade !== 'มส' && grade !== 'ร') specialGrade = 'มส';
+  if (!under && grade === 'มส') specialGrade = null;
+  if (hours === current?.attendedHours && specialGrade === undefined) return null;
+  return specialGrade === undefined ? { attendedHours: hours } : { attendedHours: hours, specialGrade };
+}

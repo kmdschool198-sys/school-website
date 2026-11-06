@@ -25,6 +25,8 @@ export interface StudentSubjectScore {
   total: number;          // คะแนนรวม: มัธยม = ภาคนี้ (เต็ม 100) · ประถม = ทั้งปี (เต็ม 100) หรือภาค 1 (เต็ม 50) ถ้ายังไม่มีภาค 2
   grade: string;          // 4, 3.5, 3, 2.5, 2, 1.5, 1, 0, ร, มส
   attendedHours: number;  // เวลาเรียนที่มาจริง
+  /** true once a teacher typed the hours; the automatic fill from attendance then leaves them alone */
+  attendedHoursManual?: boolean;
   traitScore: number;     // คุณลักษณะอันพึงประสงค์ (0-3)
   readThinkScore: number; // อ่าน คิด วิเคราะห์และเขียน (0-3)
   /** marks per indicator when the subject has a full-mark plan: [term 1] or [term 1, term 2] (ประถม) */

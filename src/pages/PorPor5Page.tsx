@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { collection, doc, getDocs, onSnapshot, query, where, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
@@ -12,7 +12,7 @@ import { useAssessmentPlans, useGradingStatus } from '../utils/assessmentStorage
 import { useSchoolRoster } from '../utils/useSchoolRoster';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { DEFAULT_ACTIVITIES } from '../data/defaultActivities';
-import { attendanceCount, attendedHours, isUnderAttendance, termRange, type AttendanceDay } from '../utils/attendanceHours';
+import { attendanceCount, attendanceRangeFor, attendedHours, autoHoursPatch, isUnderAttendance, type AttendanceDay } from '../utils/attendanceHours';
 import { READ_ITEMS, TRAIT_ITEMS } from '../utils/assessment';
 import PlanEditor from '../components/sgs/PlanEditor';
 import IndicatorGrid from '../components/sgs/IndicatorGrid';
@@ -58,7 +58,7 @@ function blankScore(hours: number) {
 }
 
 function PorPor5Content() {
-  const { classesData, loaded: scoresLoaded, updateStudentScore } = useAcademicData();
+  const { classesData, loaded: scoresLoaded, updateStudentScore, updateStudentScores } = useAcademicData();
   const { classes: rosterClasses } = useSchoolRoster();
   const studentDetails = useStudentDetails(); // birth dates for the public results lookup (staff-only)
   const auth = useTeacherAuth();
@@ -149,6 +149,47 @@ function PorPor5Content() {
     }, 180);
   };
 
+  // ================= 0. เวลาเรียนอัตโนมัติจากระบบเช็คชื่อ =================
+  // When a class sheet opens, every subject's study time follows the daily attendance check,
+  // except hours a teacher typed. Runs once per class and semester per visit.
+  const autoHoursDone = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!scoresLoaded || entryLocked) return;
+    const rosterClass = rosterClasses.find(r => r.acadId === currentClass.classId || r.shortClass === currentClass.shortName);
+    if (!rosterClass?.students.length) return;
+    const term: 1 | 2 = semesterLabel.includes('ภาคเรียนที่ 2') ? 2 : 1;
+    // re-runs when a new subject cell gets its first score, so its hours follow attendance too
+    const cellCount = currentClass.students.reduce((n, st) => n + Object.keys(st.scores).length, 0);
+    if (!cellCount) return;
+    const key = `${currentClass.classId}|${term}|${cellCount}`;
+    if (autoHoursDone.current.has(key)) return;
+    autoHoursDone.current.add(key);
+    let range: { from: string; to: string };
+    try { range = attendanceRangeFor(DEFAULT_ACTIVITIES, scheme.yearly, term); } catch { return; }
+    void getDocs(query(collection(db, 'attendance'), where('classId', '==', rosterClass.id))).then(snap => {
+      const days = snap.docs.map(d => d.data() as AttendanceDay).filter(d => d.date >= range.from && d.date <= range.to);
+      if (!days.length) return;
+      const cells: Parameters<typeof updateStudentScores>[0] = [];
+      for (const st of currentClass.students) {
+        const rs = rosterClass.students.find(r => r.code === st.code) || rosterClass.students.find(r => r.name.trim() === st.name.trim());
+        if (!rs) continue;
+        const count = attendanceCount(days, rs.id, range);
+        for (const subj of currentClass.subjects) {
+          // only subjects that already have a saved score: a new cell would get a made-up grade 0
+          const current = st.scores[subj.code];
+          if (!current) continue;
+          const patch = autoHoursPatch(current, count, subj.hours);
+          if (patch) cells.push({ classId: currentClass.classId, studentCode: st.code, subjectCode: subj.code, patch });
+        }
+      }
+      updateStudentScores(cells);
+      if (cells.length) toast.info(`อัปเดตเวลาเรียนจากการเช็คชื่อ ${days.length} วัน อัตโนมัติ (${cells.length} รายการ)`);
+    }).catch(err => {
+      autoHoursDone.current.delete(key);
+      console.error('auto study time failed', err);
+    });
+  }, [scoresLoaded, entryLocked, rosterClasses, currentClass, semesterLabel, scheme.yearly, updateStudentScores]);
+
   // ================= 1. ซิงค์เวลาเรียนจริงจากระบบเช็คชื่อรายวัน =================
   const syncAttendanceFromCloud = async () => {
     if (!canRunShortcut()) return;
@@ -161,7 +202,7 @@ function PorPor5Content() {
     setSyncingAtt(true);
     try {
       const term = semesterLabel.includes('ภาคเรียนที่ 2') ? 2 : 1;
-      const range = termRange(DEFAULT_ACTIVITIES, term);
+      const range = attendanceRangeFor(DEFAULT_ACTIVITIES, scheme.yearly, term);
       const snap = await getDocs(query(collection(db, 'attendance'), where('classId', '==', rosterClass.id)));
       const days: AttendanceDay[] = snap.docs.map(d => d.data() as AttendanceDay)
         .filter(d => d.date >= range.from && d.date <= range.to);
@@ -184,6 +225,7 @@ function PorPor5Content() {
         // set มส under 80%, lift an earlier มส once attendance is enough; ร stays
         updateStudentScore(currentClass.classId, st.code, currentSubject.code, {
           attendedHours: hours,
+          attendedHoursManual: false, // back to the automatic fill
           specialGrade: under ? 'มส' : sc?.grade === 'มส' ? null : undefined,
         });
         updated++;
@@ -301,7 +343,7 @@ function PorPor5Content() {
     const label = mode === 'full_hours' ? `เวลาเรียนเต็ม ${currentSubject.hours} ชม.`
       : mode === 'trait_3' ? `คุณลักษณะทั้ง ${TRAIT_ITEMS.length} ข้อ = 3` : `อ่าน คิด เขียนทั้ง ${READ_ITEMS.length} ข้อ = 3`;
     if (!window.confirm(`ตั้ง${label} ให้ทั้งห้อง (${currentClass.students.length} คน)? ค่าที่กรอกไว้จะถูกแทนที่`)) return;
-    const patch = mode === 'full_hours' ? { attendedHours: currentSubject.hours }
+    const patch = mode === 'full_hours' ? { attendedHours: currentSubject.hours, attendedHoursManual: true }
       : mode === 'trait_3' ? { traitItems: TRAIT_ITEMS.map(() => 3) } : { readItems: READ_ITEMS.map(() => 3) };
     currentClass.students.forEach(st => updateStudentScore(currentClass.classId, st.code, currentSubject.code, patch));
     setEntryTab(mode === 'full_hours' ? 'scores' : 'items');
@@ -323,7 +365,9 @@ function PorPor5Content() {
     byRow.forEach((vals, row) => {
       const st = currentClass.students[row];
       if (!st) return;
-      updateStudentScore(currentClass.classId, st.code, currentSubject.code, vals);
+      // hours typed or pasted by the teacher are kept; the automatic fill skips them
+      updateStudentScore(currentClass.classId, st.code, currentSubject.code,
+        'attendedHours' in vals ? { ...vals, attendedHoursManual: true } : vals);
     });
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 1800);
