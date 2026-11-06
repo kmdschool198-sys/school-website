@@ -41,6 +41,7 @@ const staticTitles: Record<string, string> = {
   '/janitor-duty': 'ตารางเวรและรายงานนักการภารโรง',
   '/executive': 'แดชบอร์ดผู้บริหาร',
   '/home-visit': 'ระบบบันทึกการเยี่ยมบ้านนักเรียน',
+  '/supervision': 'การนิเทศภายในรายบุคคล',
 };
 
 const printFormTitles: Record<string, string> = {

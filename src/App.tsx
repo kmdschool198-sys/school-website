@@ -19,6 +19,7 @@ const Results = lazy(() => import('./pages/Results'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const ClubAttendance = lazy(() => import('./pages/ClubAttendance'));
 const TeacherHub = lazy(() => import('./pages/TeacherHub'));
+const SupervisionPage = lazy(() => import('./pages/SupervisionPage'));
 const MilkReport = lazy(() => import('./pages/MilkReport'));
 const MonthlyFormPrint = lazy(() => import('./pages/MonthlyFormPrint'));
 const BodyMetricsPrint = lazy(() => import('./pages/BodyMetricsPrint'));
@@ -95,6 +96,7 @@ function App() {
           <Route path="/janitor-duty" element={<JanitorDutyPage />} />
           <Route path="/executive" element={<ExecutiveDashboard />} />
           <Route path="/home-visit" element={<HomeVisitPage />} />
+          <Route path="/supervision" element={<SupervisionPage />} />
           <Route path="/page/:slug" element={<ContentPage />} />
           <Route path="/personnel/:slug" element={<ContentPage />} />
           <Route path="*" element={<NotFound />} />

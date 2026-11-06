@@ -84,6 +84,13 @@ service cloud.firestore {
       allow list, create, update, delete: if isStaffAdmin();
     }
 
+    // การนิเทศภายใน: admin บันทึก ครูอ่านได้เฉพาะผลของตนเอง (teacherEmail = อีเมลบัญชี)
+    match /supervisions/{id} {
+      allow read: if isStaffAdmin()
+        || (isStaff() && resource.data.teacherEmail == request.auth.token.email.lower());
+      allow write: if isStaffAdmin();
+    }
+
     // Public website content. Writes still require a real Firebase Auth staff user.
     match /posts/{documentId} {
       allow read: if true;

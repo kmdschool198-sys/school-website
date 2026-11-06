@@ -4,7 +4,7 @@ import {
   Home, Printer, CheckSquare, School, Users, Coffee, Smile, Wallet,
   BookOpen, BarChart2, FileText, Heart, Calendar, Settings, LogOut,
   Menu, X, Clock, ChevronRight, Globe, FileCheck, Utensils, ClipboardCheck, ShieldAlert, ShieldCheck,
-  Gauge, House, Wrench, CalendarClock,
+  Gauge, House, Wrench, CalendarClock, ClipboardList,
 } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { SCHOOL_NAME } from '../config/siteLinks';
@@ -68,6 +68,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: 'งานวิชาการ & บริหาร',
     items: [
       { to: '/timetable', label: 'ตารางสอน & จัดสอนแทน', icon: <Calendar size={17} />, highlightColor: '#4F46E5', badge: 'อัจฉริยะ' },
+      { to: '/supervision', label: 'การนิเทศภายใน (ผลของฉัน)', icon: <ClipboardList size={17} />, highlightColor: '#7C3AED', badge: 'ใหม่' },
       { to: '/school-calendar', label: 'ปฏิทินการศึกษา', icon: <Calendar size={17} /> },
       { to: '/janitor-duty', label: 'ตารางเวร & รายงานนักการ', icon: <CalendarClock size={17} /> },
       { to: '/janitor-tasks', label: 'บันทึกงานนักการ (เช้า-บ่าย)', icon: <Wrench size={17} /> },

@@ -36,6 +36,7 @@ const SMART_APPS: SmartAppIcon[] = [
   { id: 'porpor6', to: '/porpor6', label: 'พิมพ์ ปพ.6', subtitle: 'สมุดพกรายคน/ทั้งห้อง', category: 'academic', emoji: '📄', gradient: 'linear-gradient(135deg,#EF4444,#DC2626)', badge: 'A4' },
   { id: 'porpor5', to: '/porpor5', label: 'บันทึก ปพ.5', subtitle: 'คะแนนรายตัวชี้วัด แบบ SGS', category: 'academic', emoji: '📝', gradient: 'linear-gradient(135deg,#0284C7,#0369A1)', badge: 'A4' },
   { id: 'academic-summary', to: '/academic-summary', label: 'สรุปผลสัมฤทธิ์', subtitle: 'แยก 8 กลุ่มสาระฯ', category: 'academic', emoji: '📊', gradient: 'linear-gradient(135deg,#F59E0B,#D97706)' },
+  { id: 'supervision', to: '/supervision', label: 'การนิเทศภายใน', subtitle: 'ผลนิเทศ 3 ครั้ง/ปี', category: 'print_admin', emoji: '📋', gradient: 'linear-gradient(135deg,#8B5CF6,#6D28D9)', badge: 'ใหม่' },
   { id: 'print-hub', to: '/print-hub', label: 'ศูนย์รวมการพิมพ์', subtitle: 'One-Stop Print Hub', category: 'print_admin', emoji: '🖨️', gradient: 'linear-gradient(135deg,#BE123C,#9F1239)' },
   { id: 'behavior', to: '/behavior', label: 'ความประพฤติ', subtitle: 'ตัด-เพิ่มแต้ม/ใบเตือน', category: 'student', emoji: '🛡️', gradient: 'linear-gradient(135deg,#DC2626,#991B1B)' },
   { id: 'lunch', to: '/lunch', label: 'อาหารกลางวัน', subtitle: 'นับจากเช็คชื่อ · งบ 22 บ.', category: 'daily', emoji: '🍱', gradient: 'linear-gradient(135deg,#EA580C,#C2410C)' },

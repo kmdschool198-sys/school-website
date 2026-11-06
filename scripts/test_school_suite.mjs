@@ -774,3 +774,38 @@ test('Suite 22: loading the saved roster keeps its class ids, not the built-in o
   // a class never saved keeps the built-in id and students
   assert.equal(merged[1].classId, 'kg_a2_1');
 });
+
+// -------------------------------------------------------------
+// Test Suite 23: internal supervision scoring (แบบนิเทศ 2569)
+// -------------------------------------------------------------
+test('Suite 23: supervision percent, level, per-round summary', async () => {
+  const s = await import('../src/data/supervision.ts');
+  assert.deepEqual(s.SUPERVISION_ASPECTS.map(a => a.items.length), [16, 8, 12], 'items as in the 2569 form');
+  assert.deepEqual(s.SUPERVISION_ASPECTS.map(a => a.maxPerItem), [2, 1, 1]);
+  // ด้านห้องเรียน 16 ข้อ x 2 = 32: all 2 -> 100, all 1 -> 50
+  const all = v => Object.fromEntries(Array.from({ length: 16 }, (_, i) => [String(i), v]));
+  assert.equal(s.scoreSupervision(1, all(2)).percent, 100);
+  assert.equal(s.scoreSupervision(1, all(1)).percent, 50);
+  assert.equal(s.scoreSupervision(1, all(1)).level, 'ควรปรับปรุงแก้ไข');
+  // 7 of 8 -> 87.5 ดีมาก; scores above max are capped; missing items are counted
+  const seven = Object.fromEntries(Array.from({ length: 8 }, (_, i) => [String(i), i < 7 ? 1 : 0]));
+  assert.equal(s.scoreSupervision(2, seven).percent, 87.5);
+  assert.equal(s.scoreSupervision(2, seven).level, 'ดีมาก');
+  assert.equal(s.scoreSupervision(2, { 0: 5 }).total, 1);
+  assert.equal(s.scoreSupervision(2, { 0: 1 }).missing, 7);
+  // level bands from the form, 89.5 rounds up to ดีเยี่ยม
+  assert.equal(s.supervisionLevel(89.5).label, 'ดีเยี่ยม');
+  assert.equal(s.supervisionLevel(69).label, 'พอใช้');
+  assert.equal(s.supervisionLevel(49).label, 'ควรปรับปรุงแก้ไขอย่างยิ่ง');
+  // summary: average of done rounds only, per year
+  const rec = (round, percent, year = 2569) => ({ round, percent, year });
+  const sum = s.summarizeSupervision([rec(1, 90), rec(2, 80), rec(3, 10, 2568)], 2569);
+  assert.equal(sum.done, 2);
+  assert.equal(sum.sumPercent, 170);
+  assert.equal(sum.averagePercent, 85);
+  assert.equal(sum.level, 'ดีมาก');
+  assert.equal(s.summarizeSupervision([], 2569).averagePercent, null);
+  // one doc per teacher per round per year; links cleaned
+  assert.equal(s.supervisionDocId(2569, ' Kru.A@Gmail.com ', 2), '2569_kru_a_gmail_com_r2');
+  assert.deepEqual(s.cleanPhotoLinks('https://a.com/x  javascript:alert(1)\nnot-a-link https://a.com/x'), ['https://a.com/x']);
+});
