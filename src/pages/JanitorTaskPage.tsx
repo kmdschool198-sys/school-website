@@ -15,6 +15,7 @@ import { downloadCsvReport } from '../utils/csvReport';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION, DIRECTOR_NAME } from '../config/siteLinks';
 import { janitorDocId } from '../data/janitor';
 import { usePersonnel, personnelIdByName, isJanitor } from '../utils/usePersonnel';
+import { thaiWeekLabel, weekDates } from '../utils/dates';
 const STORAGE_JANITOR_KEY = 'kmd_janitor_tasks_v1';
 
 export type ComplianceStatus = 'ตามคำสั่งครบถ้วน' | 'ทำได้บางส่วน' | 'ไม่ตรงตามคำสั่ง' | 'รอตรวจประเมิน';
@@ -210,36 +211,38 @@ function JanitorTaskContent({ userName }: { userName: string }) {
     }
   };
 
-  const monthPrefix = date.slice(0, 7);
-  const monthRecords = useMemo(() => {
-    const list = Object.values(recordsMap).filter(r => r.date.startsWith(monthPrefix));
+  // สรุปเป็นรายสัปดาห์ (จันทร์ - อาทิตย์ ของวันที่เลือก) ไม่ใช่รายเดือน
+  const week = useMemo(() => weekDates(date), [date]);
+  const weekLabel = thaiWeekLabel(week);
+  const weekRecords = useMemo(() => {
+    const list = Object.values(recordsMap).filter(r => week.includes(r.date));
     if (!list.some(r => r.date === date)) {
       list.push(currentRecord);
     }
     return list.sort((a, b) => b.date.localeCompare(a.date));
-  }, [recordsMap, monthPrefix, date, currentRecord]);
+  }, [recordsMap, week, date, currentRecord]);
 
-  const monthStats = useMemo(() => {
-    const total = monthRecords.length;
-    const fullPass = monthRecords.filter(r => r.complianceStatus === 'ตามคำสั่งครบถ้วน').length;
-    const partial = monthRecords.filter(r => r.complianceStatus === 'ทำได้บางส่วน').length;
+  const weekStats = useMemo(() => {
+    const total = weekRecords.length;
+    const fullPass = weekRecords.filter(r => r.complianceStatus === 'ตามคำสั่งครบถ้วน').length;
+    const partial = weekRecords.filter(r => r.complianceStatus === 'ทำได้บางส่วน').length;
     const avgStars = total > 0
-      ? monthRecords.reduce((s, r) => s + (r.qualityStars || 5), 0) / total
+      ? weekRecords.reduce((s, r) => s + (r.qualityStars || 5), 0) / total
       : 5;
-    const totalPhotos = monthRecords.reduce(
+    const totalPhotos = weekRecords.reduce(
       (s, r) => s + (r.morningPhotos?.length || 0) + (r.afternoonPhotos?.length || 0),
       0
     );
     return { total, fullPass, partial, avgStars, totalPhotos };
-  }, [monthRecords]);
+  }, [weekRecords]);
 
-  const exportMonthlyCsv = () => {
+  const exportWeeklyCsv = () => {
     const rows: Array<Array<string | number>> = [
       [`รายงานสรุปการปฏิบัติงาน นักการภารโรง ${SCHOOL_NAME}`],
-      [`ประจำเดือน: ${monthPrefix}`, `ผู้ตรวจประเมิน: ${DIRECTOR_NAME}`],
+      [`ประจำสัปดาห์: ${weekLabel}`, `ผู้ตรวจประเมิน: ${DIRECTOR_NAME}`],
       [],
       ['วันที่', 'ผู้ปฏิบัติงาน', 'คำสั่งงานเช้า', 'งานเช้าที่ทำ', 'จำนวนรูปเช้า', 'คำสั่งงานบ่าย', 'งานบ่ายที่ทำ', 'จำนวนรูปบ่าย', 'ผลการประเมินตามคำสั่ง', 'คะแนนดาว (เต็ม 5)', 'ความเห็น ผอ.'],
-      ...monthRecords.map(r => [
+      ...weekRecords.map(r => [
         r.date,
         r.staffName,
         r.morningOrder,
@@ -253,7 +256,7 @@ function JanitorTaskContent({ userName }: { userName: string }) {
         r.evaluatorComment,
       ]),
     ];
-    downloadCsvReport(`รายงานนักการภารโรง_${monthPrefix}.csv`, rows);
+    downloadCsvReport(`รายงานนักการภารโรง_สัปดาห์_${week[0]}.csv`, rows);
   };
 
   return (
@@ -291,7 +294,7 @@ function JanitorTaskContent({ userName }: { userName: string }) {
             </button>
             <button
               type="button"
-              onClick={exportMonthlyCsv}
+              onClick={exportWeeklyCsv}
               style={{
                 background: '#15803D', color: 'white', border: 'none',
                 borderRadius: 999, padding: '9px 18px', fontWeight: 800, fontSize: '0.84rem',
@@ -306,30 +309,30 @@ function JanitorTaskContent({ userName }: { userName: string }) {
         {/* KPI Summary Strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14, marginBottom: 16 }}>
           <div style={{ background: '#FFFFFF', borderRadius: 14, padding: '14px 16px', border: '1px solid #E2E8F0', borderLeft: '5px solid #0284C7' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B' }}>บันทึกงานเดือนนี้ ({monthPrefix})</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', marginTop: 4 }}>{monthStats.total} วัน</div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B' }}>บันทึกงานสัปดาห์นี้ ({weekLabel})</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', marginTop: 4 }}>{weekStats.total} วัน</div>
             <div style={{ fontSize: '0.73rem', color: '#0284C7', fontWeight: 700 }}>ผู้ปฏิบัติงาน: {currentRecord.staffName}</div>
           </div>
           <div style={{ background: '#FFFFFF', borderRadius: 14, padding: '14px 16px', border: '1px solid #E2E8F0', borderLeft: '5px solid #16A34A' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B' }}>✅ ปฏิบัติได้ตามคำสั่งครบถ้วน</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#15803D', marginTop: 4 }}>
-              {monthStats.fullPass} / {monthStats.total} วัน
+              {weekStats.fullPass} / {weekStats.total} วัน
             </div>
             <div style={{ fontSize: '0.73rem', color: '#16A34A', fontWeight: 700 }}>
-              คิดเป็น {monthStats.total ? Math.round((monthStats.fullPass / monthStats.total) * 100) : 100}%
+              คิดเป็น {weekStats.total ? Math.round((weekStats.fullPass / weekStats.total) * 100) : 100}%
             </div>
           </div>
           <div style={{ background: '#FFFFFF', borderRadius: 14, padding: '14px 16px', border: '1px solid #E2E8F0', borderLeft: '5px solid #F59E0B' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B' }}>⭐ คะแนนความเรียบร้อยเฉลี่ย</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#D97706', marginTop: 4 }}>
-              {monthStats.avgStars.toFixed(1)} / 5.0 ดาว
+              {weekStats.avgStars.toFixed(1)} / 5.0 ดาว
             </div>
             <div style={{ fontSize: '0.73rem', color: '#B45309', fontWeight: 700 }}>ประเมินโดยผู้บริหารสถานศึกษา</div>
           </div>
           <div style={{ background: '#FFFFFF', borderRadius: 14, padding: '14px 16px', border: '1px solid #E2E8F0', borderLeft: '5px solid #8B5CF6' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B' }}>📸 รูปภาพหลักฐานที่แนบเดือนนี้</div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B' }}>📸 รูปภาพหลักฐานที่แนบสัปดาห์นี้</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#6D28D9', marginTop: 4 }}>
-              {monthStats.totalPhotos} รูป
+              {weekStats.totalPhotos} รูป
             </div>
             <div style={{ fontSize: '0.73rem', color: '#7C3AED', fontWeight: 700 }}>ลิงก์รูปภาพ เช้า + บ่าย</div>
           </div>
@@ -384,7 +387,7 @@ function JanitorTaskContent({ userName }: { userName: string }) {
                 display: 'inline-flex', alignItems: 'center', gap: 6,
               }}
             >
-              <CalendarIcon size={16} /> สรุปประวัติรายเดือน ({monthRecords.length} วัน)
+              <CalendarIcon size={16} /> สรุปรายสัปดาห์ ({weekRecords.length} วัน)
             </button>
           </div>
         </div>
@@ -769,11 +772,11 @@ function JanitorTaskContent({ userName }: { userName: string }) {
           </>
         )}
 
-        {/* ================= TAB 2: MONTHLY HISTORY TABLE ================= */}
+        {/* ================= TAB 2: WEEKLY SUMMARY TABLE ================= */}
         {activeTab === 'history' && (
           <div style={{ background: '#FFFFFF', borderRadius: 16, padding: 20, border: '1px solid #E2E8F0' }}>
             <h3 style={{ margin: '0 0 12px', fontSize: '1.05rem', fontWeight: 900, color: '#0F172A' }}>
-              📅 สรุปประวัติการปฏิบัติงาน นักการภารโรง ประจำเดือน {monthPrefix}
+              📅 สรุปการปฏิบัติงาน นักการภารโรง ประจำสัปดาห์ {weekLabel}
             </h3>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
@@ -789,7 +792,7 @@ function JanitorTaskContent({ userName }: { userName: string }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {monthRecords.map(r => (
+                  {weekRecords.map(r => (
                     <tr key={r.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
                       <td style={{ padding: 10, textAlign: 'center', fontWeight: 800 }}>{fmtThai(r.date)}</td>
                       <td style={{ padding: 10 }}>

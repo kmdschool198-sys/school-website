@@ -809,3 +809,18 @@ test('Suite 23: supervision percent, level, per-round summary', async () => {
   assert.equal(s.supervisionDocId(2569, ' Kru.A@Gmail.com ', 2), '2569_kru_a_gmail_com_r2');
   assert.deepEqual(s.cleanPhotoLinks('https://a.com/x  javascript:alert(1)\nnot-a-link https://a.com/x'), ['https://a.com/x']);
 });
+
+// -------------------------------------------------------------
+// Test Suite 24: janitor reports are weekly (Monday to Sunday)
+// -------------------------------------------------------------
+test('Suite 24: week of a date runs Monday to Sunday, label in Thai', async () => {
+  const { weekDates, thaiWeekLabel } = await import('../src/utils/dates.ts');
+  const w = weekDates('2026-11-06'); // Friday
+  assert.equal(w.length, 7);
+  assert.equal(w[0], '2026-11-02', 'Monday');
+  assert.equal(w[6], '2026-11-08', 'Sunday');
+  assert.deepEqual(weekDates('2026-11-08'), w, 'Sunday belongs to the same week');
+  assert.equal(weekDates('2026-11-09')[0], '2026-11-09', 'next Monday starts a new week');
+  assert.equal(thaiWeekLabel(w), '2 - 8 พฤศจิกายน พ.ศ. 2569');
+  assert.equal(thaiWeekLabel(weekDates('2026-12-31')), '28 ธันวาคม พ.ศ. 2569 - 3 มกราคม พ.ศ. 2570');
+});

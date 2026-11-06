@@ -66,3 +66,28 @@ export function thaiDateLong(iso: string): string {
   if (!y || !m) return iso;
   return `${d ? `${d} ` : ''}${THAI_MONTHS[m - 1]} พ.ศ. ${y + 543}`;
 }
+
+/** The 7 days (Monday to Sunday) of the week that contains `iso`, as YYYY-MM-DD */
+export function weekDates(iso: string): string[] {
+  const [y, m, d] = iso.split('-').map(Number);
+  const base = new Date(y, (m || 1) - 1, d || 1);
+  const monday = new Date(base);
+  monday.setDate(base.getDate() - ((base.getDay() + 6) % 7));
+  return Array.from({ length: 7 }, (_, i) => {
+    const x = new Date(monday);
+    x.setDate(monday.getDate() + i);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  });
+}
+
+/** ["2026-11-02", ..., "2026-11-08"] -> "2 - 8 พฤศจิกายน พ.ศ. 2569" (months/years shown where they differ) */
+export function thaiWeekLabel(dates: string[]): string {
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  if (!first || !last) return '';
+  const [y1, m1, d1] = first.split('-').map(Number);
+  const [y2, m2, d2] = last.split('-').map(Number);
+  if (y1 === y2 && m1 === m2) return `${d1} - ${d2} ${THAI_MONTHS[m2 - 1]} พ.ศ. ${y2 + 543}`;
+  if (y1 === y2) return `${d1} ${THAI_MONTHS[m1 - 1]} - ${d2} ${THAI_MONTHS[m2 - 1]} พ.ศ. ${y2 + 543}`;
+  return `${thaiDateLong(first)} - ${thaiDateLong(last)}`;
+}

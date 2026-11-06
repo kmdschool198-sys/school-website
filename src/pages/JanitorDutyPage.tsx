@@ -19,9 +19,9 @@ import {
 import type { JanitorDailyRecord } from './JanitorTaskPage';
 import { OfficialDocument, OfficialHeader, SignatureBlock } from '../components/print/Official';
 import { DIRECTOR_SIGNER, officialTh, officialTd, officialTdLeft, SHADE } from '../components/print/officialStyles';
-import { THAI_MONTHS, currentMonth } from '../utils/dates';
+import { thaiWeekLabel, todayIso, weekDates } from '../utils/dates';
 
-type Tab = 'roster' | 'month' | 'report';
+type Tab = 'roster' | 'week' | 'report';
 const WEEK_ORDER = ['1', '2', '3', '4', '5', '6', '0']; // จันทร์ .. อาทิตย์
 
 export default function JanitorDutyPage() {
@@ -30,12 +30,6 @@ export default function JanitorDutyPage() {
     return <TeacherLoginGate title="🗓️ ตารางเวรนักการภารโรง" subtitle="จัดตารางเวร และพิมพ์รายงานการปฏิบัติงานประจำเดือน" />;
   }
   return <JanitorDuty userName={auth.name} />;
-}
-
-function datesOfMonth(month: string): string[] {
-  const [y, m] = month.split('-').map(Number);
-  const n = new Date(y, m, 0).getDate();
-  return Array.from({ length: n }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`);
 }
 
 // Checklist presets start with an emoji; printed documents use the plain text
@@ -47,7 +41,7 @@ function slotText(s: DutySlot) {
 
 function JanitorDuty({ userName }: { userName: string }) {
   const [tab, setTab] = useState<Tab>('roster');
-  const [month, setMonth] = useState(currentMonth());
+  const [weekOf, setWeekOf] = useState(todayIso()); // any day in the week shown
   const supportStaff = usePersonnel('support');
   const people = useMemo(() => supportStaff.filter(isJanitor), [supportStaff]);
   const staffList = useMemo(() => people.map(p => p.name), [people]);
@@ -110,17 +104,29 @@ function JanitorDuty({ userName }: { userName: string }) {
     edit({ ...roster, overrides: next });
   };
 
-  const dates = useMemo(() => datesOfMonth(month), [month]);
-  const [yy, mm] = month.split('-').map(Number);
-  const monthLabel = `${THAI_MONTHS[mm - 1]} พ.ศ. ${yy + 543}`;
+  // รายงานเป็นรายสัปดาห์ (จันทร์ - อาทิตย์) ไม่ใช่รายเดือน
+  const dates = useMemo(() => weekDates(weekOf), [weekOf]);
+  const weekLabel = thaiWeekLabel(dates);
+  const shiftWeek = (days: number) => {
+    const [y, m, d] = dates[0].split('-').map(Number);
+    const x = new Date(y, m - 1, d + days);
+    setWeekOf(`${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`);
+  };
 
   return (
     <SmartSchoolLayout pageTitle="ตารางเวร & รายงานนักการภารโรง">
       <div className="no-print" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
-        {([['roster', 'จัดตารางเวร'], ['month', 'ตารางเวรประจำเดือน'], ['report', 'รายงานการปฏิบัติงานประจำเดือน']] as [Tab, string][]).map(([k, label]) => (
+        {([['roster', 'จัดตารางเวร'], ['week', 'ตารางเวรประจำสัปดาห์'], ['report', 'รายงานการปฏิบัติงานประจำสัปดาห์']] as [Tab, string][]).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} style={tabBtn(tab === k)}>{label}</button>
         ))}
-        <input type="month" value={month} onChange={e => setMonth(e.target.value)} style={input} />
+        {tab !== 'roster' && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={() => shiftWeek(-7)} style={secondaryBtn} aria-label="สัปดาห์ก่อน">‹</button>
+            <input type="date" value={weekOf} onChange={e => e.target.value && setWeekOf(e.target.value)} style={input} aria-label="เลือกวันในสัปดาห์" />
+            <button onClick={() => shiftWeek(7)} style={secondaryBtn} aria-label="สัปดาห์ถัดไป">›</button>
+            <span style={{ fontWeight: 700, color: '#334155' }}>สัปดาห์ {weekLabel}</span>
+          </span>
+        )}
         {tab !== 'roster' && (
           <button onClick={() => window.print()} style={primaryBtn}><Printer size={16} /> พิมพ์</button>
         )}
@@ -173,9 +179,9 @@ function JanitorDuty({ userName }: { userName: string }) {
         </div>
       )}
 
-      {tab === 'month' && (
+      {tab === 'week' && (
         <OfficialDocument style={paper}>
-          <OfficialHeader title="ตารางเวรนักการภารโรง" lines={[`ประจำเดือน${monthLabel}`]} />
+          <OfficialHeader title="ตารางเวรนักการภารโรง" lines={[`ประจำสัปดาห์ วันที่ ${weekLabel}`]} />
           <table style={{ fontSize: '14pt' }}>
             <thead>
               <tr>
@@ -192,7 +198,7 @@ function JanitorDuty({ userName }: { userName: string }) {
                 const [y, m, dd] = d.split('-').map(Number);
                 return (
                   <tr key={d} className={day.open ? undefined : 'shade'} style={{ background: day.open ? undefined : SHADE }}>
-                    <td style={officialTd}>{dd}</td>
+                    <td style={officialTd}>{dd}/{m}</td>
                     <td style={officialTd}>{WEEKDAY_TH[new Date(y, m - 1, dd).getDay()]}</td>
                     <td style={officialTdLeft}>{slots.length ? slots.map(slotText).join(' / ') : '-'}</td>
                     <td style={officialTdLeft}>{day.open ? '' : day.label}</td>
@@ -212,7 +218,7 @@ function JanitorDuty({ userName }: { userName: string }) {
               {staffList.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-          <MonthlyReport staff={reportStaff} person={people.find(p => p.name === reportStaff)} dates={dates} monthLabel={monthLabel} roster={roster}
+          <WeeklyReport staff={reportStaff} person={people.find(p => p.name === reportStaff)} dates={dates} weekLabel={weekLabel} roster={roster}
             records={records} holidays={holidays} schoolDays={schoolDays} />
         </>
       )}
@@ -222,11 +228,11 @@ function JanitorDuty({ userName }: { userName: string }) {
   );
 }
 
-function MonthlyReport({ staff, person, dates, monthLabel, roster, records, holidays, schoolDays }: {
+function WeeklyReport({ staff, person, dates, weekLabel, roster, records, holidays, schoolDays }: {
   staff: string;
   person?: PersonnelRef;
   dates: string[];
-  monthLabel: string;
+  weekLabel: string;
   roster: JanitorRoster;
   records: JanitorDailyRecord[];
   holidays: Record<string, string>;
@@ -255,7 +261,7 @@ function MonthlyReport({ staff, person, dates, monthLabel, roster, records, holi
 
   return (
     <OfficialDocument style={paper}>
-      <OfficialHeader title="แบบรายงานการปฏิบัติงานนักการภารโรง" lines={[`ชื่อผู้ปฏิบัติงาน ${staff || '-'}   ประจำเดือน${monthLabel}`]} />
+      <OfficialHeader title="แบบรายงานการปฏิบัติงานนักการภารโรง" lines={[`ชื่อผู้ปฏิบัติงาน ${staff || '-'}   ประจำสัปดาห์ วันที่ ${weekLabel}`]} />
       <table style={{ fontSize: '13pt' }}>
         <thead>
           <tr>
@@ -271,7 +277,7 @@ function MonthlyReport({ staff, person, dates, monthLabel, roster, records, holi
             const off = !day.open && !duty.length;
             return (
               <tr key={d} className={off ? 'shade' : undefined} style={{ background: off ? SHADE : undefined }}>
-                <td style={officialTd}>{Number(d.slice(8))}</td>
+                <td style={officialTd}>{Number(d.slice(8))}/{Number(d.slice(5, 7))}</td>
                 <td style={officialTdLeft}>{duty.length ? duty.map(s => s.shift + (s.area ? ` (${s.area})` : '')).join(', ') : (off ? day.label : '-')}</td>
                 <td style={officialTdLeft}>{rec ? [...(rec.morningChecklist || []).map(plain), rec.morningDetail].filter(Boolean).join(' / ') || '-' : ''}</td>
                 <td style={officialTdLeft}>{rec ? [...(rec.afternoonChecklist || []).map(plain), rec.afternoonDetail].filter(Boolean).join(' / ') || '-' : ''}</td>
