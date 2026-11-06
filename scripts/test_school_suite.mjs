@@ -756,3 +756,21 @@ test('Suite 21: result lookup id depends on code and birth date, never exposes t
   assert.ok(a.startsWith('acad_m1_2569_1__') && !a.includes('3203') && !a.includes('2555'), 'id shows neither code nor birth date');
   assert.equal(await resultLookupDocId('acad_m1_2569_1', '3203', ''), null, 'no birth date, no lookup');
 });
+
+// -------------------------------------------------------------
+// Test Suite 22: the roster manager keeps the saved class ids
+// -------------------------------------------------------------
+test('Suite 22: loading the saved roster keeps its class ids, not the built-in ones', async () => {
+  const { mergeSavedRoster } = await import('../src/utils/studentRosterSync.ts');
+  // built-in list uses 'p4_1'; attendance history is keyed by the id saved in Firestore
+  const builtIn = [
+    { classId: 'p4_1', label: 'ป.4/1', students: [{ id: 'seed_1', name: 'เก่า' }] },
+    { classId: 'kg_a2_1', label: 'อ.2/1', students: [] },
+  ];
+  const saved = [{ classId: 'mnnbhd8on7ezz', label: 'ป.4/1', students: [{ id: 'mnnbhd8on7ezz_2840', code: '2840', name: 'จริง' }] }];
+  const merged = mergeSavedRoster(builtIn, saved);
+  assert.equal(merged[0].classId, 'mnnbhd8on7ezz', 'saved class id wins, so attendance history still matches');
+  assert.deepEqual(merged[0].students.map(s => s.id), ['mnnbhd8on7ezz_2840']);
+  // a class never saved keeps the built-in id and students
+  assert.equal(merged[1].classId, 'kg_a2_1');
+});

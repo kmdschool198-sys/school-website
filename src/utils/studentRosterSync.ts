@@ -40,6 +40,18 @@ export interface LinkedClubMember {
 const normalize = (value: string | undefined) =>
   (value || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('th-TH');
 
+/**
+ * The roster as saved in Firestore, laid over the built-in class list. A saved class keeps its
+ * own classId: attendance, homeroom and every report are keyed by it, so saving the roster with
+ * the built-in id ('p4_1') instead orphans the whole history and teachers are asked to redo days.
+ */
+export function mergeSavedRoster<T extends RosterClass>(builtIn: T[], saved: RosterClass[]): T[] {
+  return builtIn.map(c => {
+    const s = saved.find(x => x.classId === c.classId || x.label === c.label);
+    return s ? { ...c, classId: s.classId, students: Array.isArray(s.students) ? s.students : c.students } : c;
+  });
+}
+
 export function buildRosterIndex(classes: RosterClass[]) {
   const index = new Map<string, RosterStudentLocation>();
   classes.forEach(rosterClass => {

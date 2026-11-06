@@ -12,6 +12,7 @@ import {
   buildStudentCountRows,
   detectRosterChanges,
   findExistingStudent,
+  mergeSavedRoster,
   syncClubMembers,
   syncDraftResultRows,
   type LinkedClubMember,
@@ -54,25 +55,16 @@ export default function RosterManager() {
         const d = snap.data() as { classes: ClassRoster[] };
         if (d.classes?.length) {
           if (isDirtyRef.current) return;
-          const cloudClasses = d.classes;
-          setClasses(prev => {
-            return prev.map(c => {
-              const cloudCls = cloudClasses.find(
-                cc => cc.classId === c.classId || cc.label === c.label || (c as any).acadId === cc.classId
-              );
-              return {
-                ...c,
-                students: (cloudCls && Array.isArray(cloudCls.students)) ? cloudCls.students : c.students,
-              };
-            });
-          });
+          // keep the saved class ids: attendance history is keyed by them
+          setClasses(prev => mergeSavedRoster(prev, d.classes));
         }
       }
     });
   }, []);
 
   useEffect(() => {
-    if (!classId && classes.length) setClassId(classes[0].classId);
+    // also when the saved roster replaces the built-in ids, so the selection never points nowhere
+    if (classes.length && !classes.some(c => c.classId === classId)) setClassId(classes[0].classId);
   }, [classes]);
 
   // Debounced auto-save
