@@ -6,7 +6,7 @@ import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TimetableSmart from '../components/TimetableSmart';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { useSignedIn } from '../utils/useSignedIn';
-import { Calendar, Eye, Edit3, Printer, Lock, ExternalLink, AlertCircle } from 'lucide-react';
+import { Calendar, Eye, Edit3, Printer, ExternalLink, AlertCircle, ChevronLeft } from 'lucide-react';
 import { SCHOOL_NAME } from '../config/siteLinks';
 
 export default function TimetablePage() {
@@ -34,6 +34,28 @@ export default function TimetablePage() {
   // If not logged in as teacher/admin, force readOnly = true
   const isReadOnly = !teacherAuth.authed || !editMode;
 
+  if (teacherAuth.loading) return null;
+
+  // Students and parents get the timetable and nothing else: the staff shell (sidebar of every
+  // teacher system, admin login, edit tools) is only for signed-in teachers.
+  if (!teacherAuth.authed) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+        <div style={{ maxWidth: 1440, margin: '0 auto', padding: '1rem 1rem 2rem' }}>
+          <div className="tt-no-print" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+            <Link to="/" style={{ color: '#1E3A8A', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <ChevronLeft size={16} /> หน้าแรก
+            </Link>
+            <h1 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#0F172A' }}>
+              ตารางเรียนและตารางสอน · {SCHOOL_NAME}
+            </h1>
+          </div>
+          <TimetableSmart readOnly />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SmartSchoolLayout pageTitle="ระบบตารางเรียน & ตารางสอน">
       <div style={{ maxWidth: 1440, margin: '0 auto', paddingBottom: '2rem' }}>
@@ -54,7 +76,7 @@ export default function TimetablePage() {
                 {activeLeaves.map(l => `${l.teacherName} (${l.type} · ผู้สอนแทน: ${l.substitute || 'ระบุในตาราง'})`).join(' | ')}
               </span>
             </div>
-            {teacherAuth.authed && !editMode && (
+            {!editMode && (
               <button
                 onClick={() => setEditMode(true)}
                 style={{
@@ -101,29 +123,23 @@ export default function TimetablePage() {
             </div>
             <div>
               <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#93C5FD', letterSpacing: '0.04em' }}>
-                {teacherAuth.authed
-                  ? `SMART TIMETABLE & SUBSTITUTE STUDIO (ครู: ${teacherAuth.name})`
-                  : 'E-SERVICE นักเรียนและผู้ปกครอง · ภาคเรียนที่ 2/2569'}
+                {`SMART TIMETABLE & SUBSTITUTE STUDIO (ครู: ${teacherAuth.name})`}
               </div>
               <h2 style={{ margin: '2px 0 0', fontSize: '1.3rem', fontWeight: 900 }}>
-                {teacherAuth.authed && editMode
+                {editMode
                   ? 'ระบบจัดตารางสอน & จัดครูสอนแทนอัจฉริยะ'
                   : `ตารางเรียนและตารางสอน · ${SCHOOL_NAME}`}
               </h2>
               <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
-                {teacherAuth.authed
-                  ? (editMode
-                    ? 'คลิกช่องคาบเรียนเพื่อแก้ไข · สลับคาบเรียน 2 คลิก · จัดครูสอนแทนอัตโนมัติ'
-                    : 'โหมดแสดงผลสำหรับนักเรียนและบุคคลทั่วไป (ดูอย่างเดียว)')
-                  : 'โหมดสำหรับนักเรียนและผู้ปกครอง (ดูอย่างเดียว — การแก้ไขตารางจัดทำในระบบผู้ดูแล)'}
+                {editMode
+                  ? 'คลิกช่องคาบเรียนเพื่อแก้ไข · สลับคาบเรียน 2 คลิก · จัดครูสอนแทนอัตโนมัติ'
+                  : 'โหมดแสดงผลสำหรับนักเรียนและบุคคลทั่วไป (ดูอย่างเดียว)'}
               </div>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* If logged-in staff/admin */}
-            {teacherAuth.authed ? (
-              <>
+            <>
                 <button
                   onClick={() => setEditMode(!editMode)}
                   style={{
@@ -161,27 +177,7 @@ export default function TimetablePage() {
                 >
                   <ExternalLink size={15} /> จัดการในหน้าแอดมิน
                 </Link>
-              </>
-            ) : (
-              <Link
-                to="/admin?tab=timetable"
-                style={{
-                  background: 'rgba(255,255,255,0.12)',
-                  color: '#FED7AA',
-                  textDecoration: 'none',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  padding: '8px 14px',
-                  borderRadius: 10,
-                  fontWeight: 800,
-                  fontSize: '0.8rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <Lock size={14} /> เข้าสู่ระบบแอดมินเพื่อแก้ไข
-              </Link>
-            )}
+            </>
 
             <button
               onClick={() => window.print()}

@@ -162,8 +162,26 @@ export function useSchoolRoster() {
     );
   }, [signedIn]);
 
+  // visitors: class sizes from the public summary (config/students_count, kept in step with the
+  // roster by the roster manager); the seed list alone is out of date once students move
+  const [publicCounts, setPublicCounts] = useState<Record<string, { male: number; female: number }>>({});
+  useEffect(() => {
+    if (signedIn) return;
+    return onSnapshot(doc(db, 'config', 'students_count'), snap => {
+      const rows = (snap.data()?.rows || []) as Array<{ class?: string; male?: number; female?: number }>;
+      setPublicCounts(Object.fromEntries(rows.filter(r => r.class).map(r => [r.class as string, { male: Number(r.male) || 0, female: Number(r.female) || 0 }])));
+    }, () => setPublicCounts({}));
+  }, [signedIn]);
+
   const details = useStudentDetails();
-  const classes = useMemo(() => mergeWithFirestoreClasses(cloudClasses, details), [cloudClasses, details]);
+  const classes = useMemo(() => {
+    const merged = mergeWithFirestoreClasses(cloudClasses, details);
+    if (signedIn) return merged;
+    return merged.map(c => {
+      const n = publicCounts[c.label];
+      return n ? { ...c, maleCount: n.male, femaleCount: n.female, totalCount: n.male + n.female } : c;
+    });
+  }, [cloudClasses, details, signedIn, publicCounts]);
 
   const summary = useMemo(() => {
     const totalStudents = classes.reduce((sum, c) => sum + c.totalCount, 0);
