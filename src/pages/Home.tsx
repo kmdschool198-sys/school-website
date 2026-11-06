@@ -404,16 +404,16 @@ function Home() {
 
       {/* ============== HIGHLIGHT SLIDER (only when the school has posted one that is still current) ============== */}
       {liveHighlights.length > 0 && (
-        <section {...highlight.pauseHandlers} style={{ padding: '5.5rem 0', background: '#0F172A', color: 'white' }}>
+        <section {...highlight.pauseHandlers} style={{ padding: '4rem 0', background: '#0F172A', color: 'white' }}>
           <div className="container">
             {liveHighlights.map((s, i) => (
               <div key={s.id} className="highlight-slide" style={{ display: i === highlight.index ? 'grid' : 'none' }}>
                 <div>
                   {s.badge && <div style={{ display: 'inline-block', padding: '0.4rem 1.1rem', background: 'rgba(255,212,0,0.14)', color: '#FFD400', borderRadius: '50px', fontSize: '0.85rem', fontWeight: 800, marginBottom: '1.25rem' }}>{s.badge}</div>}
-                  <h2 style={{ fontSize: 'clamp(1.9rem, 4vw, 3rem)', fontWeight: 900, marginBottom: '1.25rem', lineHeight: THAI_HEADING_LH }}>
+                  <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.3rem)', fontWeight: 900, marginBottom: '1rem', lineHeight: THAI_HEADING_LH }}>
                     {s.title} <br /><span style={{ color: '#FFD400' }}>{s.titleAccent}</span>
                   </h2>
-                  <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.8, marginBottom: '2rem' }}>{s.description}</p>
+                  <p style={{ fontSize: '1.02rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.8, marginBottom: '1.75rem', display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.description}</p>
                   {s.buttonText && s.buttonLink && (
                     /^https?:\/\//.test(s.buttonLink) ? (
                       <a href={s.buttonLink} target="_blank" rel="noreferrer" className="highlight-btn">{s.buttonText} <ArrowRight size={18} /></a>
@@ -422,8 +422,10 @@ function Home() {
                     )
                   )}
                 </div>
-                <div style={{ position: 'relative', borderRadius: '28px', overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.4)', minHeight: 320, background: '#1E293B' }}>
-                  <DriveImage src={s.imageUrl} alt={s.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                {/* Fixed-height frame: portrait posters fit whole (contain) over a blurred copy, so the slide never grows */}
+                <div style={{ position: 'relative', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.4)', height: 'clamp(300px, 32vw, 400px)', background: '#1E293B' }}>
+                  <DriveImage src={s.imageUrl} alt="" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(22px) brightness(0.6)', transform: 'scale(1.15)' }} />
+                  <DriveImage src={s.imageUrl} alt={s.title} style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                 </div>
               </div>
             ))}
