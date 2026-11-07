@@ -2298,7 +2298,6 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
         return {
           id: a.teacherId,
           name: a.teacherName || teacherName(t) || '-',
-          rank: t?.rank || 'ครู',
           reason: a.reason || 'ลา',
           count: (a.periods || []).filter(p => p.subTeacher).length,
         };
@@ -2310,60 +2309,51 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
           .sort((x, y) => x.slotId - y.slotId)
           .map(p => ({ absent: tName, p, slot: data.slots.find(s => s.id === p.slotId), room: data.rooms.find(r => r.id === p.roomId) }));
       });
-      const total = rows.length;
-      const [yy, mm, dd] = subDate.split('-').map(Number);
-      const dateOnly = yy ? new Date(yy, mm - 1, dd).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : subDate;
+      const many = absentInfo.length > 1;
       const line = '1px solid #000';
-      const th: React.CSSProperties = { border: line, padding: '6px 4px', fontWeight: 700, background: '#E5E7EB', textAlign: 'center', verticalAlign: 'middle' };
-      const tdc: React.CSSProperties = { border: line, padding: '4px 6px', verticalAlign: 'middle', height: 30 };
+      const th: React.CSSProperties = { border: line, padding: '7px 4px', fontWeight: 700, background: '#E5E7EB', textAlign: 'center', verticalAlign: 'middle' };
+      const tdc: React.CSSProperties = { border: line, padding: '5px 8px', verticalAlign: 'middle', height: 38 };
       const nowrap: React.CSSProperties = { whiteSpace: 'nowrap' };
-      const field: React.CSSProperties = { display: 'flex', gap: 8, alignItems: 'baseline', lineHeight: 1.7 };
-      const dotted: React.CSSProperties = { flex: 1, borderBottom: '1px dotted #000', paddingLeft: 6 };
       return (
         <div className="tt-official-print-doc tt-sub-sheet" style={{ fontFamily: "'Sarabun', 'TH Sarabun New', sans-serif", color: '#000', fontSize: '12pt', lineHeight: 1.45 }}>
-          {/* หัวบันทึกข้อความ */}
-          <div style={{ position: 'relative', textAlign: 'center', minHeight: 58, marginBottom: 4 }}>
+          {/* หัวกระดาษ */}
+          <div style={{ textAlign: 'center', marginBottom: 14 }}>
             <img
               src="/school_logo_kmd.png"
               alt="ตราโรงเรียน"
-              style={{ position: 'absolute', left: 0, top: 0, width: 54, height: 54, objectFit: 'contain' }}
+              style={{ width: 60, height: 60, objectFit: 'contain', marginBottom: 4 }}
               onError={e => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
             />
-            <div style={{ fontSize: '22pt', fontWeight: 800, paddingTop: 12 }}>บันทึกข้อความ</div>
+            <div style={{ fontSize: '18pt', fontWeight: 800 }}>บันทึกการจัดครูสอนแทน</div>
+            <div style={{ fontSize: '13pt', fontWeight: 700 }}>{data.school.name}</div>
+            <div>ภาคเรียนที่ {data.school.semester} ปีการศึกษา {data.school.year}</div>
           </div>
-          <div style={field}><b>ส่วนราชการ</b><span style={dotted}>{data.school.name} สพป.กำแพงเพชร เขต 2</span></div>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <div style={{ ...field, flex: 1 }}><b>ที่</b><span style={dotted}>&nbsp;</span></div>
-            <div style={{ ...field, flex: 1.3 }}><b>วันที่</b><span style={dotted}>{dateOnly}</span></div>
+
+          {/* ข้อมูลการลา */}
+          <div style={{ border: line, padding: '8px 12px', marginBottom: 12 }}>
+            <div><b>วันที่จัดสอนแทน:</b> {formatThaiFullDate(subDate)}</div>
+            {absentInfo.length === 0 ? (
+              <div><b>ครูผู้ลา / ไปราชการ:</b> -</div>
+            ) : absentInfo.map(a => (
+              <div key={a.id}>
+                <b>ครูผู้ลา / ไปราชการ:</b> {a.name}
+                <span style={{ marginLeft: 18 }}><b>สาเหตุ:</b> {a.reason}</span>
+                <span style={{ marginLeft: 18 }}><b>จำนวน:</b> {a.count} คาบ</span>
+              </div>
+            ))}
           </div>
-          <div style={field}><b>เรื่อง</b><span style={dotted}>การจัดครูสอนแทน ประจำ{formatThaiFullDate(subDate)}</span></div>
-          <div style={{ borderBottom: line, margin: '4px 0 10px' }} />
-          <div style={{ marginBottom: 6 }}><b>เรียน</b>&nbsp;&nbsp;ผู้อำนวยการ{data.school.name}</div>
 
-          <p style={{ textIndent: '2.5cm', margin: '0 0 8px', textAlign: 'justify' }}>
-            ด้วย{absentInfo.length === 0
-              ? 'ไม่มีครูลาหรือไปราชการ'
-              : absentInfo.map((a, i) => (
-                <span key={a.id}>
-                  {i > 0 ? (i === absentInfo.length - 1 ? ' และ' : ' ') : ''}
-                  <b>{a.name}</b> ตำแหน่ง {a.rank} ({a.reason} {a.count} คาบ)
-                </span>
-              ))}
-            {' '}ใน{formatThaiFullDate(subDate)} งานวิชาการจึงได้จัดครูสอนแทน
-            เพื่อให้การจัดการเรียนการสอนเป็นไปอย่างต่อเนื่อง รวม {total} คาบ ดังนี้
-          </p>
-
-          {total === 0 ? (
+          {rows.length === 0 ? (
             <div style={{ border: line, padding: 16, textAlign: 'center' }}>ยังไม่มีการจัดครูสอนแทนในวันนี้</div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5pt', tableLayout: 'fixed' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11pt', tableLayout: 'fixed' }}>
               <colgroup>
                 <col style={{ width: '5%' }} />
-                <col style={{ width: '15%' }} />
+                <col style={{ width: '14%' }} />
                 <col style={{ width: '7%' }} />
-                <col style={{ width: absentInfo.length > 1 ? '22%' : '28%' }} />
-                {absentInfo.length > 1 && <col style={{ width: '17%' }} />}
-                <col style={{ width: absentInfo.length > 1 ? '19%' : '24%' }} />
+                <col style={{ width: many ? '22%' : '30%' }} />
+                {many && <col style={{ width: '18%' }} />}
+                <col style={{ width: many ? '19%' : '27%' }} />
                 <col />
               </colgroup>
               <thead>
@@ -2372,7 +2362,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
                   <th style={th}>คาบ / เวลา</th>
                   <th style={th}>ชั้น</th>
                   <th style={th}>รายวิชา</th>
-                  {absentInfo.length > 1 && <th style={th}>ครูผู้ลา</th>}
+                  {many && <th style={th}>ครูผู้ลา</th>}
                   <th style={th}>ครูผู้สอนแทน</th>
                   <th style={th}>ลงชื่อรับทราบ</th>
                 </tr>
@@ -2387,8 +2377,8 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
                     </td>
                     <td style={{ ...tdc, ...nowrap, textAlign: 'center' }}>{row.room?.label || '-'}</td>
                     <td style={tdc}>{row.p.subject || '-'}</td>
-                    {absentInfo.length > 1 && <td style={tdc}>{row.absent}</td>}
-                    <td style={{ ...tdc, ...nowrap, overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.p.subTeacher}</td>
+                    {many && <td style={tdc}>{row.absent}</td>}
+                    <td style={{ ...tdc, fontWeight: 700 }}>{row.p.subTeacher}</td>
                     <td style={tdc}></td>
                   </tr>
                 ))}
@@ -2396,29 +2386,23 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
             </table>
           )}
 
-          <p style={{ textIndent: '2.5cm', margin: '10px 0 0' }}>
-            ทั้งนี้ ให้ครูผู้สอนแทนดูแลนักเรียนตามแผนการจัดการเรียนรู้ที่ครูผู้ลามอบหมาย และบันทึกการมาเรียนของนักเรียนในคาบนั้น
-          </p>
-          <p style={{ textIndent: '2.5cm', margin: '6px 0 0' }}>จึงเรียนมาเพื่อโปรดทราบและพิจารณา</p>
-
-          {/* ผู้เสนอ */}
-          <div style={{ marginLeft: '45%', textAlign: 'center', marginTop: 18 }}>
-            <div>ลงชื่อ ...............................................</div>
-            <div>({data.school.acadName || 'นางสาวนริศรา ทำจิตรเหมาะ'})</div>
-            <div>หัวหน้างานวิชาการ</div>
+          <div style={{ marginTop: 10 }}>
+            <b>หมายเหตุ:</b> ครูผู้สอนแทนดูแลนักเรียนตามแผนการจัดการเรียนรู้ที่ครูผู้ลามอบหมาย และบันทึกการมาเรียนของนักเรียนในคาบนั้น
           </div>
 
-          {/* ความเห็นผู้บริหาร */}
-          <div style={{ marginTop: 12, borderTop: '1px dashed #000', paddingTop: 8 }}>
-            <b>ความเห็น / คำสั่งของผู้อำนวยการสถานศึกษา</b>
-            <div style={{ display: 'flex', gap: 28, margin: '6px 0 0 1cm' }}>
-              <span>☐ ทราบ</span><span>☐ อนุมัติ</span><span>☐ อื่น ๆ ..............................................................</span>
+          {/* ลายเซ็น */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, textAlign: 'center', marginTop: 44 }}>
+            <div>
+              <div style={{ height: 24 }} />
+              <div>ลงชื่อ ...............................................</div>
+              <div>({data.school.acadName || 'นางสาวนริศรา ทำจิตรเหมาะ'})</div>
+              <div>หัวหน้างานวิชาการ ผู้จัดสอนแทน</div>
             </div>
-            <div style={{ marginLeft: '45%', textAlign: 'center', marginTop: 18 }}>
+            <div>
+              <div style={{ height: 24 }}>☐ ทราบ &nbsp;&nbsp; ☐ อนุมัติ</div>
               <div>ลงชื่อ ...............................................</div>
               <div>({data.school.principalName || 'นายปรัชญา ปรางค์ชัยภูมิ'})</div>
-              <div>ผู้อำนวยการ{data.school.name}</div>
-              <div>วันที่ ......... / ......................... / .............</div>
+              <div>ผู้อำนวยการสถานศึกษา</div>
             </div>
           </div>
         </div>
@@ -2455,7 +2439,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
         @media print {
           @page {
             size: A4 ${view === 'sub' ? 'portrait' : 'landscape'};
-            margin: ${view === 'sub' ? '15mm 18mm 12mm 25mm' : '5mm 8mm 5mm 8mm'};
+            margin: ${view === 'sub' ? '15mm 15mm 15mm 20mm' : '5mm 8mm 5mm 8mm'};
           }
           html, body {
             margin: 0 !important;
