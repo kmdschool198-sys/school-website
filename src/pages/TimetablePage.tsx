@@ -4,7 +4,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TimetableSmart from '../components/TimetableSmart';
-import { useTeacherAuth } from '../utils/teacherAuth';
+import { canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
 import { useSignedIn } from '../utils/useSignedIn';
 import { Calendar, Eye, Edit3, Printer, ExternalLink, AlertCircle, ChevronLeft } from 'lucide-react';
 import { SCHOOL_NAME } from '../config/siteLinks';
@@ -31,8 +31,9 @@ export default function TimetablePage() {
     });
   }, [signedIn]);
 
-  // If not logged in as teacher/admin, force readOnly = true
-  const isReadOnly = !teacherAuth.authed || !editMode;
+  // Only admins edit the timetable and arrange substitutes; teachers see it read-only
+  const canEditTimetable = teacherAuth.authed && canManageStaffUsers(teacherAuth.role);
+  const isReadOnly = !canEditTimetable || !editMode;
 
   if (teacherAuth.loading) return null;
 
@@ -76,7 +77,7 @@ export default function TimetablePage() {
                 {activeLeaves.map(l => `${l.teacherName} (${l.type} · ผู้สอนแทน: ${l.substitute || 'ระบุในตาราง'})`).join(' | ')}
               </span>
             </div>
-            {!editMode && (
+            {!editMode && canEditTimetable && (
               <button
                 onClick={() => setEditMode(true)}
                 style={{
@@ -140,7 +141,7 @@ export default function TimetablePage() {
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <>
-                <button
+                {canEditTimetable && <button
                   onClick={() => setEditMode(!editMode)}
                   style={{
                     background: editMode ? '#10B981' : 'rgba(255,255,255,0.16)',
@@ -158,7 +159,7 @@ export default function TimetablePage() {
                 >
                   {editMode ? <Edit3 size={15} /> : <Eye size={15} />}
                   {editMode ? 'โหมดแก้ไขเปิดอยู่ (คลิกเพื่อสลับดูอย่างเดียว)' : 'เปิดโหมดแก้ไข & จัดสอนแทน'}
-                </button>
+                </button>}
                 <Link
                   to="/admin?tab=timetable"
                   style={{

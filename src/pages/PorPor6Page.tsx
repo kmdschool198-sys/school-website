@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toast } from '../components/GlobalToast';
@@ -7,6 +7,7 @@ import { Printer, Search, Eye, FileText, ArrowLeft, Edit3, Check, RotateCcw } fr
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
+import { useStaffScope } from '../utils/staffScope';
 import { useAssessmentPlans, useGradingStatus } from '../utils/assessmentStorage';
 import ActivityGrid from '../components/sgs/ActivityGrid';
 import { useAcademicData } from '../utils/academicStorage';
@@ -32,8 +33,29 @@ export default function PorPor6Page() {
 }
 
 function PorPor6Content() {
-  const { classesData, loaded: scoresLoaded, updateStudentScore, updateStudentEvaluation, updateStudentActivities, resetToDefault } = useAcademicData();
+  const { classesData, loaded: scoresLoaded, updateStudentScore: writeStudentScore, updateStudentEvaluation: writeStudentEvaluation, updateStudentActivities: writeStudentActivities, resetToDefault } = useAcademicData();
   const auth = useTeacherAuth();
+  // A teacher changes only the subjects they teach, and the class record (traits, reading,
+  // activities) only of the classes they are homeroom teacher of. Admins change everything.
+  const staffScope = useStaffScope(auth, classesData);
+  const canEditSubjectIn = (classId: string, subjectCode: string) => {
+    if (staffScope.isAdmin) return true;
+    const subj = classesData.find(c => c.classId === classId)?.subjects.find(s => s.code === subjectCode);
+    return staffScope.canEditSubject(subj?.teacher);
+  };
+  const canEditClassRecord = (classId: string) => staffScope.canManageClass(classesData.find(c => c.classId === classId));
+  const myClasses = useMemo(() => staffScope.isAdmin ? classesData : classesData.filter(c =>
+    staffScope.canManageClass(c) || c.subjects.some(s => staffScope.canEditSubject(s.teacher))), [classesData, staffScope]);
+  const updateStudentScore: typeof writeStudentScore = (classId, code, subjectCode, patch) => {
+    if (canEditSubjectIn(classId, subjectCode)) return writeStudentScore(classId, code, subjectCode, patch);
+    toast.warn('แก้ไขคะแนนได้เฉพาะวิชาที่ท่านสอน');
+  };
+  const updateStudentEvaluation: typeof writeStudentEvaluation = (classId, ...rest) => {
+    if (canEditClassRecord(classId)) return writeStudentEvaluation(classId, ...rest);
+  };
+  const updateStudentActivities: typeof writeStudentActivities = (classId, ...rest) => {
+    if (canEditClassRecord(classId)) return writeStudentActivities(classId, ...rest);
+  };
   const { status: gradingStatus } = useGradingStatus();
   const { plans } = useAssessmentPlans();
   const closedByRegistrar = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
@@ -56,6 +78,10 @@ function PorPor6Content() {
     () => classesData.find(c => c.classId === selectedClassId) || classesData[0],
     [classesData, selectedClassId]
   );
+  // open on a class this teacher works with
+  useEffect(() => {
+    if (!staffScope.isAdmin && myClasses.length && !myClasses.some(c => c.classId === selectedClassId)) setSelectedClassId(myClasses[0].classId);
+  }, [staffScope, myClasses, selectedClassId]);
 
   const ranksMap = useMemo(
     () => calculateClassRanks(currentClass.students, currentClass.subjects),
@@ -346,7 +372,7 @@ function PorPor6Content() {
               onChange={e => setSelectedClassId(e.target.value)}
               style={selectStyle}
             >
-              {classesData.map(c => (
+              {myClasses.map(c => (
                 <option key={c.classId} value={c.classId}>
                   ชั้น{c.className} ({c.shortName}/1) — {c.students.length} คน
                 </option>
@@ -365,7 +391,8 @@ function PorPor6Content() {
             <div style={{ padding: '0 12px 12px' }}>
               {!scoresLoaded && <div role="status" style={{ background: '#E0F2FE', color: '#075985', borderRadius: 8, padding: '8px 12px', marginBottom: 8, fontWeight: 700 }}>กำลังโหลดคะแนนจากระบบ… กรอกได้เมื่อโหลดเสร็จ</div>}
               {closedByRegistrar && <div role="status" style={{ background: '#FEF3C7', color: '#78350F', borderRadius: 8, padding: '8px 12px', marginBottom: 8, fontWeight: 700 }}>งานทะเบียนปิดการบันทึกผลแล้ว — แก้ไขไม่ได้</div>}
-              <ActivityGrid classData={currentClass} locked={entryLocked}
+              {!canEditClassRecord(currentClass.classId) && <div role="status" style={{ background: '#FEF3C7', color: '#78350F', borderRadius: 8, padding: '8px 12px', marginBottom: 8, fontWeight: 700 }}>🔒 บันทึกได้เฉพาะครูประจำชั้น {currentClass.shortName}</div>}
+              <ActivityGrid classData={currentClass} locked={entryLocked || !canEditClassRecord(currentClass.classId)}
                 onSave={(code, activities) => updateStudentActivities(currentClass.classId, code, activities)} />
             </div>
           )}

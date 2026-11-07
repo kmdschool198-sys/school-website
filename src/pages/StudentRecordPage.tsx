@@ -2,7 +2,7 @@
 // student's earlier years. Reads the same data as ปพ.5 / ปพ.6 (no data of its own):
 //   this year  -> useAcademicData() (class structure + config/academic_scores_2569)
 //   past years -> config/academic_scores_{year}, found by student code
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Printer } from 'lucide-react';
@@ -15,6 +15,8 @@ import { findStudentInYear, gpaOf, yearRows, yearsBack, type SubjectRow } from '
 import { activityOverall, itemsLevel, LEVEL_LABELS } from '../utils/assessment';
 import { OfficialDocument, OfficialHeader, SignatureBlock } from '../components/print/Official';
 import { DIRECTOR_SIGNER, officialTd, officialTdLeft, officialTh, SHADE } from '../components/print/officialStyles';
+import { useStaffScope } from '../utils/staffScope';
+import type { Role } from '../utils/teacherAuth';
 
 const YEARS_TO_LOOK_BACK = 6; // ม.3 has at most 9 school years here; 6 covers ป.1 -> ป.6 / ม.1 -> ม.3
 
@@ -23,11 +25,15 @@ type SavedYear = Record<string, Record<string, Record<string, StudentSubjectScor
 export default function StudentRecordPage() {
   const auth = useTeacherAuth();
   if (!auth.authed) return <TeacherLoginGate title="ผลการเรียนรายบุคคล" subtitle="รายปี · รายคน · ย้อนหลัง" />;
-  return <StudentRecord />;
+  return <StudentRecord auth={auth} />;
 }
 
-function StudentRecord() {
-  const { classesData, loaded } = useAcademicData();
+function StudentRecord({ auth }: { auth: { role: Role; name: string; authed: boolean } }) {
+  const { classesData: allClasses, loaded } = useAcademicData();
+  // a teacher sees the classes they are homeroom teacher of or teach a subject in; admins see all
+  const staffScope = useStaffScope(auth, allClasses);
+  const classesData = useMemo(() => staffScope.isAdmin ? allClasses : allClasses.filter(c =>
+    staffScope.canManageClass(c) || c.subjects.some(s => staffScope.canEditSubject(s.teacher))), [allClasses, staffScope]);
   const [classId, setClassId] = useState('');
   const [studentCode, setStudentCode] = useState('');
   const cls = classesData.find(c => c.classId === classId) || classesData[0];

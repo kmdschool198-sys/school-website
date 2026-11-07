@@ -13,6 +13,8 @@ import TeacherLoginGate from '../components/TeacherLoginGate';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { downloadCsvReport } from '../utils/csvReport';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
+import { useStaffScope } from '../utils/staffScope';
+import type { Role } from '../utils/teacherAuth';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const STORAGE_KEY = 'kmd_behavior_logs_v2_dmc';
@@ -62,11 +64,14 @@ export default function BehaviorPage() {
       />
     );
   }
-  return <BehaviorContent userName={auth.name} />;
+  return <BehaviorContent userName={auth.name} role={auth.role} />;
 }
 
-function BehaviorContent({ userName }: { userName: string }) {
-  const { classes: unifiedRosters } = useSchoolRoster();
+function BehaviorContent({ userName, role }: { userName: string; role: Role }) {
+  const { classes: allRosterClasses } = useSchoolRoster();
+  // a teacher sees and changes only the classes they are homeroom teacher of; admins see every class
+  const staffScope = useStaffScope({ role, name: userName, authed: true }, allRosterClasses);
+  const unifiedRosters = useMemo(() => allRosterClasses.filter(c => staffScope.canManageClass(c)), [allRosterClasses, staffScope]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [search, setSearch] = useState<string>('');
   const [logs, setLogs] = useState<BehaviorLogEntry[]>(() => {

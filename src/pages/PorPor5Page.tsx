@@ -10,6 +10,7 @@ import TeacherLoginGate from '../components/TeacherLoginGate';
 import { canManageStaffUsers, useTeacherAuth } from '../utils/teacherAuth';
 import { useAssessmentPlans, useGradingStatus } from '../utils/assessmentStorage';
 import { useSchoolRoster } from '../utils/useSchoolRoster';
+import { useStaffScope } from '../utils/staffScope';
 import { findStudentDetails, useStudentDetails } from '../data/studentDetails';
 import { DEFAULT_ACTIVITIES } from '../data/defaultActivities';
 import { attendanceCount, attendanceRangeFor, attendedHours, autoHoursPatch, isUnderAttendance, type AttendanceDay } from '../utils/attendanceHours';
@@ -58,7 +59,7 @@ function blankScore(hours: number) {
 }
 
 function PorPor5Content() {
-  const { classesData, loaded: scoresLoaded, updateStudentScore, updateStudentScores } = useAcademicData();
+  const { classesData, loaded: scoresLoaded, updateStudentScore: writeStudentScore, updateStudentScores: writeStudentScores } = useAcademicData();
   const { classes: rosterClasses } = useSchoolRoster();
   const studentDetails = useStudentDetails(); // birth dates for the public results lookup (staff-only)
   const auth = useTeacherAuth();
@@ -66,8 +67,24 @@ function PorPor5Content() {
   const { status: gradingStatus } = useGradingStatus();
   // SGS: once งานทะเบียน closes score entry only registrars can change scores
   const closedByRegistrar = !gradingStatus.entryOpen && !canManageStaffUsers(auth.role);
+  // A teacher changes only the subjects they teach (by the subject's teacher name); admins change
+  // every subject. Every score write on this page goes through the two guards below.
+  const staffScope = useStaffScope(auth, classesData);
+  const canEditSubjectIn = (classId: string, subjectCode: string) => {
+    if (staffScope.isAdmin) return true;
+    const subj = classesData.find(c => c.classId === classId)?.subjects.find(s => s.code === subjectCode);
+    return staffScope.canEditSubject(subj?.teacher);
+  };
+  const updateStudentScore: typeof writeStudentScore = (classId, studentCode, subjectCode, patch) => {
+    if (canEditSubjectIn(classId, subjectCode)) return writeStudentScore(classId, studentCode, subjectCode, patch);
+  };
+  const updateStudentScores: typeof writeStudentScores = cells =>
+    writeStudentScores(cells.filter(c => canEditSubjectIn(c.classId, c.subjectCode)));
+  // classes a teacher works with: the ones they teach a subject in, or are homeroom teacher of
+  const myClasses = useMemo(() => staffScope.isAdmin ? classesData : classesData.filter(c =>
+    staffScope.canManageClass(c) || c.subjects.some(s => staffScope.canEditSubject(s.teacher))), [classesData, staffScope]);
   // nothing is editable until the score document has loaded, or a save would be built from blanks
-  const entryLocked = closedByRegistrar || !scoresLoaded;
+  const baseLocked = closedByRegistrar || !scoresLoaded;
   const [entryTab, setEntryTab] = useState<'scores' | 'items'>('scores');
   const [planTerm, setPlanTerm] = useState(0);
   const [showPlanEditor, setShowPlanEditor] = useState(false);
@@ -113,6 +130,27 @@ function PorPor5Content() {
     [currentClass, selectedSubjectCode]
   );
 
+  const subjectEditable = canEditSubjectIn(currentClass.classId, currentSubject.code);
+  const entryLocked = baseLocked || !subjectEditable;
+  // a homeroom teacher may look at every subject of their class; other teachers see their own subjects
+  const visibleSubjects = staffScope.isAdmin || staffScope.canManageClass(currentClass)
+    ? currentClass.subjects
+    : currentClass.subjects.filter(s => staffScope.canEditSubject(s.teacher));
+
+  // open on a class and subject this teacher may edit
+  useEffect(() => {
+    if (staffScope.isAdmin || !classesData.length) return;
+    if (!myClasses.some(c => c.classId === selectedClassId)) {
+      const first = myClasses[0];
+      if (!first) return;
+      setSelectedClassId(first.classId);
+      const own = first.subjects.find(s => staffScope.canEditSubject(s.teacher)) || first.subjects[0];
+      if (own) setSelectedSubjectCode(own.code);
+    } else if (!visibleSubjects.some(s => s.code === selectedSubjectCode) && visibleSubjects[0]) {
+      setSelectedSubjectCode(visibleSubjects[0].code);
+    }
+  }, [staffScope, classesData, myClasses, selectedClassId, selectedSubjectCode, visibleSubjects]);
+
   const scheme = scoreScheme(currentClass.level);
   const GRID_COLS = gridColsFor(scheme);
   const subjectPlan = plans[currentClass.classId]?.[currentSubject.code];
@@ -126,7 +164,8 @@ function PorPor5Content() {
     setSelectedClassId(cid);
     const nextCls = classesData.find(c => c.classId === cid);
     if (nextCls && nextCls.subjects.length > 0) {
-      setSelectedSubjectCode(nextCls.subjects[0].code);
+      const own = nextCls.subjects.find(s => staffScope.canEditSubject(s.teacher)) || nextCls.subjects[0];
+      setSelectedSubjectCode(own.code);
     }
   };
 
@@ -154,7 +193,7 @@ function PorPor5Content() {
   // except hours a teacher typed. Runs once per class and semester per visit.
   const autoHoursDone = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!scoresLoaded || entryLocked) return;
+    if (!scoresLoaded || baseLocked) return;
     const rosterClass = rosterClasses.find(r => r.acadId === currentClass.classId || r.shortClass === currentClass.shortName);
     if (!rosterClass?.students.length) return;
     const term: 1 | 2 = semesterLabel.includes('ภาคเรียนที่ 2') ? 2 : 1;
@@ -188,7 +227,7 @@ function PorPor5Content() {
       autoHoursDone.current.delete(key);
       console.error('auto study time failed', err);
     });
-  }, [scoresLoaded, entryLocked, rosterClasses, currentClass, semesterLabel, scheme.yearly, updateStudentScores]);
+  }, [scoresLoaded, baseLocked, rosterClasses, currentClass, semesterLabel, scheme.yearly, updateStudentScores]);
 
   // ================= 1. ซิงค์เวลาเรียนจริงจากระบบเช็คชื่อรายวัน =================
   const syncAttendanceFromCloud = async () => {
@@ -267,6 +306,7 @@ function PorPor5Content() {
 
   // ================= 3. ส่งคะแนน ปพ.5/ปพ.6 ขึ้นระบบประกาศผลสอบออนไลน์ (/results) ทันที =================
   const publishClassResultsOnline = async () => {
+    if (!staffScope.isAdmin) { toast.warn('การเผยแพร่ผลสอบทำได้เฉพาะผู้ดูแลระบบ'); return; }
     if (!window.confirm(`ยืนยันการส่งคะแนนทุกวิชาของชั้น ${currentClass.shortName}/1 ขึ้นหน้า "ประกาศผลสอบออนไลน์ (/results)" เพื่อให้ผู้ปกครองและนักเรียนค้นหาด้วยเลขประจำตัวได้ทันที?`)) {
       return;
     }
@@ -334,6 +374,7 @@ function PorPor5Content() {
   const canRunShortcut = () => {
     if (!scoresLoaded) { toast.warn('กำลังโหลดคะแนนจากระบบ — รอสักครู่แล้วลองใหม่'); return false; }
     if (closedByRegistrar) { toast.warn('งานทะเบียนปิดการบันทึกผลแล้ว — แก้ไขไม่ได้'); return false; }
+    if (!subjectEditable) { toast.warn('แก้ไขได้เฉพาะวิชาที่ท่านสอน'); return false; }
     return true;
   };
 
@@ -628,6 +669,7 @@ function PorPor5Content() {
             <button
               type="button"
               onClick={() => setShowPasteModal(true)}
+              disabled={entryLocked}
               style={{
                 background: '#0F172A', color: 'white', border: 'none', borderRadius: 999,
                 padding: '9px 16px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
@@ -637,7 +679,7 @@ function PorPor5Content() {
               <ClipboardPaste size={15} /> วางคะแนนจาก Excel
             </button>
 
-            <button
+            {staffScope.isAdmin && <button
               type="button"
               onClick={publishClassResultsOnline}
               disabled={publishingOnline}
@@ -648,7 +690,7 @@ function PorPor5Content() {
               }}
             >
               <Megaphone size={15} /> {publishingOnline ? 'กำลังส่ง...' : 'เผยแพร่ผลสอบออนไลน์ (/results)'}
-            </button>
+            </button>}
 
             <button
               type="button"
@@ -692,7 +734,7 @@ function PorPor5Content() {
               onChange={e => handleClassChange(e.target.value)}
               style={selStyle}
             >
-              {classesData.map(c => (
+              {myClasses.map(c => (
                 <option key={c.classId} value={c.classId}>
                   ชั้น {c.className} ({c.shortName}/1) — {c.students.length} คน
                 </option>
@@ -709,9 +751,9 @@ function PorPor5Content() {
               onChange={e => setSelectedSubjectCode(e.target.value)}
               style={selStyle}
             >
-              {currentClass.subjects.map(s => (
+              {visibleSubjects.map(s => (
                 <option key={s.code} value={s.code}>
-                  {s.code} — {s.name} ({s.type} · {s.credits} นก. · {s.teacher})
+                  {staffScope.canEditSubject(s.teacher) ? '' : '🔒 '}{s.code} — {s.name} ({s.type} · {s.credits} นก. · {s.teacher})
                 </option>
               ))}
             </select>
@@ -852,6 +894,11 @@ function PorPor5Content() {
             กำลังโหลดคะแนนจากระบบ… กรอกได้เมื่อโหลดเสร็จ
           </div>
         )}
+        {!baseLocked && !subjectEditable && (
+          <div role="status" className="no-print" style={{ background: '#FEF3C7', border: '1px solid #FCD34D', color: '#78350F', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontWeight: 700 }}>
+            🔒 วิชานี้ {currentSubject.teacher} เป็นผู้สอน — ดูได้อย่างเดียว แก้ไขได้เฉพาะวิชาที่ท่านสอน
+          </div>
+        )}
         {closedByRegistrar && (
           <div role="status" className="no-print" style={{ background: '#FEF3C7', border: '1px solid #FCD34D', color: '#78350F', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontWeight: 700 }}>
             งานทะเบียนปิดการบันทึกผลการเรียนแล้ว — ดูคะแนนได้ แก้ไขไม่ได้ (ติดต่องานทะเบียน/วัดผล)
@@ -863,6 +910,7 @@ function PorPor5Content() {
             scheme={scheme}
             plan={subjectPlan}
             onSave={async plan => {
+              if (!subjectEditable) return;
               await savePlan(currentClass.classId, currentSubject.code, plan);
               toast.success('บันทึกคะแนนเต็มรายตัวชี้วัดแล้ว');
             }}

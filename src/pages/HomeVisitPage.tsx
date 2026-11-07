@@ -9,6 +9,8 @@ import DriveImage from '../components/DriveImage';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { downloadCsvReport } from '../utils/csvReport';
 import { SCHOOL_NAME } from '../config/siteLinks';
+import { useStaffScope } from '../utils/staffScope';
+import type { Role } from '../utils/teacherAuth';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const STORAGE_HOME_VISIT_KEY = 'kmd_home_visits_v1';
@@ -31,11 +33,14 @@ export default function HomeVisitPage() {
   if (!auth.authed) {
     return <TeacherLoginGate title="🏠 ระบบบันทึกการเยี่ยมบ้านนักเรียน & คัดกรองทุน กสศ." />;
   }
-  return <HomeVisitContent />;
+  return <HomeVisitContent role={auth.role} userName={auth.name} />;
 }
 
-function HomeVisitContent() {
-  const { classes: rosters } = useSchoolRoster();
+function HomeVisitContent({ role, userName }: { role: Role; userName: string }) {
+  const { classes: allRosterClasses } = useSchoolRoster();
+  // a teacher sees and changes only the classes they are homeroom teacher of; admins see every class
+  const staffScope = useStaffScope({ role, name: userName, authed: true }, allRosterClasses);
+  const rosters = useMemo(() => allRosterClasses.filter(c => staffScope.canManageClass(c)), [allRosterClasses, staffScope]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [records, setRecords] = useState<Record<string, HomeVisitRecord>>(() => {
     try {

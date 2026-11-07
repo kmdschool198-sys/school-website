@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import AdminOnly from '../components/AdminOnly';
 import QuickDate from '../components/QuickDate';
 import DriveImage from '../components/DriveImage';
 import { useTeacherAuth } from '../utils/teacherAuth';
@@ -68,7 +69,7 @@ export default function JanitorTaskPage() {
       />
     );
   }
-  return <JanitorTaskContent userName={auth.name} />;
+  return <AdminOnly role={auth.role} title="การตรวจงานนักการภารโรง"><JanitorTaskContent userName={auth.name} /></AdminOnly>;
 }
 
 function JanitorTaskContent({ userName }: { userName: string }) {

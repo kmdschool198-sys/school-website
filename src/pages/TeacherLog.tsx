@@ -3,7 +3,8 @@ import { Link, useParams, Navigate } from 'react-router-dom';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ChevronLeft, LogOut, Plus, Trash2, Edit2, Save, X, Download, ExternalLink } from 'lucide-react';
-import { useTeacherAuth } from '../utils/teacherAuth';
+import { canManageStaffUsers, useTeacherAuth, type Role } from '../utils/teacherAuth';
+import { namesInclude } from '../utils/staffScope';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { TEACHER_LOGS, type LogConfig, type LogField } from '../data/teacherLogs';
 
@@ -23,10 +24,12 @@ export default function TeacherLogPage() {
 function Wrapper({ config }: { config: LogConfig }) {
   const auth = useTeacherAuth();
   if (!auth.authed) return <TeacherLoginGate title={`${config.emoji} ${config.title}`} />;
-  return <App config={config} userName={auth.name} onLogout={auth.logout} />;
+  return <App config={config} userName={auth.name} role={auth.role} onLogout={auth.logout} />;
 }
 
-function App({ config, userName, onLogout }: { config: LogConfig; userName: string; onLogout: () => void }) {
+function App({ config, userName, role, onLogout }: { config: LogConfig; userName: string; role: Role; onLogout: () => void }) {
+  // a teacher changes only entries they wrote; admins change every entry
+  const canChange = (e: LogEntry) => canManageStaffUsers(role) || namesInclude(e.createdBy, userName);
   const [items, setItems] = useState<LogEntry[]>([]);
   const [editing, setEditing] = useState<LogEntry | null>(null);
   const [filterTeacher, setFilterTeacher] = useState('');
@@ -72,6 +75,7 @@ function App({ config, userName, onLogout }: { config: LogConfig; userName: stri
   };
 
   const del = async (e: LogEntry) => {
+    if (!canChange(e)) return;
     if (!confirm('ลบรายการนี้?')) return;
     try { await deleteDoc(doc(db, config.collection, e.id)); }
     catch (err: any) { alert('❌ ' + (err?.message || err)); }
@@ -141,8 +145,10 @@ function App({ config, userName, onLogout }: { config: LogConfig; userName: stri
                         <td key={c.key} style={td}>{String(e[c.key] ?? '-')}</td>
                       ))}
                       <td style={td}>
-                        <button onClick={() => setEditing(e)} style={btnIcon}><Edit2 size={14} /></button>
-                        <button onClick={() => del(e)} style={{ ...btnIcon, color: '#DC2626' }}><Trash2 size={14} /></button>
+                        {canChange(e) ? <>
+                          <button onClick={() => setEditing(e)} style={btnIcon}><Edit2 size={14} /></button>
+                          <button onClick={() => del(e)} style={{ ...btnIcon, color: '#DC2626' }}><Trash2 size={14} /></button>
+                        </> : <span title="แก้ไขได้เฉพาะผู้บันทึก" style={{ color: '#94A3B8' }}>🔒</span>}
                       </td>
                     </tr>
                   ))}

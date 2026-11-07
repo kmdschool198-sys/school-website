@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import AdminOnly from '../components/AdminOnly';
 import RosterManager from '../components/RosterManager';
 
 export default function ManageRosterPage() {
@@ -22,7 +23,7 @@ export default function ManageRosterPage() {
         </div>
       </header>
       <main style={{ maxWidth: 1400, margin: '0 auto', padding: '1.25rem' }}>
-        <RosterManager />
+        <AdminOnly role={auth.role} title="การจัดการรายชื่อนักเรียน"><RosterManager /></AdminOnly>
       </main>
     </div>
   );

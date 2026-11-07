@@ -5,7 +5,8 @@ import { db } from '../firebase';
 import { Check, X as XIcon, Clock, Save, Download, ChevronLeft, LogOut, Users, ClipboardCheck, Printer } from 'lucide-react';
 import type { Club, ClubAttendanceDoc, AttStatus, ClubEvaluation, EvalLevel } from '../data/clubs';
 import { EVAL_LABELS } from '../data/clubs';
-import { useTeacherAuth } from '../utils/teacherAuth';
+import { canManageStaffUsers, useTeacherAuth, type Role } from '../utils/teacherAuth';
+import { namesInclude } from '../utils/staffScope';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
 import { SCHOOL_NAME } from '../config/siteLinks';
@@ -18,11 +19,14 @@ type CsvPeriod = 'month' | 'year';
 export default function ClubAttendancePage() {
   const auth = useTeacherAuth();
   if (!auth.authed) return <TeacherLoginGate title="🎯 เช็คชื่อชุมนุม / กิจกรรม / ลูกเสือ" />;
-  return <App userName={auth.name} onLogout={auth.logout} />;
+  return <App userName={auth.name} role={auth.role} onLogout={auth.logout} />;
 }
 
-function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
-  const [clubs, setClubs] = useState<Club[]>([]);
+function App({ userName, role, onLogout }: { userName: string; role: Role; onLogout: () => void }) {
+  const [allClubs, setClubs] = useState<Club[]>([]);
+  // a teacher checks only the clubs they advise; admins check every club
+  const isAdmin = canManageStaffUsers(role);
+  const clubs = useMemo(() => isAdmin ? allClubs : allClubs.filter(c => namesInclude(c.advisor, userName)), [allClubs, isAdmin, userName]);
   const [clubId, setClubId] = useState('');
   const [date, setDate] = useState(todayStr());
   const [csvPeriod, setCsvPeriod] = useState<CsvPeriod>('month');
@@ -55,6 +59,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
         if (v.note) item.note = v.note;
         if (Object.keys(item).length) clean[k] = item;
       }
+      if (!clubs.some(c => c.id === clubId)) return;
       await setDoc(doc(db, 'club_evaluations', clubId), {
         clubId, records: clean, updatedAt: Date.now(),
       });
@@ -71,8 +76,8 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   }, []);
 
   useEffect(() => {
-    if (!clubId && clubs.length) setClubId(clubs[0].id);
-  }, [clubs]);
+    if (clubs.length && !clubs.some(c => c.id === clubId)) setClubId(clubs[0].id);
+  }, [clubs, clubId]);
 
   useEffect(() => {
     if (!clubId) return;
@@ -145,7 +150,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   };
 
   const save = async () => {
-    if (!clubId) return;
+    if (!clubId || !clubs.some(c => c.id === clubId)) return;
     setSaving(true);
     try {
       await setDoc(doc(db, 'club_attendance', `${clubId}_${date}`), {

@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, LogOut, RotateCcw, CalendarDays } from 'luci
 import { db } from '../firebase';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import AdminOnly from '../components/AdminOnly';
 import { toast } from '../components/GlobalToast';
 import {
   SCHOOL_CALENDAR_COLLECTION,
@@ -23,7 +24,7 @@ export default function SchoolCalendarPage() {
   if (!auth.authed) {
     return <TeacherLoginGate title="🗓️ ปฏิทินเปิด-ปิดโรงเรียน" subtitle="กำหนดวันเรียนชดเชยและวันปิดกรณีพิเศษ" />;
   }
-  return <App userName={auth.name} onLogout={auth.logout} />;
+  return <AdminOnly role={auth.role} title="ปฏิทินเปิด-ปิดโรงเรียน"><App userName={auth.name} onLogout={auth.logout} /></AdminOnly>;
 }
 
 function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {

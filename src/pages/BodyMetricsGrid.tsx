@@ -14,6 +14,8 @@ import { SCHOOL_NAME } from '../config/siteLinks';
 import { toast } from '../components/GlobalToast';
 import ExcelPasteModal from '../components/ExcelPasteModal';
 import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
+import { useStaffScope } from '../utils/staffScope';
+import type { Role } from '../utils/teacherAuth';
 
 const COLOR = '#EC4899';
 const THAI_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -26,11 +28,14 @@ type CsvScope = 'class' | 'all';
 export default function BodyMetricsGridPage() {
   const auth = useTeacherAuth();
   if (!auth.authed) return <TeacherLoginGate title="⚖️ บันทึกน้ำหนัก-ส่วนสูง" subtitle="กรอกในตารางต่อชั้น+เดือน" />;
-  return <App userName={auth.name} onLogout={auth.logout} />;
+  return <App userName={auth.name} role={auth.role} onLogout={auth.logout} />;
 }
 
-function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
-  const { classes: availableClasses } = useSchoolRoster();
+function App({ userName, role, onLogout }: { userName: string; role: Role; onLogout: () => void }) {
+  const { classes: allRosterClasses } = useSchoolRoster();
+  // a teacher sees and changes only the classes they are homeroom teacher of; admins see every class
+  const staffScope = useStaffScope({ role, name: userName, authed: true }, allRosterClasses);
+  const availableClasses = useMemo(() => allRosterClasses.filter(c => staffScope.canManageClass(c)), [allRosterClasses, staffScope]);
   const studentDetails = useStudentDetails();
   const [classId, setClassId] = useState('');
   const [month, setMonth] = useState(thisMonth());

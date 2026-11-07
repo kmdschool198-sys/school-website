@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
+import AdminOnly from '../components/AdminOnly';
 import ClubsManager from '../components/ClubsManager';
 
 export default function ManageClubsPage() {
@@ -22,7 +23,7 @@ export default function ManageClubsPage() {
         </div>
       </header>
       <main style={{ maxWidth: 1400, margin: '0 auto', padding: '1.25rem' }}>
-        <ClubsManager />
+        <AdminOnly role={auth.role} title="การจัดการชุมนุม"><ClubsManager /></AdminOnly>
       </main>
     </div>
   );

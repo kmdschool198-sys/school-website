@@ -20,6 +20,8 @@ import {
   THAI_MONTHS_FULL,
 } from '../utils/csvReport';
 import { SCHOOL_NAME, SCHOOL_AFFILIATION } from '../config/siteLinks';
+import { useStaffScope } from '../utils/staffScope';
+import type { Role } from '../utils/teacherAuth';
 
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 const LUNCH_RATE_PER_HEAD = 22; // งบอาหารกลางวัน สพฐ./อปท. 22 บาท/คน/วัน
@@ -119,11 +121,14 @@ export default function LunchDutyPage() {
       />
     );
   }
-  return <LunchDutyContent userName={auth.name} />;
+  return <LunchDutyContent userName={auth.name} role={auth.role} />;
 }
 
-function LunchDutyContent({ userName }: { userName: string }) {
-  const { classes: availableClasses } = useSchoolRoster();
+function LunchDutyContent({ userName, role }: { userName: string; role: Role }) {
+  const { classes: allRosterClasses } = useSchoolRoster();
+  // a teacher sees and changes only the classes they are homeroom teacher of; admins see every class
+  const staffScope = useStaffScope({ role, name: userName, authed: true }, allRosterClasses);
+  const availableClasses = useMemo(() => allRosterClasses.filter(c => staffScope.canManageClass(c)), [allRosterClasses, staffScope]);
   const [date, setDate] = useState(todayStr());
   const [allDocs, setAllDocs] = useState<AttDoc[]>([]);
   const [activeTab, setActiveTab] = useState<'lunch' | 'duty' | 'roster'>('lunch');

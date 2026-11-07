@@ -4,7 +4,8 @@ import { collection, doc, onSnapshot, setDoc, deleteDoc, query, orderBy } from '
 import { db } from '../firebase';
 import { usePersonnel, personnelIdByName } from '../utils/usePersonnel';
 import { ChevronLeft, LogOut, Plus, Trash2, Edit2, Save, X, Award, Download } from 'lucide-react';
-import { useTeacherAuth } from '../utils/teacherAuth';
+import { canManageStaffUsers, useTeacherAuth, type Role } from '../utils/teacherAuth';
+import { namesInclude } from '../utils/staffScope';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { SCHOOL_NAME } from '../config/siteLinks';
 
@@ -33,10 +34,13 @@ const CATEGORIES: TrainingRecord['category'][] = ['PA', 'วPA', 'พัฒน�
 export default function TeacherTrainingPage() {
   const auth = useTeacherAuth();
   if (!auth.authed) return <TeacherLoginGate title="🎓 ระบบบันทึกข้อมูลการอบรมครู" />;
-  return <App userName={auth.name} onLogout={auth.logout} />;
+  return <App userName={auth.name} role={auth.role} onLogout={auth.logout} />;
 }
 
-function App({ userName, onLogout }: { userName: string; onLogout: () => void }) {
+function App({ userName, role, onLogout }: { userName: string; role: Role; onLogout: () => void }) {
+  // a teacher records and changes only their own trainings; admins change everyone's
+  const isAdmin = canManageStaffUsers(role);
+  const canChange = (t: TrainingRecord) => isAdmin || namesInclude(t.teacherName, userName) || namesInclude(t.createdBy, userName);
   const [items, setItems] = useState<TrainingRecord[]>([]);
   const [editing, setEditing] = useState<TrainingRecord | null>(null);
   const [filter, setFilter] = useState<string>('');
@@ -86,13 +90,17 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   const create = () => {
     const today = todayStr();
     setEditing({
-      id: `train_${Date.now()}`, teacherName: '', topic: '', organizer: '',
+      id: `train_${Date.now()}`, teacherName: isAdmin ? '' : userName, topic: '', organizer: '',
       startDate: today, endDate: today, hours: 0, location: '', category: 'PA',
       certificateUrl: '', budget: 0, note: '', createdAt: Date.now(), createdBy: userName,
     });
   };
 
   const save = async (t: TrainingRecord) => {
+    if (!isAdmin && !namesInclude(t.teacherName, userName)) {
+      alert('บันทึกได้เฉพาะข้อมูลการอบรมของตนเอง');
+      return;
+    }
     try {
       const clean: any = { ...t, teacherId: personnelIdByName(people, t.teacherName) || t.teacherId || '' };
       if (!clean.certificateUrl) delete clean.certificateUrl;
@@ -104,6 +112,7 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
   };
 
   const del = async (t: TrainingRecord) => {
+    if (!canChange(t)) return;
     if (!confirm(`ลบข้อมูล "${t.topic}"?`)) return;
     try { await deleteDoc(doc(db, 'teacher_trainings', t.id)); }
     catch (e: any) { alert('❌ ' + (e?.message || e)); }
@@ -213,8 +222,10 @@ function App({ userName, onLogout }: { userName: string; onLogout: () => void })
                   <span style={{ background: catColor(t.category) + '22', color: catColor(t.category), padding: '2px 10px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 800 }}>{t.category}</span>
                   <span style={{ background: '#FFEDD5', color: '#7C2D12', padding: '2px 10px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700 }}>⏱️ {t.hours} ชั่วโมง</span>
                   <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                    <button onClick={() => setEditing(t)} style={btnSm}><Edit2 size={12} /></button>
-                    <button onClick={() => del(t)} style={{ ...btnSm, color: '#DC2626' }}><Trash2 size={12} /></button>
+                    {canChange(t) ? <>
+                      <button onClick={() => setEditing(t)} style={btnSm}><Edit2 size={12} /></button>
+                      <button onClick={() => del(t)} style={{ ...btnSm, color: '#DC2626' }}><Trash2 size={12} /></button>
+                    </> : <span title="แก้ไขได้เฉพาะเจ้าของข้อมูล" style={{ color: '#94A3B8' }}>🔒</span>}
                   </span>
                 </div>
                 <div style={{ fontWeight: 900, fontSize: '1.05rem', color: '#0F172A' }}>{t.topic}</div>

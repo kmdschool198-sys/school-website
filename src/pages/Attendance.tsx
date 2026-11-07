@@ -8,6 +8,7 @@ import {
   Users, BarChart3, Calendar, ChevronLeft, AlertCircle, LogOut, Plus, Trash2, Edit2,
 } from 'lucide-react';
 import { useTeacherAuth, type Role } from '../utils/teacherAuth';
+import { useStaffScope } from '../utils/staffScope';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { PageLoading } from '../components/PageState';
 import { THAI_MONTHS_FULL, daysInMonth, downloadCsvReport, makeSectionedReportRows, monthLabel, yearLabel } from '../utils/csvReport';
@@ -23,7 +24,7 @@ interface AttDoc {
   records: Record<string, { status: Status; note?: string; noMilk?: boolean; noBrush?: boolean; noLunch?: boolean; noDuty?: boolean }>;
   updatedAt?: number;
 }
-interface ClassRoster { classId: string; label: string; students: Student[]; }
+interface ClassRoster { classId: string; label: string; homeroomTeacher?: string; students: Student[]; }
 
 const STATUS_COLORS: Record<Status, string> = {
   present: '#FF6A01',  // school orange
@@ -63,6 +64,7 @@ const seedClasses = (): ClassRoster[] => {
   return buildSeedRosters().map(r => ({
     classId: r.classId,
     label: r.label,
+    homeroomTeacher: r.homeroomTeacher,
     students: r.students.map(s => ({ id: s.id, code: s.code, name: s.name, emoji: s.emoji })),
   }));
 };
@@ -74,10 +76,10 @@ type CsvScope = 'class' | 'all';
 export default function Attendance() {
   const auth = useTeacherAuth();
   if (!auth.authed) return <TeacherLoginGate title="📋 ระบบเช็คชื่อนักเรียน" />;
-  return <AttendanceApp role={auth.role} onLogout={auth.logout} />;
+  return <AttendanceApp role={auth.role} name={auth.name} onLogout={auth.logout} />;
 }
 
-function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void }) {
+function AttendanceApp({ role, name, onLogout }: { role: Role; name: string; onLogout: () => void }) {
   const isSuper = role === 'owner' || role === 'super' || role === 'admin';
   const today = todayStr();
   const [classes, setClasses] = useState<ClassRoster[]>(seedClasses);
@@ -107,6 +109,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
           setClasses(merged.map(r => ({
             classId: r.classId,
             label: r.label,
+            homeroomTeacher: r.homeroomTeacher,
             students: r.students.map(s => ({ id: s.id, code: s.code, name: s.name, emoji: s.emoji })),
           })));
         }
@@ -114,9 +117,16 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
     });
   }, []);
 
+  // a teacher checks only the classes they are homeroom teacher of; admins check every class
+  const scope = useStaffScope({ role, name, authed: true }, classes);
+  const myClasses = useMemo(() => classes.filter(c => scope.canManageClass(c)), [classes, scope]);
   useEffect(() => {
-    if (!classId && classes.length) setClassId(classes[0].classId);
-  }, [classes]);
+    const pick = myClasses[0] || classes[0];
+    if (pick && (!classId || !classes.some(c => c.classId === classId))) setClassId(pick.classId);
+  }, [classes, myClasses]);
+  const canEditClass = scope.canManageClass(classId);
+  // read-only: not this teacher's class, or a past date for a non-admin
+  const locked = !canEditClass || (!isSuper && date !== today);
 
   // Load attendance for current date
   useEffect(() => {
@@ -272,7 +282,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
   const clearAll = () => setRecords({});
 
   const save = async () => {
-    if (!classId || !dateAllowed(date)) return;
+    if (!classId || locked || !dateAllowed(date)) return;
     setSaving(true);
     try {
       const id = `${classId}_${date}`;
@@ -581,12 +591,15 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
           <div>
             <label style={lbl}>เลือกชั้นเรียน</label>
             <select value={classId} onChange={e => setClassId(e.target.value)} style={inp}>
-              {classes.map(c => <option key={c.classId} value={c.classId}>{c.label}</option>)}
+              {(isSuper ? classes : myClasses).map(c => <option key={c.classId} value={c.classId}>{c.label}</option>)}
+              {!isSuper && !myClasses.some(c => c.classId === classId) && currentClass && (
+                <option value={currentClass.classId}>{currentClass.label} (ดูอย่างเดียว)</option>
+              )}
             </select>
           </div>
           <div>
             <label style={lbl}>
-              วันที่เช็คชื่อ {!isSuper && date !== today && <span style={{ color: '#EF4444', fontSize: '0.7rem' }}>(อ่านอย่างเดียว)</span>}
+              วันที่เช็คชื่อ {locked && <span style={{ color: '#EF4444', fontSize: '0.7rem' }}>(อ่านอย่างเดียว)</span>}
             </label>
             <input type="date" value={date} max={today}
               onChange={e => setDate(e.target.value)} style={inp} />
@@ -618,28 +631,30 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
         {tab === 'check' && (
           <>
             {/* Read-only banner for normal users on past dates */}
-            {!isSuper && date !== today && (
+            {locked && (
               <div style={{
                 background: '#FEF3C7', border: '1px solid #FDE68A', color: '#92400E',
                 padding: '10px 14px', borderRadius: 10, marginBottom: 12,
                 fontSize: '0.85rem', fontWeight: 700,
               }}>
-                🔒 โหมดอ่านอย่างเดียว — แก้ไขย้อนหลังต้องเข้าโดยผู้ดูแลระบบ ({fmtThai(date)})
+                {canEditClass
+                  ? `🔒 โหมดอ่านอย่างเดียว — แก้ไขย้อนหลังต้องเข้าโดยผู้ดูแลระบบ (${fmtThai(date)})`
+                  : `🔒 อ่านอย่างเดียว — เช็คชื่อได้เฉพาะห้องที่ท่านเป็นครูประจำชั้น`}
               </div>
             )}
 
             {/* Quick actions */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button onClick={() => markAll('present')} disabled={!isSuper && date !== today}
-                style={{ ...quickBtn, background: BRAND, opacity: (!isSuper && date !== today) ? 0.4 : 1 }}>
+              <button onClick={() => markAll('present')} disabled={locked}
+                style={{ ...quickBtn, background: BRAND, opacity: locked ? 0.4 : 1 }}>
                 ✓ มาทั้งหมด
               </button>
-              <button onClick={clearAll} disabled={!isSuper && date !== today}
-                style={{ ...quickBtn, background: '#EF4444', opacity: (!isSuper && date !== today) ? 0.4 : 1 }}>
+              <button onClick={clearAll} disabled={locked}
+                style={{ ...quickBtn, background: '#EF4444', opacity: locked ? 0.4 : 1 }}>
                 ↺ ล้างทั้งหมด
               </button>
-              <button onClick={save} disabled={saving || (!isSuper && date !== today)}
-                style={{ ...quickBtn, background: '#0F172A', marginLeft: 'auto', opacity: (!isSuper && date !== today) ? 0.4 : 1 }}>
+              <button onClick={save} disabled={saving || locked}
+                style={{ ...quickBtn, background: '#0F172A', marginLeft: 'auto', opacity: locked ? 0.4 : 1 }}>
                 <Save size={14} style={{ marginRight: 4 }} />{saving ? 'กำลังบันทึก…' : 'บันทึกข้อมูล'}
               </button>
               {savedAt && <span style={{ fontSize: '0.72rem', color: BRAND, fontWeight: 700 }}>✓ {savedAt.toLocaleTimeString('th-TH')}</span>}
@@ -673,14 +688,14 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
                     <div style={{ display: 'flex', gap: 4 }}>
                       {(['present', 'absent', 'leave'] as Status[]).map(status => (
                         <button key={status} onClick={() => setStatus(s.id, status)}
-                          disabled={!isSuper && date !== today}
+                          disabled={locked}
                           style={{
                           padding: '8px 12px', borderRadius: 10, border: 'none',
-                          cursor: (!isSuper && date !== today) ? 'not-allowed' : 'pointer',
+                          cursor: locked ? 'not-allowed' : 'pointer',
                           fontWeight: 800, fontSize: '0.78rem',
                           background: st === status ? STATUS_COLORS[status] : '#F1F5F9',
                           color: st === status ? 'white' : '#64748B',
-                          opacity: (!isSuper && date !== today) ? 0.5 : 1,
+                          opacity: locked ? 0.5 : 1,
                           display: 'inline-flex', alignItems: 'center', gap: 4,
                         }}>
                           {status === 'present' ? <Check size={12} /> : status === 'absent' ? <XIcon size={12} /> : <Clock size={12} />}
@@ -693,13 +708,13 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <button
                           onClick={() => setMilk(s.id, !!r?.noMilk)}
-                          disabled={!isSuper && date !== today}
+                          disabled={locked}
                           style={{
                             background: r?.noMilk ? '#F1F5F9' : '#DBEAFE',
                             color: r?.noMilk ? '#64748B' : '#1E40AF',
                             border: `1px solid ${r?.noMilk ? '#CBD5E1' : '#93C5FD'}`,
                             borderRadius: 10, padding: '8px 12px', fontSize: '0.78rem', fontWeight: 800,
-                            cursor: (!isSuper && date !== today) ? 'not-allowed' : 'pointer',
+                            cursor: locked ? 'not-allowed' : 'pointer',
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                           }}
                         >
@@ -707,13 +722,13 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
                         </button>
                         <button
                           onClick={() => setBrush(s.id, !!r?.noBrush)}
-                          disabled={!isSuper && date !== today}
+                          disabled={locked}
                           style={{
                             background: r?.noBrush ? '#F1F5F9' : '#CFFAFE',
                             color: r?.noBrush ? '#64748B' : '#0891B2',
                             border: `1px solid ${r?.noBrush ? '#CBD5E1' : '#67E8F9'}`,
                             borderRadius: 10, padding: '8px 12px', fontSize: '0.78rem', fontWeight: 800,
-                            cursor: (!isSuper && date !== today) ? 'not-allowed' : 'pointer',
+                            cursor: locked ? 'not-allowed' : 'pointer',
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                           }}
                         >
@@ -724,7 +739,7 @@ function AttendanceApp({ role, onLogout }: { role: Role; onLogout: () => void })
                     <input
                       placeholder="หมายเหตุ..."
                       value={r?.note || ''}
-                      readOnly={!isSuper && date !== today}
+                      readOnly={locked}
                       onChange={e => setNote(s.id, e.target.value)}
                       style={{ ...inp, maxWidth: 180, fontSize: '0.78rem' }}
                     />
