@@ -676,6 +676,22 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
     await saveToCloud(nextData);
   };
 
+  // Draft for the selected teacher differs from what is saved for subDate
+  const hasUnsavedDraft = useMemo(() => {
+    const filled = Object.entries(draftSubMap).filter(([, v]) => v);
+    if (!filled.length) return false;
+    const saved = data.substitute?.[subDate]?.absentList?.find(a => a.teacherId === subAbsentTeacherId);
+    if (!saved) return true;
+    const savedMap = new Map((saved.periods || []).map(p => [`${p.roomId}_${p.slotId}`, p.subTeacher]));
+    return filled.length !== savedMap.size || filled.some(([k, v]) => savedMap.get(k) !== v) || (saved.reason || '') !== subReason;
+  }, [draftSubMap, data.substitute, subDate, subAbsentTeacherId, subReason]);
+
+  // Print the substitute sheet of subDate; unsaved assignments are saved first so the paper matches the record
+  const printDailySubSheet = async () => {
+    if (hasUnsavedDraft && !readOnly) await saveDailySubAssignment();
+    setTimeout(() => window.print(), 150);
+  };
+
   const removeDailyAbsentEntry = async (dateStr: string, teacherId: string) => {
     if (!confirm('ต้องการลบรายการจัดสอนแทนนี้ใช่หรือไม่?')) return;
     const nextSub = { ...(data.substitute || {}) };
@@ -1402,9 +1418,9 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
                     <Sparkles size={15} /> ⚡ จัดครูสอนแทนอัตโนมัติทั้งวัน
                   </button>
                 )}
-                {subsForSelectedDate.length > 0 && (
+                {(subsForSelectedDate.length > 0 || hasUnsavedDraft) && (
                   <button
-                    onClick={() => window.print()}
+                    onClick={printDailySubSheet}
                     style={{
                       background: '#0F172A', color: 'white', border: 'none', padding: '9px 14px',
                       borderRadius: 10, fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
@@ -2272,7 +2288,102 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
       );
     }
 
-    // Fallback for sub or master views
+    // ════════════════════════════════════════════════════════════════════════
+    // DAILY SUBSTITUTE SHEET (ใบแจ้งจัดครูสอนแทน ประจำวัน)
+    // ════════════════════════════════════════════════════════════════════════
+    if (view === 'sub') {
+      const absentList = data.substitute?.[subDate]?.absentList || [];
+      const rows = absentList.flatMap(a => {
+        const tName = a.teacherName || teacherName(data.teachers.find(t => t.id === a.teacherId)) || '-';
+        return [...(a.periods || [])]
+          .filter(p => p.subTeacher)
+          .sort((x, y) => x.slotId - y.slotId)
+          .map(p => ({ absent: tName, reason: a.reason || '-', p, slot: data.slots.find(s => s.id === p.slotId), room: data.rooms.find(r => r.id === p.roomId) }));
+      });
+      const cellBorder = '1px solid #000';
+      const th: React.CSSProperties = { border: cellBorder, padding: '5px 6px', fontWeight: 900, background: '#EEF2F7', fontSize: '10pt' };
+      const tdc: React.CSSProperties = { border: cellBorder, padding: '5px 6px', fontSize: '10pt', verticalAlign: 'middle' };
+      return (
+        <div className="tt-official-print-doc tt-sub-sheet" style={{ fontFamily: "'Sarabun', 'TH Sarabun New', sans-serif", color: '#000' }}>
+          <div>
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <img
+                src="/school_logo_kmd.png"
+                alt="ตราโรงเรียน"
+                style={{ width: 48, height: 48, objectFit: 'contain', marginBottom: 2 }}
+                onError={e => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+              />
+              <h3 style={{ margin: 0, fontSize: '15pt', fontWeight: 900 }}>บันทึกการจัดครูสอนแทน</h3>
+              <div style={{ fontSize: '11pt', fontWeight: 700 }}>{data.school.name}</div>
+              <div style={{ fontSize: '10pt' }}>
+                ประจำ{formatThaiFullDate(subDate)} · ภาคเรียนที่ {data.school.semester} ปีการศึกษา {data.school.year}
+              </div>
+            </div>
+            <div style={{ fontSize: '10.5pt', marginBottom: 6 }}>
+              {absentList.map(a => (
+                <div key={a.teacherId}>
+                  ครูผู้ลา / ไปราชการ: <b>{a.teacherName || teacherName(data.teachers.find(t => t.id === a.teacherId)) || '-'}</b>
+                  {' '}— สาเหตุ: {a.reason || '-'} ({(a.periods || []).filter(p => p.subTeacher).length} คาบ)
+                </div>
+              ))}
+            </div>
+            {rows.length === 0 ? (
+              <div style={{ border: cellBorder, padding: 16, textAlign: 'center', fontSize: '11pt' }}>
+                ยังไม่มีการจัดครูสอนแทนในวันนี้
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...th, width: '5%' }}>ที่</th>
+                    <th style={{ ...th, width: '13%' }}>คาบ / เวลา</th>
+                    <th style={{ ...th, width: '8%' }}>ชั้น</th>
+                    <th style={th}>รายวิชา</th>
+                    <th style={th}>ครูผู้ลา</th>
+                    <th style={th}>ครูผู้สอนแทน</th>
+                    <th style={{ ...th, width: '17%' }}>ลงชื่อรับทราบ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => (
+                    <tr key={`${row.absent}_${row.p.slotId}_${row.p.roomId}`}>
+                      <td style={{ ...tdc, textAlign: 'center' }}>{i + 1}</td>
+                      <td style={{ ...tdc, textAlign: 'center' }}>
+                        <div style={{ fontWeight: 800 }}>{row.slot?.label || `คาบที่ ${row.p.slotId}`}</div>
+                        <div style={{ fontSize: '8.5pt' }}>{row.slot ? `${row.slot.start}-${row.slot.end}` : ''}</div>
+                      </td>
+                      <td style={{ ...tdc, textAlign: 'center', fontWeight: 800 }}>{row.room?.label || '-'}</td>
+                      <td style={tdc}>{row.p.subject || '-'}</td>
+                      <td style={tdc}>{row.absent}</td>
+                      <td style={{ ...tdc, fontWeight: 800 }}>{row.p.subTeacher}</td>
+                      <td style={tdc}></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <div style={{ fontSize: '9.5pt', marginTop: 6 }}>
+              หมายเหตุ: ครูผู้สอนแทนดูแลนักเรียนตามแผนการสอนที่ครูผู้ลามอบหมาย และบันทึกการเข้าเรียนของนักเรียนในคาบนั้น
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, textAlign: 'center', fontSize: '10pt', marginTop: 48 }}>
+            <div>
+              <div>ลงชื่อ................................................ผู้จัดสอนแทน</div>
+              <div style={{ marginTop: 3, fontWeight: 700 }}>({data.school.acadName || 'นางสาวนริศรา ทำจิตรเหมาะ'})</div>
+              <div>หัวหน้างานวิชาการ</div>
+            </div>
+            <div>
+              <div>☐ ทราบ &nbsp; ☐ อนุมัติ</div>
+              <div style={{ marginTop: 6 }}>ลงชื่อ................................................</div>
+              <div style={{ marginTop: 3, fontWeight: 700 }}>({data.school.principalName || 'นายปรัชญา ปรางค์ชัยภูมิ'})</div>
+              <div>ผู้อำนวยการสถานศึกษา</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback for master, overview and data views
     return (
       <div className="tt-official-print-doc">
         <div style={{ textAlign: 'center', marginBottom: 10 }}>
@@ -2290,7 +2401,6 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
         <div className="tt-grid">
           {view === 'master' && renderMasterGrid()}
           {view === 'overview' && renderOverview()}
-          {view === 'sub' && renderSubPanel()}
           {view === 'data' && renderDataPanel()}
         </div>
       </div>
@@ -2302,7 +2412,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
       <style>{`
         @media print {
           @page {
-            size: A4 landscape;
+            size: A4 ${view === 'sub' ? 'portrait' : 'landscape'};
             margin: 5mm 8mm 5mm 8mm;
           }
           html, body {
@@ -2321,7 +2431,7 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
             display: block !important;
             position: static !important;
             width: 100% !important;
-            max-height: 195mm !important;
+            max-height: ${view === 'sub' ? '285mm' : '195mm'} !important;
             background: white !important;
             padding: 0 !important;
             margin: 0 !important;
@@ -2332,14 +2442,19 @@ export default function TimetableSmart({ readOnly = false }: { readOnly?: boolea
           }
           .tt-official-print-doc {
             width: 100% !important;
-            height: 190mm !important;
-            max-height: 195mm !important;
+            height: ${view === 'sub' ? '280mm' : '190mm'} !important;
+            max-height: ${view === 'sub' ? '285mm' : '195mm'} !important;
             box-sizing: border-box !important;
             page-break-inside: avoid !important;
             page-break-after: avoid !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
+          }
+          /* daily substitute sheet: signatures follow the table, not the page bottom */
+          .tt-official-print-doc.tt-sub-sheet {
+            height: auto !important;
+            justify-content: flex-start !important;
           }
         }
         .tt-print-header { display: none; }
