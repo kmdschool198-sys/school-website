@@ -351,7 +351,7 @@ export const INITIAL_ACADEMIC_DATA: ClassAcademicData[] = [
     "affiliation": "สำนักงานเขตพื้นที่การศึกษาประถมศึกษากำแพงเพชร เขต 2",
     "director": "นายปรัชญา ปรางค์ชัยภูมิ",
     "homeroomTeachers": [
-      "นางสาวภัทรสุดา สุหงษา"
+      "นางสาวธญาภรณ์ คล้ายเพ็ง"
     ],
     "subjects": [
       {

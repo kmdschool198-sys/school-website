@@ -35,7 +35,7 @@ export const DMC_CLASS_METADATA: Array<{
   { roomId: 'kg_a2_1', acadId: 'a2', shortClass: 'อ.2', label: 'อ.2/1', fullClassName: 'อนุบาล 2', levelGroup: 'ปฐมวัย', homeroomTeacher: 'นางสาวณัฐณิชา ภักดี' },
   { roomId: 'kg_a3_1', acadId: 'a3', shortClass: 'อ.3', label: 'อ.3/1', fullClassName: 'อนุบาล 3', levelGroup: 'ปฐมวัย', homeroomTeacher: 'นางสาวณัฐณิชา ภักดี' },
   { roomId: 'p1_1', acadId: 'p1', shortClass: 'ป.1', label: 'ป.1/1', fullClassName: 'ประถมศึกษาปีที่ 1', levelGroup: 'ประถม', homeroomTeacher: 'นางสาวธิดารัตน์ แรตสอน' },
-  { roomId: 'p2_1', acadId: 'p2', shortClass: 'ป.2', label: 'ป.2/1', fullClassName: 'ประถมศึกษาปีที่ 2', levelGroup: 'ประถม', homeroomTeacher: 'นางสาวภัทรสุดา สุหงษา' },
+  { roomId: 'p2_1', acadId: 'p2', shortClass: 'ป.2', label: 'ป.2/1', fullClassName: 'ประถมศึกษาปีที่ 2', levelGroup: 'ประถม', homeroomTeacher: 'นางสาวธญาภรณ์ คล้ายเพ็ง' },
   { roomId: 'p3_1', acadId: 'p3', shortClass: 'ป.3', label: 'ป.3/1', fullClassName: 'ประถมศึกษาปีที่ 3', levelGroup: 'ประถม', homeroomTeacher: 'นางสาวไอยรดา อาจจีน' },
   { roomId: 'p4_1', acadId: 'p4', shortClass: 'ป.4', label: 'ป.4/1', fullClassName: 'ประถมศึกษาปีที่ 4', levelGroup: 'ประถม', homeroomTeacher: 'นายพีระ เดชะผล' },
   { roomId: 'p5_1', acadId: 'p5', shortClass: 'ป.5', label: 'ป.5/1', fullClassName: 'ประถมศึกษาปีที่ 5', levelGroup: 'ประถม', homeroomTeacher: 'นายนวพานิชณ์ วังคีรี' },
