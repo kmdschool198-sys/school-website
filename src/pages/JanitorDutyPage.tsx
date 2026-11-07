@@ -8,7 +8,6 @@ import { db } from '../firebase';
 import { CalendarClock, Plus, Printer, Save, Trash2, Wrench } from 'lucide-react';
 import SmartSchoolLayout from '../components/SmartSchoolLayout';
 import TeacherLoginGate from '../components/TeacherLoginGate';
-import AdminOnly from '../components/AdminOnly';
 import { useTeacherAuth } from '../utils/teacherAuth';
 import { usePersonnel, personnelIdByName, samePerson, type PersonnelRef, isJanitor } from '../utils/usePersonnel';
 import { useSchoolDays } from '../utils/useSchoolDays';
@@ -30,7 +29,7 @@ export default function JanitorDutyPage() {
   if (!auth.authed) {
     return <TeacherLoginGate title="🗓️ ตารางเวรนักการภารโรง" subtitle="จัดตารางเวร และพิมพ์รายงานการปฏิบัติงานประจำเดือน" />;
   }
-  return <AdminOnly role={auth.role} title="ตารางเวรนักการภารโรง"><JanitorDuty userName={auth.name} /></AdminOnly>;
+  return <JanitorDuty userName={auth.name} />;
 }
 
 // Checklist presets start with an emoji; printed documents use the plain text
