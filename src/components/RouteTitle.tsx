@@ -42,6 +42,8 @@ const staticTitles: Record<string, string> = {
   '/executive': 'แดชบอร์ดผู้บริหาร',
   '/home-visit': 'ระบบบันทึกการเยี่ยมบ้านนักเรียน',
   '/supervision': 'การนิเทศภายในรายบุคคล',
+  '/timetable': 'ตารางเรียนและตารางสอน',
+  '/print-homeroom': 'พิมพ์บันทึกกิจกรรมโฮมรูม',
 };
 
 const printFormTitles: Record<string, string> = {

@@ -160,7 +160,7 @@ export default function TimetablePage() {
                   {editMode ? <Edit3 size={15} /> : <Eye size={15} />}
                   {editMode ? 'โหมดแก้ไขเปิดอยู่ (คลิกเพื่อสลับดูอย่างเดียว)' : 'เปิดโหมดแก้ไข & จัดสอนแทน'}
                 </button>}
-                <Link
+                {canEditTimetable && <Link
                   to="/admin?tab=timetable"
                   style={{
                     background: 'rgba(255,255,255,0.12)',
@@ -177,7 +177,7 @@ export default function TimetablePage() {
                   }}
                 >
                   <ExternalLink size={15} /> จัดการในหน้าแอดมิน
-                </Link>
+                </Link>}
             </>
 
             <button
