@@ -12,6 +12,7 @@ import {
 import { useTeacherAuth } from '../utils/teacherAuth';
 import TeacherLoginGate from '../components/TeacherLoginGate';
 import { useStaffScope } from '../utils/staffScope';
+import { isWithdrawal, signedAmount } from '../utils/saving';
 import type { Role } from '../utils/teacherAuth';
 
 const BRAND = '#FF6A01';
@@ -283,10 +284,10 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
           {(logs.saving?.length || 0) === 0 ? <Empty msg="ยังไม่มีบันทึก" /> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {(() => {
-                const total = logs.saving.reduce((s: number, x: any) => s + (Number(x.amount) || 0), 0);
+                const total = logs.saving.reduce((s: number, x: any) => s + signedAmount(x), 0);
                 return (
                   <div style={{ padding: 10, background: '#DCFCE7', borderRadius: 8, textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.78rem', color: '#166534' }}>ยอดออมรวม</div>
+                    <div style={{ fontSize: '0.78rem', color: '#166534' }}>ยอดคงเหลือ (ฝาก − ถอน)</div>
                     <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#166534' }}>{total.toLocaleString('th-TH')} ฿</div>
                   </div>
                 );
@@ -294,7 +295,7 @@ function Dashboard({ cls }: { cls: { id: string; label: string; students: Studen
               {logs.saving.slice(0, 3).map((l: any) => (
                 <div key={l.id} style={{ padding: '6px 10px', background: '#FFF7ED', borderRadius: 6, fontSize: '0.78rem', display: 'flex', gap: 8 }}>
                   <span style={{ flex: 1 }}>{l.studentName}</span>
-                  <span style={{ fontWeight: 800, color: '#10B981' }}>+{l.amount}฿</span>
+                  <span style={{ fontWeight: 800, color: isWithdrawal(l) ? '#DC2626' : '#10B981' }}>{isWithdrawal(l) ? '−' : '+'}{l.amount}฿</span>
                 </div>
               ))}
             </div>

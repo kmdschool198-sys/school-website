@@ -14,13 +14,14 @@ import { toast } from '../components/GlobalToast';
 import ExcelPasteModal from '../components/ExcelPasteModal';
 import { parseClipboardTable, cleanNumeric, isTabularPaste } from '../utils/excelPaste';
 import { useStaffScope } from '../utils/staffScope';
+import { depositAmount, isWithdrawal, signedAmount, withdrawalAmount } from '../utils/saving';
 import type { Role } from '../utils/teacherAuth';
 
 const COLOR = '#10B981';
 const DIRECTOR_NAME = 'นายปรัชญา ปรางค์ชัยภูมิ';
 
 interface Student { id: string; code?: string; name: string; emoji?: string; }
-interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; studentCode?: string; amount?: number; date?: string; }
+interface LogEntry { id: string; classLabel?: string; studentName?: string; studentId?: string; studentCode?: string; amount?: number; date?: string; type?: 'deposit' | 'withdraw'; createdAt?: number; }
 type CsvPeriod = 'month' | 'year';
 type CsvScope = 'class' | 'all';
 
@@ -65,19 +66,54 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
     sameStudent(l, s);
   const matches = (l: LogEntry, s: Student) => matchesInClass(l, s, current?.label);
 
-  const findEntry = (s: Student) => logs.find(l => matches(l, s) && l.date === date);
+  // the day's deposit (withdrawals are separate records)
+  const findEntry = (s: Student) => logs.find(l => matches(l, s) && l.date === date && !isWithdrawal(l));
+  const withdrawalsOf = (s: Student) => logs.filter(l => matches(l, s) && isWithdrawal(l))
+    .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.createdAt || 0) - (b.createdAt || 0));
+  const todayWithdrawalsOf = (s: Student) => withdrawalsOf(s).filter(l => l.date === date);
+  const monthWithdrawnOf = (s: Student) => withdrawalsOf(s)
+    .filter(l => l.date?.startsWith(currentMonth)).reduce((sum, l) => sum + withdrawalAmount(l), 0);
 
+  // deposits this month
   const monthBalanceOf = (s: Student) => logs
     .filter(l => matches(l, s) && l.date?.startsWith(currentMonth))
-    .reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+    .reduce((sum, l) => sum + depositAmount(l), 0);
 
+  // money the student has now: every deposit minus every withdrawal
   const balanceOf = (s: Student) => logs
     .filter(l => matches(l, s))
-    .reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+    .reduce((sum, l) => sum + signedAmount(l), 0);
 
   const balanceOfInClass = (s: Student, classLabel?: string) => logs
     .filter(l => matchesInClass(l, s, classLabel))
-    .reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+    .reduce((sum, l) => sum + signedAmount(l), 0);
+
+  // A withdrawal is its own record, so the deposit history stays as it was
+  const withdraw = async (s: Student) => {
+    if (!current) return;
+    const bal = balanceOf(s);
+    if (bal <= 0) { toast.warn(`${s.name} ไม่มียอดเงินคงเหลือให้ถอน`); return; }
+    const input = prompt(`ถอนเงินของ ${s.name}\nยอดคงเหลือ ${bal.toLocaleString('th-TH')} บาท\n\nจำนวนเงินที่ถอน (บาท):`, String(bal));
+    if (input === null) return;
+    const amount = Number(input.replace(/[,\s]/g, ''));
+    if (!Number.isFinite(amount) || amount <= 0) { toast.warn('จำนวนเงินไม่ถูกต้อง'); return; }
+    if (amount > bal) { toast.warn(`ถอนได้ไม่เกินยอดคงเหลือ ${bal.toLocaleString('th-TH')} บาท`); return; }
+    const id = `wd_${classId}_${date}_${s.id}_${Date.now()}`;
+    try {
+      await setDoc(doc(db, 'log_saving', id), {
+        id, type: 'withdraw', classLabel: current.label, studentId: s.id, studentCode: s.code || s.id,
+        studentName: s.name, amount, date, teacherName: userName, createdAt: Date.now(),
+      });
+      setSavedAt(new Date());
+      toast.success(`บันทึกการถอน ${s.name} ${amount.toLocaleString('th-TH')} บาท · คงเหลือ ${(bal - amount).toLocaleString('th-TH')} บาท`);
+    } catch (e: any) { toast.error('บันทึกการถอนไม่สำเร็จ: ' + (e?.message || e)); }
+  };
+
+  const cancelWithdrawal = async (l: LogEntry, s: Student) => {
+    if (!confirm(`ยกเลิกการถอน ${Number(l.amount).toLocaleString('th-TH')} บาท ของ ${s.name}?`)) return;
+    try { await deleteDoc(doc(db, 'log_saving', l.id)); setSavedAt(new Date()); }
+    catch (e: any) { toast.error('ยกเลิกไม่สำเร็จ: ' + (e?.message || e)); }
+  };
 
   const updateAmount = async (s: Student, amount: number | undefined) => {
     if (!current) return;
@@ -225,6 +261,8 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
   const todayTotal = students.reduce((s, st) => s + (findEntry(st)?.amount || 0), 0);
   const monthTotal = students.reduce((s, st) => s + monthBalanceOf(st), 0);
   const allTimeTotal = students.reduce((s, st) => s + balanceOf(st), 0);
+  const todayWithdrawnTotal = students.reduce((s, st) => s + todayWithdrawalsOf(st).reduce((n, l) => n + withdrawalAmount(l), 0), 0);
+  const monthWithdrawnTotal = students.reduce((s, st) => s + monthWithdrawnOf(st), 0);
   const filledCount = students.filter(s => findEntry(s)).length;
 
   const exportCsv = () => {
@@ -241,12 +279,14 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
           let monthSum = 0;
           days.forEach(d => {
             const dateStr = `${month}-${String(d).padStart(2, '0')}`;
-            const log = logs.find(l => matchesInClass(l, s, classItem.label) && l.date === dateStr);
-            const amt = log?.amount || 0;
+            const log = logs.find(l => matchesInClass(l, s, classItem.label) && l.date === dateStr && !isWithdrawal(l));
+            const amt = log ? depositAmount(log) : 0;
             row.push(amt > 0 ? String(amt) : '-');
             monthSum += amt;
           });
-          row.push(String(monthSum), String(balanceOfInClass(s, classItem.label)));
+          const monthOut = logs.filter(l => matchesInClass(l, s, classItem.label) && l.date?.startsWith(month))
+            .reduce((n, l) => n + withdrawalAmount(l), 0);
+          row.push(String(monthSum), String(monthOut), String(balanceOfInClass(s, classItem.label)));
           return row;
         })
         : classItem.students.map((s, i) => {
@@ -256,18 +296,20 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
             const monthPrefix = `${year}-${String(m).padStart(2, '0')}`;
             const sum = logs
               .filter(l => matchesInClass(l, s, classItem.label) && l.date?.startsWith(monthPrefix))
-              .reduce((total, log) => total + (Number(log.amount) || 0), 0);
+              .reduce((total, log) => total + depositAmount(log), 0);
             row.push(sum > 0 ? String(sum) : '-');
             yearSum += sum;
           });
-          row.push(String(yearSum), String(balanceOfInClass(s, classItem.label)));
+          const yearOut = logs.filter(l => matchesInClass(l, s, classItem.label) && l.date?.startsWith(year))
+            .reduce((n, l) => n + withdrawalAmount(l), 0);
+          row.push(String(yearSum), String(yearOut), String(balanceOfInClass(s, classItem.label)));
           return row;
         });
       return {
         title: `ชั้น ${classItem.label}`,
         headers: csvPeriod === 'month'
-          ? ['ที่', 'รหัส', 'ชื่อ-สกุล', ...days.map(String), 'รวมเดือนนี้', 'สะสมทั้งหมด']
-          : ['ที่', 'รหัส', 'ชื่อ-สกุล', ...THAI_MONTHS_FULL, 'รวมปีนี้', 'สะสมทั้งหมด'],
+          ? ['ที่', 'รหัส', 'ชื่อ-สกุล', ...days.map(String), 'ฝากเดือนนี้', 'ถอนเดือนนี้', 'คงเหลือ']
+          : ['ที่', 'รหัส', 'ชื่อ-สกุล', ...THAI_MONTHS_FULL, 'ฝากปีนี้', 'ถอนปีนี้', 'คงเหลือ'],
         rows: rows.length ? rows : [['-', '-', 'ยังไม่มีรายชื่อนักเรียน']],
       };
     });
@@ -276,7 +318,7 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
       subtitle: csvPeriod === 'month' ? `รายเดือน ${monthLabel(month)}` : `รายปี ${yearLabel(year)}`,
       meta: [['ขอบเขต', csvScope === 'all' ? 'ทุกชั้น' : `ชั้น ${current.label}`], ['ผู้ส่งออก', userName], ['วันที่สร้างไฟล์', new Date().toLocaleString('th-TH')]],
       sections,
-      footerRows: [['หมายเหตุ', csvPeriod === 'month' ? 'ช่องวันที่เป็นจำนวนเงินที่ออมในวันนั้น' : 'ช่องเดือนเป็นยอดรวมเงินออมของเดือนนั้น']],
+      footerRows: [['หมายเหตุ', (csvPeriod === 'month' ? 'ช่องวันที่เป็นจำนวนเงินที่ฝากในวันนั้น' : 'ช่องเดือนเป็นยอดเงินฝากของเดือนนั้น') + ' · คงเหลือ = ฝากทั้งหมด - ถอนทั้งหมด']],
     });
     downloadCsvReport(`ออมเงิน_${csvScope === 'all' ? 'ทุกชั้น' : current.label}_${csvPeriod === 'month' ? `รายเดือน_${month}` : `รายปี_${year}`}`, reportRows);
   };
@@ -380,8 +422,9 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 14 }}>
           <Stat label="ออมวันนี้" value={`${todayTotal.toLocaleString('th-TH')} ฿`} color={COLOR} sub={`${filledCount}/${students.length} คน`} />
-          <Stat label="รวมเดือนนี้" value={`${monthTotal.toLocaleString('th-TH')} ฿`} color="#0284C7" />
-          <Stat label="ยอดสะสมห้องนี้" value={`${allTimeTotal.toLocaleString('th-TH')} ฿`} color="#3B82F6" />
+          <Stat label="ฝากเดือนนี้" value={`${monthTotal.toLocaleString('th-TH')} ฿`} color="#0284C7" />
+          <Stat label="ถอนเดือนนี้" value={`${monthWithdrawnTotal.toLocaleString('th-TH')} ฿`} color="#DC2626" sub={todayWithdrawnTotal ? `วันนี้ ${todayWithdrawnTotal.toLocaleString('th-TH')} ฿` : undefined} />
+          <Stat label="ยอดคงเหลือห้องนี้" value={`${allTimeTotal.toLocaleString('th-TH')} ฿`} color="#3B82F6" />
           <Stat label="เฉลี่ยสะสมต่อคน" value={`${students.length ? Math.round(allTimeTotal / students.length).toLocaleString('th-TH') : 0} ฿`} color="#A855F7" />
         </div>
 
@@ -402,8 +445,9 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
                     <th style={{ ...th, textAlign: 'left', minWidth: 200 }}>ชื่อ-สกุล</th>
                     <th style={th}>💰 ออมวันนี้ (฿)</th>
                     <th style={th}>⚡ กดเพิ่มด่วน (1 คลิก)</th>
-                    <th style={th}>📅 รวมเดือนนี้ (฿)</th>
-                    <th style={th}>📊 ยอดสะสมรวม (฿)</th>
+                    <th style={th}>📅 ฝากเดือนนี้ (฿)</th>
+                    <th style={th}>💸 ถอน (฿)</th>
+                    <th style={th}>📊 คงเหลือ (฿)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -463,6 +507,20 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
                         <td style={{ ...td, fontWeight: 700, color: mBal > 0 ? '#0284C7' : '#94A3B8' }}>
                           {mBal.toLocaleString('th-TH')}
                         </td>
+                        <td style={td}>
+                          <div style={{ display: 'inline-flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+                            {todayWithdrawalsOf(s).map(l => (
+                              <button key={l.id} type="button" onClick={() => cancelWithdrawal(l, s)} title="กดเพื่อยกเลิกการถอนนี้"
+                                style={{ padding: '2px 7px', borderRadius: 6, border: '1px solid #FECACA', background: '#FEF2F2', color: '#B91C1C', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}>
+                                −{Number(l.amount).toLocaleString('th-TH')} ✕
+                              </button>
+                            ))}
+                            <button type="button" onClick={() => withdraw(s)} disabled={bal <= 0}
+                              style={{ padding: '3px 9px', borderRadius: 6, border: '1px solid #FCA5A5', background: 'white', color: bal > 0 ? '#DC2626' : '#CBD5E1', fontWeight: 800, fontSize: '0.74rem', cursor: bal > 0 ? 'pointer' : 'not-allowed' }}>
+                              ถอน
+                            </button>
+                          </div>
+                        </td>
                         <td style={{ ...td, fontWeight: 800, color: bal > 0 ? '#3B82F6' : '#94A3B8' }}>
                           {bal.toLocaleString('th-TH')}
                         </td>
@@ -476,6 +534,7 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
                     <td style={{ ...td, color: COLOR, fontSize: '1rem' }}>{todayTotal.toLocaleString('th-TH')} ฿</td>
                     <td style={td}>—</td>
                     <td style={{ ...td, color: '#0284C7', fontSize: '1rem' }}>{monthTotal.toLocaleString('th-TH')} ฿</td>
+                    <td style={{ ...td, color: '#DC2626', fontSize: '0.9rem' }}>{todayWithdrawnTotal ? `−${todayWithdrawnTotal.toLocaleString('th-TH')} ฿ วันนี้` : '—'}</td>
                     <td style={{ ...td, color: '#3B82F6', fontSize: '1rem' }}>{allTimeTotal.toLocaleString('th-TH')} ฿</td>
                   </tr>
                 </tfoot>
@@ -525,10 +584,11 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
             <tr style={{ background: '#F1F5F9' }}>
               <th style={{ ...pTh, width: '7%' }}>เลขที่</th>
               <th style={{ ...pTh, width: '14%' }}>รหัสประจำตัว</th>
-              <th style={{ ...pTh, width: '37%', textAlign: 'left', paddingLeft: 8 }}>ชื่อ - นามสกุล</th>
-              <th style={{ ...pTh, width: '14%' }}>ออมวันนี้ (บาท)</th>
-              <th style={{ ...pTh, width: '14%' }}>รวมเดือนนี้ (บาท)</th>
-              <th style={{ ...pTh, width: '14%' }}>ยอดสะสมรวม (บาท)</th>
+              <th style={{ ...pTh, width: '33%', textAlign: 'left', paddingLeft: 8 }}>ชื่อ - นามสกุล</th>
+              <th style={{ ...pTh, width: '11%' }}>ฝากวันนี้ (บาท)</th>
+              <th style={{ ...pTh, width: '12%' }}>ฝากเดือนนี้ (บาท)</th>
+              <th style={{ ...pTh, width: '11%' }}>ถอนเดือนนี้ (บาท)</th>
+              <th style={{ ...pTh, width: '12%' }}>คงเหลือ (บาท)</th>
             </tr>
           </thead>
           <tbody>
@@ -543,6 +603,7 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
                   <td style={{ ...pTd, textAlign: 'left', paddingLeft: 8 }}>{s.name}</td>
                   <td style={pTd}>{e?.amount ? e.amount.toLocaleString('th-TH') : '-'}</td>
                   <td style={pTd}>{mBal > 0 ? mBal.toLocaleString('th-TH') : '-'}</td>
+                  <td style={pTd}>{monthWithdrawnOf(s) > 0 ? monthWithdrawnOf(s).toLocaleString('th-TH') : '-'}</td>
                   <td style={{ ...pTd, fontWeight: 700 }}>{bal > 0 ? bal.toLocaleString('th-TH') : '-'}</td>
                 </tr>
               );
@@ -553,6 +614,7 @@ function App({ userName, role, onLogout }: { userName: string; role: Role; onLog
               </td>
               <td style={pTd}>{todayTotal.toLocaleString('th-TH')}</td>
               <td style={pTd}>{monthTotal.toLocaleString('th-TH')}</td>
+              <td style={pTd}>{monthWithdrawnTotal.toLocaleString('th-TH')}</td>
               <td style={pTd}>{allTimeTotal.toLocaleString('th-TH')}</td>
             </tr>
           </tbody>
