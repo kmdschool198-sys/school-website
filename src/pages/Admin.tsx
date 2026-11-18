@@ -58,6 +58,7 @@ import {
   STAFF_USERS_COLLECTION,
   canManageStaffUsers,
   canUseWebsiteAdmin,
+  clearAuth,
   getAuthorizedStaffProfile,
   resolveStaffEmail,
   roleFromClaim,
@@ -758,10 +759,10 @@ function Admin() {
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
     setIsLoggedIn(false);
     setCurrentStaff(null);
     setStaffUsers([]);
+    await clearAuth();
   };
 
   // ---------- Posts ----------

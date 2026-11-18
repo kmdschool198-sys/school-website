@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
+import { AUTH_CHANGE_EVENT } from './teacherAuth';
 
 // Staff-only data (rosters, DMC details, scores, leave records) is loaded only for someone signed
 // in, so a visitor's browser never downloads it, whatever the Firestore rules allow. Staff accounts
@@ -17,6 +18,20 @@ function devSession(): boolean {
 
 export function useSignedIn(): boolean {
   const [signedIn, setSignedIn] = useState(() => !!auth.currentUser || devSession());
-  useEffect(() => onAuthStateChanged(auth, user => setSignedIn(!!user || devSession())), []);
+  useEffect(() => {
+    const sync = (event: Event) => {
+      if ((event as CustomEvent<{ loggedOut?: boolean }>).detail?.loggedOut) {
+        setSignedIn(false);
+        return;
+      }
+      setSignedIn(!!auth.currentUser || devSession());
+    };
+    const unsub = onAuthStateChanged(auth, user => setSignedIn(!!user || devSession()));
+    window.addEventListener(AUTH_CHANGE_EVENT, sync);
+    return () => {
+      unsub();
+      window.removeEventListener(AUTH_CHANGE_EVENT, sync);
+    };
+  }, []);
   return signedIn;
 }

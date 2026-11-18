@@ -194,53 +194,91 @@ export async function completeRedirectSignIn(): Promise<void> {
   }
 }
 
+export const AUTH_CHANGE_EVENT = 'kmd-teacher-auth-changed';
+
+function readDevSession(): AuthState | null {
+  if (!import.meta.env.DEV) return null;
+  try {
+    const raw = localStorage.getItem('kmd_teacher_auth_v1');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.authed) {
+      return {
+        authed: true,
+        loading: false,
+        role: parsed.role || 'teacher',
+        name: parsed.name || 'ครู',
+        email: parsed.email || '',
+      };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export async function clearAuth() {
-  await signOut(auth);
+  try {
+    localStorage.removeItem('kmd_teacher_auth_v1');
+  } catch { /* ignore */ }
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error('Firebase signOut error', error);
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { loggedOut: true } }));
+  }
 }
 
 export function useTeacherAuth(): AuthState & { logout: () => void } {
-  const [state, setState] = useState<AuthState>(DEFAULT_AUTH_STATE);
+  const [state, setState] = useState<AuthState>(() => readDevSession() || DEFAULT_AUTH_STATE);
 
   useEffect(() => {
     let alive = true;
 
-    // Local test session for `npm run dev` only; in production anyone could set this key in their
-    // own browser to skip the login screen, so real sessions always come from Firebase Auth
-    try {
-      const raw = import.meta.env.DEV ? localStorage.getItem('kmd_teacher_auth_v1') : null;
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed.authed) {
-          setState({
-            authed: true,
-            loading: false,
-            role: parsed.role || 'teacher',
-            name: parsed.name || 'ครู',
-            email: parsed.email || '',
-          });
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-    
+    const dev = readDevSession();
+    if (dev) setState(dev);
+
     // Process redirect sign-in result on mount
     void completeRedirectSignIn();
 
     const unsubscribe = onAuthStateChanged(auth, async user => {
       try {
+        if (!user) {
+          const fallbackDev = readDevSession();
+          if (alive) setState(fallbackDev || { ...DEFAULT_AUTH_STATE, loading: false });
+          return;
+        }
         const next = await stateFromUser(user);
-        if (user && !next.authed) {
+        if (!next.authed) {
           await signOut(auth);
         }
         if (alive) setState(next);
       } catch (err) {
         console.error('Unable to read Firebase auth state', err);
-        if (alive) setState({ ...DEFAULT_AUTH_STATE, loading: false });
+        if (alive) setState(readDevSession() || { ...DEFAULT_AUTH_STATE, loading: false });
       }
     });
+
+    const onLocalAuthChange = (event: Event) => {
+      if (!alive) return;
+      const loggedOut = (event as CustomEvent<{ loggedOut?: boolean }>).detail?.loggedOut;
+      if (loggedOut) {
+        setState({ ...DEFAULT_AUTH_STATE, loading: false });
+        return;
+      }
+      const fallbackDev = readDevSession();
+      if (!auth.currentUser && !fallbackDev) {
+        setState({ ...DEFAULT_AUTH_STATE, loading: false });
+      } else if (fallbackDev) {
+        setState(fallbackDev);
+      }
+    };
+    window.addEventListener(AUTH_CHANGE_EVENT, onLocalAuthChange);
+
     return () => {
       alive = false;
       unsubscribe();
+      window.removeEventListener(AUTH_CHANGE_EVENT, onLocalAuthChange);
     };
   }, []);
 
@@ -250,6 +288,10 @@ export function useTeacherAuth(): AuthState & { logout: () => void } {
       try {
         localStorage.removeItem('kmd_teacher_auth_v1');
       } catch { /* ignore */ }
+      setState({ ...DEFAULT_AUTH_STATE, loading: false });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { loggedOut: true } }));
+      }
       void clearAuth();
     },
   };
